@@ -1,0 +1,32 @@
+# FastAPI and ASGI server
+fastapi
+uvicorn[standard]==0.23.1
+
+# Database and ORM
+sqlalchemy==2.0.20
+psycopg2-binary==2.9.7
+
+# Caching
+aioredis==2.0.1
+
+# Full-text search
+elasticsearch==8.15.1
+
+# Authentication and security
+python-jose==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Background tasks
+celery==5.3.4
+redis==4.5.5
+
+# Validation and serialization
+pydantic==2.10.6
+
+# Testing
+pytest==7.4.2
+httpx==0.24.1
+
+# Deployment and tools
+gunicorn==21.2.0
+docker==7.1.0

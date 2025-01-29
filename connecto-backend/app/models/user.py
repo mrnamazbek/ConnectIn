@@ -1,63 +1,35 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
+"""
+user.py:
+Определяет модель User и (опционально) промежуточную таблицу user_teams 
+для связи Many-to-Many между пользователями и командами.
+"""
+
+from sqlalchemy import Column, Integer, String, Table, ForeignKey
 from sqlalchemy.orm import relationship
-from .base import Base, TimestampMixin
-
-class User(Base, TimestampMixin):
-    __tablename__ = 'users'
-
-    id = Column(Integer, primary_key=True)
-    email = Column(String(255), unique=True, nullable=False)
-    password_hash = Column(String(255), nullable=False)
-    name = Column(String(100))
-    bio = Column(Text)
-    education = Column(Text)
-    experience = Column(Text)
-    github_url = Column(String(255))
-    linkedin_url = Column(String(255))
-
-    # Relationships
-    skills = relationship("UserSkill", back_populates="user")
-    teams = relationship("UserTeam", back_populates="user")
-    articles = relationship("Article", back_populates="author")
-    projects = relationship("Project", back_populates="owner")
-    notifications = relationship("Notification", back_populates="user")
-    requests = relationship("Request", back_populates="user")
-
-# --- Moved from old_models.py ---
-from sqlalchemy.ext.declarative import declarative_base
-
-# Базовый класс для всех моделей
-Base = declarative_base()
-
-
-# --- Moved from interaction.py ---
-from sqlalchemy import Column, Integer, Enum, ForeignKey
-from sqlalchemy.orm import relationship
-
 from .base import Base
 
+# Пример промежуточной таблицы для связи Many-to-Many:
+user_teams_association = Table(
+    "user_teams",
+    Base.metadata,
+    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
+    Column("team_id", Integer, ForeignKey("teams.id"), primary_key=True),
+)
 
-class UserArticleInteraction(Base):
-    __tablename__ = 'user_article_interactions'
+class User(Base):
+    __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True)
-    interaction_type = Column(Enum('view', 'like', 'bookmark', name='interaction_type'))
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    # Добавьте нужные поля: username, full_name, bio и т.д.
 
-    user_id = Column(Integer, ForeignKey('users.id'))
-    article_id = Column(Integer, ForeignKey('articles.id'))
+    # Связь с командами (через user_teams_association)
+    teams = relationship(
+        "Team",
+        secondary=user_teams_association,
+        back_populates="members"
+    )
 
-    user = relationship("User")
-    article = relationship("Article", back_populates="interactions")
-
-
-class UserProjectInteraction(Base):
-    __tablename__ = 'user_project_interactions'
-
-    id = Column(Integer, primary_key=True)
-    interaction_type = Column(Enum('view', 'like', 'bookmark', name='interaction_type'))
-
-    user_id = Column(Integer, ForeignKey('users.id'))
-    project_id = Column(Integer, ForeignKey('projects.id'))
-
-    user = relationship("User")
-    project = relationship("Project", back_populates="interactions")
+    def __repr__(self):
+        return f"<User id={self.id} email={self.email}>"

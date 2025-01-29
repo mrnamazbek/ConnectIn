@@ -3,7 +3,7 @@ import { NavLink } from "react-router";
 
 const SubNav = () => {
     return (
-        <div className="bg-gray-100 shadow-lg text-black font-bold">
+        <div className="bg-white shadow-lg text-black font-bold">
             <nav className="flex justify-center space-x-6 py-3">
                 {/* News Link */}
                 <NavLink to="/news" className={({ isActive }) => (isActive ? "text-green-600 font-semibold border-b-2 border-green-600" : "hover:text-green-600")}>

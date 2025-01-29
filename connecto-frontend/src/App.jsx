@@ -23,7 +23,6 @@ function App() {
                             <Route path="/profile" element={<UserProfile />} />
                             <Route path="/project/:projectId" element={<ProjectProfile />} />
                             <Route path="/search" element={<SearchPage />} />
-
                             <Route path="*" element={<NotFoundPage />} />
                         </Routes>
                     </div>

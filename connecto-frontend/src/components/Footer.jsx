@@ -5,7 +5,7 @@ import { NavLink } from "react-router";
 
 const Footer = () => {
     return (
-        <footer className="bg-green-800 text-white w-full py-3 font-bold shadow-xl">
+        <footer className="bg-green-600 text-white w-full py-3 font-bold shadow-xl">
             <div className="grid grid-cols-8">
                 {/* Footer content aligned to the grid */}
                 <div className="col-start-2 col-span-6 flex justify-between items-center">

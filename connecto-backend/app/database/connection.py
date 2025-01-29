@@ -1,19 +1,33 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+# app/database/connection.py
+
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from typing import Generator
 
-DATABASE_URL = "postgresql://namazbek:admin1234@localhost:5433/connecto_db"
+from app.core.config import settings
 
-# Создаем асинхронный движок
-engine = create_async_engine(DATABASE_URL, future=True, echo=True)
-
-# Создаем фабрику сессий
-async_session = sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
+# Создаём движок SQLAlchemy, используя настройки из config
+engine = create_engine(
+    settings.DATABASE_URL,  # из Settings
+    echo=False,             # echo=True для отладки, пишет SQL в консоль
+    future=True             # API SQLAlchemy 2.0
 )
 
-# Получение сессии
-async def get_session() -> AsyncSession:
-    async with async_session() as session:
-        yield session
+# создаём фабрику сессий
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+    future=True
+)
+
+def get_db() -> Generator:
+    """
+    Функция-зависимость (dependency) для FastAPI.
+    Генерирует и затем закрывает сессию для каждого запроса.
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

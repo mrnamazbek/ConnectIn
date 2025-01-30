@@ -26,7 +26,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 # Настройка для JWT
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60  # 60 минут (можно регулировать)
+ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 30 минут (можно регулировать)
 
 
 @router.post("/register", response_model=UserOut, summary="Создать аккаунт")

@@ -15,13 +15,13 @@ from typing import List
 from app.database.connection import get_db
 from app.models.team import Team
 from app.models.user import User
-from app.schemas.team import TeamCreate, TeamRead, TeamUpdate
+from app.schemas.team import TeamCreate, TeamOut, TeamUpdate
 from app.api.auth import get_current_user
 
 router = APIRouter()
 
 
-@router.post("/", response_model=TeamRead, summary="Создать новую команду")
+@router.post("/", response_model=TeamOut, summary="Создать новую команду")
 def create_team(
     team_data: TeamCreate,
     db: Session = Depends(get_db),
@@ -50,7 +50,7 @@ def create_team(
     return new_team
 
 
-@router.get("/", response_model=List[TeamRead], summary="Получить список всех команд")
+@router.get("/", response_model=List[TeamOut], summary="Получить список всех команд")
 def read_teams(db: Session = Depends(get_db)):
     """
     Возвращает список всех команд в базе.
@@ -60,7 +60,7 @@ def read_teams(db: Session = Depends(get_db)):
     return teams
 
 
-@router.get("/{team_id}", response_model=TeamRead, summary="Получить данные конкретной команды")
+@router.get("/{team_id}", response_model=TeamOut, summary="Получить данные конкретной команды")
 def read_team(team_id: int, db: Session = Depends(get_db)):
     """
     Детальная информация по команде.
@@ -74,7 +74,7 @@ def read_team(team_id: int, db: Session = Depends(get_db)):
     return team
 
 
-@router.put("/{team_id}", response_model=TeamRead, summary="Обновить команду")
+@router.put("/{team_id}", response_model=TeamOut, summary="Обновить команду")
 def update_team(
     team_id: int,
     team_data: TeamUpdate,

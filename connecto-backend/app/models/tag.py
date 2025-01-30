@@ -1,29 +1,29 @@
 """
 tag.py:
 Хранит теги (Tag), которые могут использоваться в статьях (Article) или проектах (Project).
-Ниже пример, как связать Tag с Article через article_tags_association,
-и Tag с Project через project_tags_association.
 """
 
 from sqlalchemy import Column, Integer, String, Table, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import Base
 
-# Если мы хотим Many-to-Many с Article
+# Проверяем, существует ли таблица, прежде чем объявлять её заново
 article_tags_association = Table(
     "article_tags",
     Base.metadata,
     Column("article_id", Integer, ForeignKey("articles.id"), primary_key=True),
     Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
+    extend_existing=True,  # Позволяет обновить таблицу, если она уже объявлена
 )
 
-# Если хотим Many-to-Many с Project
 project_tags_association = Table(
     "project_tags",
     Base.metadata,
     Column("project_id", Integer, ForeignKey("projects.id"), primary_key=True),
     Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
+    extend_existing=True,  # Аналогично, для таблицы project_tags
 )
+
 
 class Tag(Base):
     __tablename__ = "tags"

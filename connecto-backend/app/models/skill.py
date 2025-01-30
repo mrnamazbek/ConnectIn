@@ -10,6 +10,7 @@ skill.py:
 from sqlalchemy import Column, Integer, String, Table, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import Base
+from .project import project_skills_association  # Explicit import
 
 # Пример: может существовать также user_skills_association, если нужно
 # user_skills_association = Table(
@@ -29,20 +30,12 @@ class Skill(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False)
 
-    # Связь с проектами (через project_skills_association)
+    # ✅ Use explicit import instead of a string
     projects = relationship(
         "Project",
-        secondary="project_skills",  # можно указать саму таблицу строкой
+        secondary=project_skills_association,
         back_populates="skills"
     )
-
-    # Если нужно связать навыки с пользователями,
-    # можно сделать relationship на user_skills_association
-    # users = relationship(
-    #     "User",
-    #     secondary="user_skills",
-    #     back_populates="skills"
-    # )
 
     def __repr__(self):
         return f"<Skill id={self.id} name={self.name}>"

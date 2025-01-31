@@ -1,13 +1,7 @@
-# app/database/__init__.py
-
 """
-Инициализирует пакет database.
-Обычно здесь не храним ничего,
-но при необходимости можем импортировать
-важные объекты, например engine, SessionLocal,
-чтобы потом проще было обращаться:
-from app.database import SessionLocal
+app/database/__init__.py:
+Инициализирует пакет database, ре-экспорт необходимых объектов.
 """
+from .connection import engine, SessionLocal, get_db
 
-# from .connection import engine, SessionLocal
-# __all__ = ["engine", "SessionLocal"]
+__all__ = ("engine", "SessionLocal", "get_db")

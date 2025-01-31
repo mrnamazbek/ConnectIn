@@ -22,6 +22,7 @@ article_tags_association = Table(
     Base.metadata,
     Column("article_id", Integer, ForeignKey("articles.id"), primary_key=True),
     Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
+    extend_existing=True
 )
 
 

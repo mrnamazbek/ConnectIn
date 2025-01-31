@@ -1,7 +1,8 @@
 # app/core/config.py
 
 import os
-from pydantic import BaseSettings
+from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -12,7 +13,7 @@ class Settings(BaseSettings):
     """
 
     # Пример: URL базы данных
-    DATABASE_URL: str = "postgresql://namazbek:admin1234@localhost:5433/connecto_db"
+    DATABASE_URL: str = "postgresql://didar:postgres@localhost:5432/connectin"
 
     # Пример: секретный ключ (используется для JWT, шифрования)
     SECRET_KEY: str = "SUPERSECRET123"

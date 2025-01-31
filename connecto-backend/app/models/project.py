@@ -10,15 +10,15 @@ project.py:
 from sqlalchemy import Column, Integer, String, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from .base import Base
+from .tag import project_tags_association  # Import the project-tags association table
 
-# Пример: связь Many-to-Many между Project и Skill
+# Many-to-Many between Project and Skill
 project_skills_association = Table(
     "project_skills",
     Base.metadata,
     Column("project_id", Integer, ForeignKey("projects.id"), primary_key=True),
     Column("skill_id", Integer, ForeignKey("skills.id"), primary_key=True),
 )
-
 
 class Project(Base):
     __tablename__ = "projects"
@@ -27,14 +27,17 @@ class Project(Base):
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
 
-    # Опционально: связь с владельцем (если хотите)
-    # owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    # owner = relationship("User", back_populates="projects")
-
-    # Если хотим Many-to-Many со скиллами
+    # Many-to-Many with Skills
     skills = relationship(
         "Skill",
         secondary=project_skills_association,
+        back_populates="projects"
+    )
+
+    # Many-to-Many with Tags (fixing missing relationship)
+    tags = relationship(
+        "Tag",
+        secondary=project_tags_association,  # Connects to the `Tag` model
         back_populates="projects"
     )
 

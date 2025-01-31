@@ -10,13 +10,13 @@ from typing import List
 from app.database.connection import get_db
 from app.models.project import Project
 from app.models.user import User
-from app.schemas.project import ProjectCreate, ProjectRead, ProjectUpdate
+from app.schemas.project import ProjectCreate, ProjectOut, ProjectUpdate
 from app.api.auth import get_current_user
 
 router = APIRouter()
 
 
-@router.post("/", response_model=ProjectRead, summary="Создать проект")
+@router.post("/", response_model=ProjectOut, summary="Создать проект")
 def create_project(
     project_data: ProjectCreate,
     db: Session = Depends(get_db),
@@ -27,7 +27,7 @@ def create_project(
     Текущий пользователь становится "владельцем" (user_id).
     """
     new_project = Project(
-        title=project_data.title,
+        title=project_data.name,
         description=project_data.description,
         user_id=current_user.id
     )
@@ -37,7 +37,7 @@ def create_project(
     return new_project
 
 
-@router.get("/", response_model=List[ProjectRead], summary="Список всех проектов")
+@router.get("/", response_model=List[ProjectOut], summary="Список всех проектов")
 def read_projects(db: Session = Depends(get_db)):
     """
     Получаем список всех проектов, доступных в базе.
@@ -46,7 +46,7 @@ def read_projects(db: Session = Depends(get_db)):
     return projects
 
 
-@router.get("/{project_id}", response_model=ProjectRead, summary="Детали одного проекта")
+@router.get("/{project_id}", response_model=ProjectOut, summary="Детали одного проекта")
 def read_project(project_id: int, db: Session = Depends(get_db)):
     """
     Получить информацию по конкретному проекту по его ID.
@@ -60,7 +60,7 @@ def read_project(project_id: int, db: Session = Depends(get_db)):
     return project
 
 
-@router.put("/{project_id}", response_model=ProjectRead, summary="Обновить проект")
+@router.put("/{project_id}", response_model=ProjectOut, summary="Обновить проект")
 def update_project(
     project_id: int,
     project_data: ProjectUpdate,
@@ -82,8 +82,8 @@ def update_project(
         )
 
     # Если поля в ProjectUpdate не пустые, присваиваем их
-    if project_data.title:
-        project.title = project_data.title
+    if project_data.name:
+        project.title = project_data.name
     if project_data.description:
         project.description = project_data.description
 

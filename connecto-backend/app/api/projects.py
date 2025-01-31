@@ -1,6 +1,7 @@
 """
 Этот модуль отвечает за CRUD-операции над моделью Проекта.
 Пользователи могут создавать, просматривать, редактировать и удалять свои проекты.
+Добавлена система заявок: пользователи могут подавать заявки, а владельцы проектов их одобрять/отклонять.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -12,10 +13,12 @@ from app.models.project import Project
 from app.models.user import User
 from app.schemas.project import ProjectCreate, ProjectOut, ProjectUpdate
 from app.api.auth import get_current_user
+from app.models.project import project_applications, project_members_association
+from app.schemas.project import ApplicationDecisionRequest, ApplicationStatus
 
 router = APIRouter()
 
-
+# 🔹 Создать проект
 @router.post("/", response_model=ProjectOut, summary="Создать проект")
 def create_project(
     project_data: ProjectCreate,
@@ -24,12 +27,12 @@ def create_project(
 ):
     """
     Создание нового проекта.
-    Текущий пользователь становится "владельцем" (user_id).
+    Текущий пользователь становится владельцем проекта.
     """
     new_project = Project(
-        title=project_data.name,
+        name=project_data.name,
         description=project_data.description,
-        user_id=current_user.id
+        owner_id=current_user.id
     )
     db.add(new_project)
     db.commit()
@@ -37,29 +40,28 @@ def create_project(
     return new_project
 
 
+# 🔹 Получить все проекты
 @router.get("/", response_model=List[ProjectOut], summary="Список всех проектов")
 def read_projects(db: Session = Depends(get_db)):
     """
     Получаем список всех проектов, доступных в базе.
     """
-    projects = db.query(Project).all()
-    return projects
+    return db.query(Project).all()
 
 
-@router.get("/{project_id}", response_model=ProjectOut, summary="Детали одного проекта")
+# 🔹 Получить один проект по ID
+@router.get("/{project_id}", response_model=ProjectOut, summary="Детали проекта")
 def read_project(project_id: int, db: Session = Depends(get_db)):
     """
-    Получить информацию по конкретному проекту по его ID.
+    Получить информацию по конкретному проекту.
     """
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Проект не найден"
-        )
+        raise HTTPException(status_code=404, detail="Проект не найден")
     return project
 
 
+# 🔹 Обновить проект
 @router.put("/{project_id}", response_model=ProjectOut, summary="Обновить проект")
 def update_project(
     project_id: int,
@@ -68,30 +70,24 @@ def update_project(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Обновить существующий проект (только если пользователь - владелец).
+    Обновляет существующий проект (только если пользователь - владелец).
     """
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Проект не найден")
+    
+    if project.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Вы не можете редактировать чужой проект")
 
-    # Проверяем, владелец ли текущий пользователь
-    if project.user_id != current_user.id:
-        raise HTTPException(
-            status_code=403,
-            detail="Вы не можете редактировать чужой проект"
-        )
-
-    # Если поля в ProjectUpdate не пустые, присваиваем их
-    if project_data.name:
-        project.title = project_data.name
-    if project_data.description:
-        project.description = project_data.description
+    project.name = project_data.name or project.name
+    project.description = project_data.description or project.description
 
     db.commit()
     db.refresh(project)
     return project
 
 
+# 🔹 Удалить проект
 @router.delete("/{project_id}", summary="Удалить проект")
 def delete_project(
     project_id: int,
@@ -99,18 +95,119 @@ def delete_project(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Удалить проект по ID, если вы являетесь его владельцем.
+    Удалить проект (только если пользователь - владелец).
     """
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Проект не найден")
 
-    if project.user_id != current_user.id:
-        raise HTTPException(
-            status_code=403,
-            detail="Вы не можете удалить чужой проект"
-        )
+    if project.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Вы не можете удалить чужой проект")
 
     db.delete(project)
     db.commit()
     return {"detail": "Проект успешно удалён"}
+
+
+# 🔹 Подать заявку на участие в проекте
+@router.post("/{project_id}/apply", summary="Подать заявку на проект")
+def apply_to_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Пользователь подает заявку на участие в проекте.
+    """
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Проект не найден")
+
+    # Проверяем, не является ли пользователь уже участником
+    if db.query(project_members_association).filter_by(user_id=current_user.id, project_id=project_id).first():
+        raise HTTPException(status_code=400, detail="Вы уже являетесь участником проекта")
+
+    # Проверяем, не подал ли пользователь уже заявку
+    if db.query(project_applications).filter_by(user_id=current_user.id, project_id=project_id).first():
+        raise HTTPException(status_code=400, detail="Вы уже подали заявку")
+
+    # Добавляем заявку в таблицу заявок
+    new_application = project_applications.insert().values(user_id=current_user.id, project_id=project_id)
+    db.execute(new_application)
+    db.commit()
+
+    return {"detail": "Заявка подана"}
+
+
+# 🔹 Получить список заявок в проект
+@router.get("/{project_id}/applications", summary="Список заявок на проект")
+def get_project_applications(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Владелец проекта может просмотреть список заявок от пользователей.
+    """
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Проект не найден")
+
+    if project.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Вы не владелец проекта")
+
+    applicants = db.execute(
+        project_applications.select().where(project_applications.c.project_id == project_id)
+    ).fetchall()
+
+    return [{"user_id": app.user_id} for app in applicants]
+
+
+# 🔹 Одобрить/Отклонить заявку
+@router.post("/{project_id}/applications/{user_id}/decision", summary="Принять или отклонить заявку")
+def decide_application(
+    project_id: int,
+    user_id: int,
+    request: ApplicationDecisionRequest,  # Accepting JSON body instead of query
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Владелец проекта принимает или отклоняет заявку пользователя.
+    """
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Проект не найден")
+
+    if project.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Вы не владелец проекта")
+
+    application = db.execute(
+        project_applications.select().where(
+            (project_applications.c.project_id == project_id) &
+            (project_applications.c.user_id == user_id)
+        )
+    ).fetchone()
+
+    if not application:
+        raise HTTPException(status_code=404, detail="Заявка не найдена")
+
+    if request.decision == ApplicationStatus.ACCEPTED:
+        # ✅ Add user to project members table
+        db.execute(project_members_association.insert().values(user_id=user_id, project_id=project_id))
+        # ✅ Remove application after approval
+        db.execute(project_applications.delete().where(
+            (project_applications.c.project_id == project_id) &
+            (project_applications.c.user_id == user_id)
+        ))
+        db.commit()
+        return {"detail": "Пользователь принят в проект"}
+
+    elif request.decision == ApplicationStatus.REJECTED:
+        # ✅ Remove application from applications table
+        db.execute(project_applications.delete().where(
+            (project_applications.c.project_id == project_id) &
+            (project_applications.c.user_id == user_id)
+        ))
+        db.commit()
+        return {"detail": "Заявка отклонена"}

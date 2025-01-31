@@ -9,8 +9,12 @@ project.py:
 
 from pydantic import BaseModel, Field
 from typing import Optional, List
+from app.enums import ApplicationStatus
 # from .user import UserOut  # Если нужно выводить владельца
 # from .skill import SkillOut # Если нужно выводить навыки
+
+class ApplicationDecisionRequest(BaseModel):
+    decision: ApplicationStatus
 
 class ProjectBase(BaseModel):
     name: str = Field(..., max_length=200)
@@ -33,13 +37,13 @@ class ProjectUpdate(BaseModel):
     description: Optional[str] = None
 
 
-class ProjectOut(ProjectBase):
-    """
-    Отображаем проект в ответе API.
-    """
+class ProjectOut(BaseModel):
     id: int
-    # skills: List[SkillOut] = [] # если нужно подтягивать навыки
-    # owner: Optional[UserOut] = None
+    name: str
+    description: str
+    owner_id: int
+    members: List[int] = []  # List of user IDs who are members
+    applicants: List[int] = []  # List of user IDs who applied
 
     class Config:
         orm_mode = True

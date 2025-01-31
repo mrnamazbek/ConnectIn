@@ -139,6 +139,38 @@ def apply_to_project(
     return {"detail": "Заявка подана"}
 
 
+# 🔹 Получить список участников проекта
+@router.get("/{project_id}/members", summary="Список участников проекта")
+def get_project_members(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Получить список всех участников проекта.
+    """
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Проект не найден")
+
+    # Получаем список участников через промежуточную таблицу
+    members = db.execute(
+        project_members_association.select().where(
+            project_members_association.c.project_id == project_id
+        )
+    ).fetchall()
+
+    if not members:
+        return {"detail": "В проекте пока нет участников"}
+
+    # Получаем информацию о пользователях
+    member_ids = [member.user_id for member in members]
+    users = db.query(User).filter(User.id.in_(member_ids)).all()
+
+    return [{"id": user.id, "username": user.username, "email": user.email} for user in users]
+
+
+
 # 🔹 Получить список заявок в проект
 @router.get("/{project_id}/applications", summary="Список заявок на проект")
 def get_project_applications(
@@ -211,3 +243,42 @@ def decide_application(
         ))
         db.commit()
         return {"detail": "Заявка отклонена"}
+    
+    
+# 🔹 Удалить пользователя из проекта (только владелец проекта)
+@router.delete("/{project_id}/members/{user_id}", summary="Удалить пользователя из проекта")
+def remove_user_from_project(
+    project_id: int,
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Владелец проекта может удалить участника из проекта.
+    """
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Проект не найден")
+
+    if project.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Вы не владелец проекта")
+
+    # Проверяем, является ли пользователь участником
+    member = db.execute(
+        project_members_association.select().where(
+            (project_members_association.c.project_id == project_id) &
+            (project_members_association.c.user_id == user_id)
+        )
+    ).fetchone()
+
+    if not member:
+        raise HTTPException(status_code=404, detail="Пользователь не является участником проекта")
+
+    # Удаляем пользователя из таблицы участников проекта
+    db.execute(project_members_association.delete().where(
+        (project_members_association.c.project_id == project_id) &
+        (project_members_association.c.user_id == user_id)
+    ))
+    db.commit()
+
+    return {"detail": "Пользователь удален из проекта"}

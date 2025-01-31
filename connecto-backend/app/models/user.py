@@ -20,9 +20,9 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, nullable=False, index=True)  # Добавили username
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    # Добавьте нужные поля: username, full_name, bio и т.д.
 
     # Связь с командами (через user_teams_association)
     teams = relationship(
@@ -32,4 +32,4 @@ class User(Base):
     )
 
     def __repr__(self):
-        return f"<User id={self.id} email={self.email}>"
+        return f"<User id={self.id} username={self.username} email={self.email}>"

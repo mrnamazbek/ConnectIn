@@ -63,18 +63,19 @@ def login_user(
     """
     Эндпоинт для входа в систему (получение JWT-токена).
     Принимает form_data c полями:
-    - username (в нашем случае email)
+    - username (используется как email)
     - password
     Возвращает access_token при успешной аутентификации.
     """
-    user = db.query(User).filter(User.email == form_data.username).first()
+    
+    user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверный email или пароль."
+            detail="Неверный логин или пароль."
         )
 
-    # Генерируем JWT-токен (по умолчанию на 60 минут)
+    # Генерируем JWT-токен
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
         "sub": user.email,
@@ -90,36 +91,39 @@ def get_current_user(
     db: Session = Depends(get_db)
 ) -> User:
     """
-    Зависимость: извлекает пользователя из токена.
-    Если токен некорректен / истёк / пользователь не найден - выбрасывает HTTPException.
+    Извлекает текущего пользователя из JWT-токена.
+
+    - Декодирует JWT-токен и получает email пользователя.
+    - Проверяет существование пользователя в базе.
+    - Если что-то не так (токен истёк, некорректен или пользователь не найден) — выбрасывает HTTPException.
     """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Неверные учетные данные или токен истёк",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
-        if email is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Не удалось определить пользователя по токену."
-            )
+        if not email:
+            raise credentials_exception
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Токен недействителен или истёк."
-        )
+        raise credentials_exception
 
     user = db.query(User).filter(User.email == email).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден."
+            detail="Пользователь не найден"
         )
+
     return user
 
 
 @router.get("/me", response_model=UserOut, summary="Текущий пользователь")
 def read_current_user(current_user: User = Depends(get_current_user)):
     """
-    Тестовый эндпоинт, чтобы проверить авторизацию.
     Возвращает данные текущего пользователя (из токена).
     """
     return current_user

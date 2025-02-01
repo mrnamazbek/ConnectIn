@@ -8,3 +8,4 @@ __pycache__/
 # Ignore IDE files
 .idea/
 .vscode/
+alembic.ini

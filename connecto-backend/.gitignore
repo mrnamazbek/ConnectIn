@@ -1,0 +1,13 @@
+alembic.ini
+
+# Ignore compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore database credentials
+.env
+.env.local
+
+# Ignore alembic cache (optional)
+alembic/versions/__pycache__/

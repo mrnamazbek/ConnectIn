@@ -1,31 +1,17 @@
-# app/core/config.py
-
 import os
-from pydantic import BaseModel
 from pydantic_settings import BaseSettings
-
 
 class Settings(BaseSettings):
     """
-    Класс для хранения настроек приложения.
-    Pydantic автоматически считывает переменные окружения,
-    а также позволяет задавать значения по умолчанию.
+    Stores application settings. Pydantic automatically reads environment variables.
     """
 
-    # Пример: URL базы данных
-    DATABASE_URL: str = "postgresql://didar:postgres@localhost:5432/connectin"
-
-    # Пример: секретный ключ (используется для JWT, шифрования)
-    SECRET_KEY: str = "SUPERSECRET123"
-
-    # Дополнительно можно указать другие переменные окружения,
-    # например, DEBUG, ALLOWED_HOSTS, SMTP и т.д.
+    # ✅ Load from .env file
+    DATABASE_URL: str
+    SECRET_KEY: str
 
     class Config:
-        # Для загрузки из файла .env (если нужен)
-        env_file = ".env"
+        env_file = ".env"  # Load from .env
         env_file_encoding = "utf-8"
 
-
-# Создаём экземпляр Settings, к которому можно обращаться по всему проекту
 settings = Settings()

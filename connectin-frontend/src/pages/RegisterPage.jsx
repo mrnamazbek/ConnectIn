@@ -3,17 +3,15 @@ import { faUsers } from "@fortawesome/free-solid-svg-icons";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
+import { useNavigate } from "react-router";
 
 const RegisterPage = () => {
     return (
         <div className="flex justify-center items-center min-h-screen">
             <div className="w-full bg-white text-black p-5 rounded-lg flex">
-                {/* Left side - Register Form */}
                 <div className="w-2/3 flex justify-center items-center">
                     <RegisterForm />
                 </div>
-
-                {/* Right side - Promotional Text */}
                 <div className="w-3/4 bg-green-600 text-white flex justify-center items-center rounded-lg shadow-2xl">
                     <p className="text-xl font-bold text-center px-5">
                         ConnecTo: Build Projects <br /> Grow Skills, Find Your Team.
@@ -25,7 +23,8 @@ const RegisterPage = () => {
 };
 
 const RegisterForm = () => {
-    // 1. Define the validation schema with Yup
+    const navigate = useNavigate();
+    
     const validationSchema = Yup.object({
         username: Yup.string().min(3, "Username must be at least 3 characters").required("Username is required"),
         email: Yup.string().email("Invalid email address").required("Email is required"),
@@ -35,7 +34,6 @@ const RegisterForm = () => {
             .required("Confirm Password is required"),
     });
 
-    // 2. Initialize Formik
     const formik = useFormik({
         initialValues: {
             username: "",
@@ -46,23 +44,20 @@ const RegisterForm = () => {
         validationSchema,
         onSubmit: async (values, { setSubmitting, setFieldError }) => {
             try {
-                // Example API call
-                const response = await axios.post("http://localhost:8000/register", {
+                const response = await axios.post("http://127.0.0.1:8000/auth/register", {
                     username: values.username,
                     email: values.email,
                     password: values.password,
                 });
                 console.log("Registration successful:", response.data);
-
-                // You can redirect or show a success message here
-                alert("Registration successful!");
+                
+                alert("Registration successful! Redirecting to login...");
+                navigate("/login");
             } catch (error) {
                 console.error("Registration failed:", error);
-
-                // Optionally, set a field error if the server returns something specific
-                // For example, if the server says "Email already taken," you could do:
-                // setFieldError("email", "Email already taken");
-
+                if (error.response && error.response.data.message) {
+                    setFieldError("email", error.response.data.message);
+                }
                 alert("Registration failed. Please try again.");
             } finally {
                 setSubmitting(false);
@@ -70,7 +65,6 @@ const RegisterForm = () => {
         },
     });
 
-    // 3. Render the form
     return (
         <div className="bg-white p-5 rounded-lg w-full max-w-lg">
             <h1 className="text-3xl font-bold text-center mb-2">
@@ -78,12 +72,8 @@ const RegisterForm = () => {
                 <span className="ml-3">ConnectIn</span>
             </h1>
             <p className="text-center text-black mb-6">Create your account to get started</p>
-
             <hr className="mb-6" />
-
-            {/* Formik form */}
             <form onSubmit={formik.handleSubmit}>
-                {/* Username */}
                 <div className="mb-4 text-black">
                     <label htmlFor="username" className="block text-black font-bold text-sm mb-2">
                         Username
@@ -97,8 +87,6 @@ const RegisterForm = () => {
                     />
                     {formik.touched.username && formik.errors.username && <p className="text-red-500 text-sm mt-1">{formik.errors.username}</p>}
                 </div>
-
-                {/* Email */}
                 <div className="mb-4 text-black">
                     <label htmlFor="email" className="block text-black font-bold text-sm mb-2">
                         Email
@@ -106,8 +94,6 @@ const RegisterForm = () => {
                     <input type="email" id="email" className={`w-full p-3 border ${formik.touched.email && formik.errors.email ? "border-red-500" : "border-black"} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-800`} placeholder="Enter your email" {...formik.getFieldProps("email")} />
                     {formik.touched.email && formik.errors.email && <p className="text-red-500 text-sm mt-1">{formik.errors.email}</p>}
                 </div>
-
-                {/* Password */}
                 <div className="mb-4 text-black">
                     <label htmlFor="password" className="block text-black font-bold text-sm mb-2">
                         Password
@@ -121,8 +107,6 @@ const RegisterForm = () => {
                     />
                     {formik.touched.password && formik.errors.password && <p className="text-red-500 text-sm mt-1">{formik.errors.password}</p>}
                 </div>
-
-                {/* Confirm Password */}
                 <div className="mb-6 text-black">
                     <label htmlFor="confirmPassword" className="block text-black font-bold text-sm mb-2">
                         Confirm Password
@@ -136,24 +120,9 @@ const RegisterForm = () => {
                     />
                     {formik.touched.confirmPassword && formik.errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{formik.errors.confirmPassword}</p>}
                 </div>
-
-                {/* Submit Button */}
                 <button type="submit" disabled={formik.isSubmitting} className="w-full border border-black text-black py-3 rounded-lg font-semibold hover:bg-gray-100 transition cursor-pointer">
                     {formik.isSubmitting ? "Registering..." : "Register"}
                 </button>
-
-                <div className="mt-4 text-center">
-                    <button type="button" className="w-full border text-white py-3 rounded-lg font-semibold bg-black hover:bg-gray-800 transition cursor-pointer">
-                        Sign in with Google
-                    </button>
-                </div>
-
-                <p className="mt-4 text-gray-700 text-sm text-center">
-                    Already have an account?{" "}
-                    <a href="/login" className="text-black font-semibold ml-1">
-                        Login here
-                    </a>
-                </p>
             </form>
         </div>
     );

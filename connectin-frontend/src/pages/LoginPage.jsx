@@ -2,24 +2,20 @@ import React from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
-
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUsers } from "@fortawesome/free-solid-svg-icons";
-import { NavLink } from "react-router"; // or "react-router-dom", depending on your version
+import { NavLink, useNavigate } from "react-router";
 
 const LoginPage = () => {
     return (
         <div className="flex justify-center items-center min-h-screen">
             <div className="w-full bg-white text-black p-5 flex h-full shadow-xl">
-                {/* Left side - Login Form */}
                 <div className="w-2/3 flex justify-center items-center">
                     <LoginForm />
                 </div>
-
-                {/* Right side - Promotional Text */}
                 <div className="w-3/4 bg-green-600 text-white flex justify-center items-center rounded-lg shadow-2xl">
                     <p className="text-xl font-bold text-center px-5">
-                        ConnectIn: Build Projects <br /> Grow Skills, Find Your Team.{" "}
+                        ConnectIn: Build Projects <br /> Grow Skills, Find Your Team.
                     </p>
                 </div>
             </div>
@@ -28,37 +24,44 @@ const LoginPage = () => {
 };
 
 const LoginForm = () => {
-    // 1. Define validation with Yup
+    const navigate = useNavigate();
+
     const validationSchema = Yup.object({
-        email: Yup.string().email("Invalid email address").required("Email is required"),
+        username: Yup.string().required("Username is required").min(3, "Username must be at least 3 characters long"),
         password: Yup.string().required("Password is required"),
     });
 
-    // 2. Configure Formik
     const formik = useFormik({
         initialValues: {
-            email: "",
+            username: "",
             password: "",
         },
         validationSchema,
         onSubmit: async (values, { setSubmitting }) => {
             try {
-                // Example API call to your backend
-                const response = await axios.post("http://localhost:8000/login", {
-                    email: values.email,
-                    password: values.password,
-                });
+                const response = await axios.post(
+                    "http://127.0.0.1:8000/auth/login",
+                    {
+                        username: values.username,
+                        password: values.password,
+                    },
+                    {
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                        },
+                    }
+                );
 
                 console.log("Login successful:", response.data);
-                // Here you could store a JWT, set cookies, etc.
-                // e.g., localStorage.setItem('token', response.data.token);
+                localStorage.setItem("token", response.data.token);
+                localStorage.setItem("user", JSON.stringify(response.data.user));
 
-                alert("You are now logged in!");
+                alert(`Welcome ${response.data.user.username}!`);
+                navigate("/");
             } catch (error) {
                 console.error("Login failed:", error);
                 alert("Login failed. Please check your credentials and try again.");
             } finally {
-                // Reset isSubmitting so button becomes clickable again
                 setSubmitting(false);
             }
         },
@@ -68,23 +71,27 @@ const LoginForm = () => {
         <div className="bg-white p-5 rounded-lg w-full max-w-lg">
             <h1 className="text-3xl font-bold text-center mb-2">
                 <FontAwesomeIcon icon={faUsers} />
-                <span className="ml-3">Connect</span>
+                <span className="ml-3">ConnectIn</span>
             </h1>
-            <p className="text-center text-black mb-6">Enter your email and password to continue</p>
+            <p className="text-center text-black mb-6">Enter your username and password to continue</p>
 
             <hr className="mb-6" />
 
             <form onSubmit={formik.handleSubmit}>
-                {/* Email Field */}
                 <div className="mb-4 text-black">
-                    <label className="block text-black font-bold text-sm mb-2" htmlFor="email">
-                        Email
+                    <label className="block text-black font-bold text-sm mb-2" htmlFor="username">
+                        Username
                     </label>
-                    <input id="email" type="email" className={`w-full p-3 border ${formik.touched.email && formik.errors.email ? "border-red-500" : "border-black"} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-800`} placeholder="Enter your email" {...formik.getFieldProps("email")} />
-                    {formik.touched.email && formik.errors.email && <p className="text-red-500 text-sm mt-1">{formik.errors.email}</p>}
+                    <input
+                        id="username"
+                        type="text"
+                        className={`w-full p-3 border ${formik.touched.username && formik.errors.username ? "border-red-500" : "border-black"} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-800`}
+                        placeholder="Enter your username"
+                        {...formik.getFieldProps("username")}
+                    />
+                    {formik.touched.username && formik.errors.username && <p className="text-red-500 text-sm mt-1">{formik.errors.username}</p>}
                 </div>
 
-                {/* Password Field */}
                 <div className="mb-6">
                     <label className="block font-bold text-sm mb-2" htmlFor="password">
                         Password
@@ -99,7 +106,6 @@ const LoginForm = () => {
                     {formik.touched.password && formik.errors.password && <p className="text-red-500 text-sm mt-1">{formik.errors.password}</p>}
                 </div>
 
-                {/* Submit Button */}
                 <button type="submit" disabled={formik.isSubmitting} className="w-full border border-black text-black py-3 rounded-lg font-semibold hover:bg-gray-100 transition cursor-pointer">
                     {formik.isSubmitting ? "Signing in..." : "Sign in"}
                 </button>
@@ -111,7 +117,7 @@ const LoginForm = () => {
                 </div>
 
                 <p className="mt-4 text-gray-700 text-sm text-center">
-                    Already have an account?
+                    Don't have an account?
                     <NavLink to="/register" className="text-black font-semibold ml-1">
                         Register here
                     </NavLink>

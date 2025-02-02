@@ -85,8 +85,15 @@ def login_user(
     }
     access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
-    return {"access_token": access_token, "token_type": "bearer"}
-
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": { 
+            "id": user.id,
+            "username": user.username,
+            "email": user.email
+        }
+    }
 
 def get_current_user(
     token: str = Depends(oauth2_scheme),

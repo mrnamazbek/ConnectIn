@@ -36,15 +36,18 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     Проверяем, нет ли уже такого email в базе.
     Храним пароль в хэше (bcrypt), а не 'в открытую'.
     """
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
+    existing_user = db.query(User).filter(
+        (User.email == user_data.email) | (User.username == user_data.username)
+    ).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email уже зарегистрирован."
+            detail="Пользователь с таким email или именем пользователя уже существует."
         )
 
     hashed_pw = hash_password(user_data.password)
     new_user = User(
+        username=user_data.username,
         email=user_data.email,
         hashed_password=hashed_pw,
         # При необходимости добавьте поля из UserCreate (username, full_name и т.д.)

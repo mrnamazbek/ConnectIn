@@ -50,7 +50,6 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
         username=user_data.username,
         email=user_data.email,
         hashed_password=hashed_pw,
-        # При необходимости добавьте поля из UserCreate (username, full_name и т.д.)
     )
     db.add(new_user)
     db.commit()

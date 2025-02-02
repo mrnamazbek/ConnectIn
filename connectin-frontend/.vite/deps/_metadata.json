@@ -1,0 +1,79 @@
+{
+  "hash": "59e739e1",
+  "configHash": "9549f5f5",
+  "lockfileHash": "1b23afd2",
+  "browserHash": "a9cdc5c4",
+  "optimized": {
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "5e12cb04",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "ee570936",
+      "needsInterop": true
+    },
+    "react-router": {
+      "src": "../../node_modules/react-router/dist/development/index.mjs",
+      "file": "react-router.js",
+      "fileHash": "4ecbe935",
+      "needsInterop": false
+    },
+    "@fortawesome/react-fontawesome": {
+      "src": "../../node_modules/@fortawesome/react-fontawesome/index.es.js",
+      "file": "@fortawesome_react-fontawesome.js",
+      "fileHash": "8c21638c",
+      "needsInterop": false
+    },
+    "@fortawesome/free-brands-svg-icons": {
+      "src": "../../node_modules/@fortawesome/free-brands-svg-icons/index.mjs",
+      "file": "@fortawesome_free-brands-svg-icons.js",
+      "fileHash": "07975de7",
+      "needsInterop": false
+    },
+    "@fortawesome/free-solid-svg-icons": {
+      "src": "../../node_modules/@fortawesome/free-solid-svg-icons/index.mjs",
+      "file": "@fortawesome_free-solid-svg-icons.js",
+      "fileHash": "c87e554f",
+      "needsInterop": false
+    },
+    "formik": {
+      "src": "../../node_modules/formik/dist/formik.esm.js",
+      "file": "formik.js",
+      "fileHash": "dd6d9d2e",
+      "needsInterop": false
+    },
+    "yup": {
+      "src": "../../node_modules/yup/index.esm.js",
+      "file": "yup.js",
+      "fileHash": "bc42f578",
+      "needsInterop": false
+    },
+    "axios": {
+      "src": "../../node_modules/axios/index.js",
+      "file": "axios.js",
+      "fileHash": "5cdc13ea",
+      "needsInterop": false
+    },
+    "@fortawesome/free-regular-svg-icons": {
+      "src": "../../node_modules/@fortawesome/free-regular-svg-icons/index.mjs",
+      "file": "@fortawesome_free-regular-svg-icons.js",
+      "fileHash": "3c8e9ca5",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-Q6DFBYTI": {
+      "file": "chunk-Q6DFBYTI.js"
+    },
+    "chunk-TWJRYSII": {
+      "file": "chunk-TWJRYSII.js"
+    },
+    "chunk-DC5AMYBS": {
+      "file": "chunk-DC5AMYBS.js"
+    }
+  }
+}

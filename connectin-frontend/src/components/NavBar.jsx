@@ -20,7 +20,7 @@ const NavBar = () => {
                     {/* Logo */}
                     <h1 className="text-2xl">
                         <NavLink to="/" end>
-                            Connect
+                            ConnectIn
                         </NavLink>
                     </h1>
 

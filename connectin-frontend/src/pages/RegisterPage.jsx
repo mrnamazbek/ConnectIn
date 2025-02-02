@@ -75,7 +75,7 @@ const RegisterForm = () => {
         <div className="bg-white p-5 rounded-lg w-full max-w-lg">
             <h1 className="text-3xl font-bold text-center mb-2">
                 <FontAwesomeIcon icon={faUsers} />
-                <span className="ml-3">Connect</span>
+                <span className="ml-3">ConnectIn</span>
             </h1>
             <p className="text-center text-black mb-6">Create your account to get started</p>
 

@@ -19,7 +19,7 @@ const LoginPage = () => {
                 {/* Right side - Promotional Text */}
                 <div className="w-3/4 bg-green-600 text-white flex justify-center items-center rounded-lg shadow-2xl">
                     <p className="text-xl font-bold text-center px-5">
-                        ConnecTo: Build Projects <br /> Grow Skills, Find Your Team.{" "}
+                        ConnectIn: Build Projects <br /> Grow Skills, Find Your Team.{" "}
                     </p>
                 </div>
             </div>

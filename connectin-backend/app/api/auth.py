@@ -17,7 +17,7 @@ from app.schemas.user import UserCreate, UserOut
 from app.models.user import User
 from app.utils.auth import hash_password, verify_password
 from app.database.connection import get_db
-from app.core.config import settings  # Предполагаем, что здесь SECRET_KEY, ALGORITHM и пр.
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -88,11 +88,7 @@ def login_user(
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "user": { 
-            "id": user.id,
-            "username": user.username,
-            "email": user.email
-        }
+        "user": UserOut.from_orm(user)
     }
 
 def get_current_user(

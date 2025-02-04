@@ -5,6 +5,7 @@ import ProjectsPage from "./ProjectsPage";
 import TeamsPage from "./TeamsPage";
 import SubNav from "../components/SubNav";
 import { fakePopularProjects, fakeNews, fakeProjects, fakeTeams } from "../data/data";
+import Footer from "../components/Footer";
 
 const Feed = () => {
     return (

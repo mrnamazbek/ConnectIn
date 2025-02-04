@@ -61,7 +61,7 @@ const UserProfile = () => {
                                 <p className="text-gray-600">
                                     Telegram:{" "}
                                     <a href={`https://t.me/${user.telegram}`} target="_blank" className="text-blue-600">
-                                        @{user.telegram}
+                                        {user.telegram}
                                     </a>
                                 </p>
                             </>

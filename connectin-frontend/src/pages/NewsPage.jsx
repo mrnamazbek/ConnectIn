@@ -9,9 +9,9 @@ export default function NewsPage({ fakeNews }) {
     }
 
     return (
-        <>
+        <div className="flex flex-col space-y-5">
             {fakeNews.map((article) => (
-                <div key={article.id} className="bg-white shadow-lg p-5 mb-6">
+                <div key={article.id} className=" bg-white border border-green-700 rounded-md shadow-md p-5">
                     {/* Author & Theme */}
                     <div className="flex items-center mb-4">
                         <img src="/pngimg.com - pokemon_PNG129.png" alt={article.author} className="w-10 h-10 rounded-full border border-black" />
@@ -57,6 +57,6 @@ export default function NewsPage({ fakeNews }) {
                     </div>
                 </div>
             ))}
-        </>
+        </div>
     );
 }

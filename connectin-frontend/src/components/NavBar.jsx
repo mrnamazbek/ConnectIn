@@ -1,54 +1,51 @@
-import { NavLink } from "react-router";
-import { useState } from "react";
+import { NavLink, useLocation } from "react-router";
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faLightbulb } from "@fortawesome/free-solid-svg-icons";
-import { faMoon } from "@fortawesome/free-regular-svg-icons";
-import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import { faSun, faMoon, faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 
 const NavBar = () => {
-    const [theme, setTheme] = useState("light");
-    const handleThemeChange = () => {
-        console.log("Theme changed");
-        setTheme(theme === "light" ? "dark" : "light");
-    };
+    const location = useLocation();
+    const noStickyRoutes = ["/news", "/projects", "/teams"];
+    const isSticky = !noStickyRoutes.includes(location.pathname);
+
+    const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+
+    useEffect(() => {
+        document.documentElement.classList.toggle("dark", theme === "dark");
+        localStorage.setItem("theme", theme);
+    }, [theme]);
 
     return (
-        <nav className="bg-green-600 text-white w-full py-3 font-bold shadow-xl">
-            {/* Full-width Navbar with inner content grid */}
-            <div className="grid grid-cols-8">
-                <div className="col-start-2 col-span-6 flex justify-between items-center">
-                    {/* Logo */}
-                    <h1 className="text-2xl">
-                        <NavLink to="/" end>
-                            ConnectIn
-                        </NavLink>
-                    </h1>
+        <nav className={`grid grid-cols-8 bg-white border-b border-green-700 shadow-md ${isSticky ? "sticky top-0" : ""}`}>
+            <div className="col-start-2 col-span-6">
+                <div className="flex justify-between items-center py-3">
+                    <NavLink to="/" className="font-semibold text-green-700">
+                        ConnectIn
+                    </NavLink>
 
-                    {/* Navigation Links */}
-                    <div className="flex items-center space-x-4">
-                        {theme === "light" ? (
-                            <button onClick={handleThemeChange}>
-                                <FontAwesomeIcon icon={faMoon} className="cursor-pointer" />
-                            </button>
-                        ) : (
-                            <button onClick={handleThemeChange}>
-                                <FontAwesomeIcon icon={faLightbulb} className="cursor-pointer" />
-                            </button>
-                        )}
-                        <NavLink to="/search" className="hover:underline hover:underline-offset-4 transition duration-300">
+                    <div className="space-x-5 font-semibold flex items-center">
+                        {/* Theme Toggle */}
+                        <button onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+                            <FontAwesomeIcon icon={theme === "light" ? faMoon : faSun} className="cursor-pointer text-gray-600 hover:text-green-700" />
+                        </button>
+
+                        {/* Search */}
+                        <NavLink to="/search" className={({ isActive }) => (isActive ? "text-green-700" : "hover:text-green-700")}>
                             <FontAwesomeIcon icon={faMagnifyingGlass} />
                         </NavLink>
-                        <NavLink to="/" className="hover:underline hover:underline-offset-4 transition duration-300">
+
+                        {/* Navigation Links */}
+                        <NavLink to="/" className={({ isActive }) => (isActive ? "text-green-700" : "hover:text-green-700")}>
                             Feed
                         </NavLink>
-                        <NavLink to="/profile" className="hover:underline hover:underline-offset-4 transition duration-300">
+                        <NavLink to="/profile" className={({ isActive }) => (isActive ? "text-green-700" : "hover:text-green-700")}>
                             Profile
                         </NavLink>
-                        <NavLink to="/login" className="hover:underline hover:underline-offset-4 transition duration-300">
-                            Login
+                        <NavLink to="/login" className={({ isActive }) => (isActive ? "text-green-700" : "hover:text-green-700")}>
+                            Sign in
                         </NavLink>
-                        <NavLink to="/register" className="hover:underline hover:underline-offset-4 transition duration-300">
-                            Registration
+                        <NavLink to="/register" className={({ isActive }) => (isActive ? "text-green-700" : "hover:text-green-700")}>
+                            Sign up
                         </NavLink>
                     </div>
                 </div>

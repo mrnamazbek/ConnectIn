@@ -3,27 +3,10 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUsers } from "@fortawesome/free-solid-svg-icons";
 import { NavLink, useNavigate } from "react-router";
+import { faGoogle, faGithub } from "@fortawesome/free-brands-svg-icons";
 
 const LoginPage = () => {
-    return (
-        <div className="flex justify-center items-center min-h-screen">
-            <div className="w-full bg-white text-black p-5 flex h-full shadow-xl">
-                <div className="w-2/3 flex justify-center items-center">
-                    <LoginForm />
-                </div>
-                <div className="w-3/4 bg-green-600 text-white flex justify-center items-center rounded-lg shadow-2xl">
-                    <p className="text-xl font-bold text-center px-5">
-                        ConnectIn: Build Projects <br /> Grow Skills, Find Your Team.
-                    </p>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const LoginForm = () => {
     const navigate = useNavigate();
 
     const validationSchema = Yup.object({
@@ -37,6 +20,8 @@ const LoginForm = () => {
             password: "",
         },
         validationSchema,
+        validateOnBlur: false,
+        validateOnChange: true,
         onSubmit: async (values, { setSubmitting }) => {
             try {
                 const response = await axios.post(
@@ -46,9 +31,7 @@ const LoginForm = () => {
                         password: values.password,
                     },
                     {
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded",
-                        },
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     }
                 );
 
@@ -67,61 +50,81 @@ const LoginForm = () => {
     });
 
     return (
-        <div className="bg-white p-5 rounded-lg w-full max-w-lg">
-            <h1 className="text-3xl font-bold text-center mb-2">
-                <FontAwesomeIcon icon={faUsers} />
-                <span className="ml-3">ConnectIn</span>
-            </h1>
-            <p className="text-center text-black mb-6">Enter your username and password to continue</p>
+        <div className="flex justify-center items-center min-h-screen -mt-13 px-4">
+            <div className="flex flex-wrap md:flex-nowrap border border-green-700 rounded-md bg-white shadow-lg w-full max-w-3xl">
+                {/* Left Side: Form */}
+                <div className="flex flex-col flex-1 p-6">
+                    <h1 className="text-lg font-semibold">Welcome!</h1>
+                    <p className="text-sm text-gray-500">Enter your username and password to continue</p>
 
-            <hr className="mb-6" />
+                    <form onSubmit={formik.handleSubmit} className="mt-4">
+                        <div className="flex flex-col space-y-3">
+                            {/* Username Field */}
+                            <div className="flex flex-col space-y-2">
+                                <label className="font-semibold text-sm" htmlFor="username">
+                                    Username
+                                </label>
+                                <input
+                                    id="username"
+                                    type="text"
+                                    className={`w-full text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none ${formik.touched.username && formik.errors.username ? "border-red-500" : ""}`}
+                                    placeholder="Enter your username"
+                                    autoFocus
+                                    {...formik.getFieldProps("username")}
+                                />
+                                {formik.touched.username && formik.errors.username && <p className="text-red-500 text-sm">{formik.errors.username}</p>}
+                            </div>
 
-            <form onSubmit={formik.handleSubmit}>
-                <div className="mb-4 text-black">
-                    <label className="block text-black font-bold text-sm mb-2" htmlFor="username">
-                        Username
-                    </label>
-                    <input
-                        id="username"
-                        type="text"
-                        className={`w-full p-3 border ${formik.touched.username && formik.errors.username ? "border-red-500" : "border-black"} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-800`}
-                        placeholder="Enter your username"
-                        {...formik.getFieldProps("username")}
-                    />
-                    {formik.touched.username && formik.errors.username && <p className="text-red-500 text-sm mt-1">{formik.errors.username}</p>}
+                            {/* Password Field */}
+                            <div className="flex flex-col space-y-2">
+                                <label className="font-semibold text-sm" htmlFor="password">
+                                    Password
+                                </label>
+                                <input
+                                    id="password"
+                                    type="password"
+                                    className={`w-full text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none ${formik.touched.password && formik.errors.password ? "border-red-500" : ""}`}
+                                    placeholder="Enter your password"
+                                    {...formik.getFieldProps("password")}
+                                />
+                                {formik.touched.password && formik.errors.password && <p className="text-red-500 text-sm">{formik.errors.password}</p>}
+                            </div>
+                        </div>
+
+                        {/* Submit Button */}
+                        <div className="mt-5">
+                            <button type="submit" disabled={formik.isSubmitting} className="w-full font-semibold shadow-md bg-green-700 text-white py-2 rounded-md hover:bg-green-600 transition cursor-pointer">
+                                {formik.isSubmitting ? "Signing in..." : "Sign in"}
+                            </button>
+                        </div>
+
+                        {/* OAuth Buttons */}
+                        <div className="flex justify-between space-x-3 mt-4">
+                            <button type="button" className="w-full flex items-center justify-center border border-gray-200 py-2 font-semibold rounded-md shadow-md hover:bg-gray-100 transition cursor-pointer">
+                                <FontAwesomeIcon icon={faGoogle} className="mr-2" /> Google
+                            </button>
+                            <button type="button" className="w-full flex items-center justify-center border border-gray-200 py-2 font-semibold rounded-md shadow-md hover:bg-gray-100 transition cursor-pointer">
+                                <FontAwesomeIcon icon={faGithub} className="mr-2" /> Github
+                            </button>
+                        </div>
+
+                        {/* Register Link */}
+                        <p className="text-sm text-center mt-4">
+                            <span className="text-gray-500">Don't have an account?</span>
+                            <NavLink to="/register" className="font-semibold underline ml-1">
+                                Sign up here
+                            </NavLink>
+                        </p>
+                    </form>
                 </div>
 
-                <div className="mb-6">
-                    <label className="block font-bold text-sm mb-2" htmlFor="password">
-                        Password
-                    </label>
-                    <input
-                        id="password"
-                        type="password"
-                        className={`w-full p-3 border ${formik.touched.password && formik.errors.password ? "border-red-500" : "border-black"} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-800`}
-                        placeholder="Enter your password"
-                        {...formik.getFieldProps("password")}
-                    />
-                    {formik.touched.password && formik.errors.password && <p className="text-red-500 text-sm mt-1">{formik.errors.password}</p>}
+                {/* Right Side: Welcome Banner */}
+                <div className="bg-green-700 rounded-l-md flex justify-center items-center px-6 hidden md:flex">
+                    <p className="text-white text-center font-semibold text-lg leading-snug">
+                        ConnectIn: Build Projects. <br /> Grow Skills, Find Your Team.
+                    </p>
                 </div>
-
-                <button type="submit" disabled={formik.isSubmitting} className="w-full border border-black text-black py-3 rounded-lg font-semibold hover:bg-gray-100 transition cursor-pointer">
-                    {formik.isSubmitting ? "Signing in..." : "Sign in"}
-                </button>
-
-                <div className="mt-4 text-center">
-                    <button type="button" className="w-full border text-white py-3 rounded-lg font-semibold bg-black hover:bg-gray-800 transition cursor-pointer">
-                        Sign in with Google
-                    </button>
-                </div>
-
-                <p className="mt-4 text-gray-700 text-sm text-center">
-                    Don't have an account?
-                    <NavLink to="/register" className="text-black font-semibold ml-1">
-                        Register here
-                    </NavLink>
-                </p>
-            </form>
+            </div>
         </div>
     );
 };

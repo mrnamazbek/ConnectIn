@@ -119,8 +119,8 @@ const LoginPage = () => {
                 </div>
 
                 {/* Right Side: Welcome Banner */}
-                <div className="bg-green-700 rounded-l-md flex justify-center items-center px-6 hidden md:flex">
-                    <p className="text-white text-center font-semibold text-lg leading-snug">
+                <div className="bg-green-700 rounded-l-md justify-center items-center px-6 hidden md:flex">
+                    <p className="text-white text-center font-semibold text-lg">
                         ConnectIn: Build Projects. <br /> Grow Skills, Find Your Team.
                     </p>
                 </div>

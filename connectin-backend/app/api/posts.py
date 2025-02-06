@@ -38,12 +38,6 @@ def create_post(
             raise HTTPException(status_code=404, detail="Team not found.")
         new_post.team_id = team.id
 
-    if post_data.post_type == "project":
-        project = db.query(Project).filter(Project.id == post_data.project_id).first()
-        if not project:
-            raise HTTPException(status_code=404, detail="Project not found.")
-        new_post.project_id = project.id
-
     # ✅ Assign Tags (Fix)
     if post_data.tag_ids:
         selected_tags = db.query(Tag).filter(Tag.id.in_(post_data.tag_ids)).all()

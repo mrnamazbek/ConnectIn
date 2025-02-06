@@ -1,15 +1,9 @@
-"""
-app/models/__init__.py:
-Импортируем все модели, чтобы Alembic видел их при автогенерации миграций.
-Также ре-экспорт, чтобы было удобно пользоваться в другом коде.
-"""
-
 from .base import Base
-from .user import User, user_teams_association
+from .user import User, user_teams_association, user_skills_association
 from .team import Team
-from .project import Project, project_skills_association
-from .skill import Skill
-from .article import Article, Comment, article_tags_association
+from .project import Project, project_skills_association, project_members_association, project_applications
+from .skill import Skill, post_skills_association
+from .post import Post, post_tags_association
 from .tag import Tag, project_tags_association
 from .request import Request
 from .review import Review
@@ -21,14 +15,16 @@ __all__ = [
     "Team",
     "Project",
     "Skill",
-    "Article",
-    "Comment",
+    "Post",
     "Tag",
     "Request",
     "Review",
     "Recommendation",
     "user_teams_association",
     "project_skills_association",
-    "article_tags_association",
+    "project_members_association",
+    "project_applications",
+    "post_skills_association",
+    "post_tags_association",
     "project_tags_association",
 ]

@@ -2,10 +2,13 @@ import { NavLink, useLocation } from "react-router";
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSun, faMoon, faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import { faUser } from "@fortawesome/free-regular-svg-icons";
+import { faNewspaper } from "@fortawesome/free-solid-svg-icons";
+import { faPen } from "@fortawesome/free-solid-svg-icons";
 
 const NavBar = () => {
     const location = useLocation();
-    const noStickyRoutes = ["/news", "/projects", "/teams"];
+    const noStickyRoutes = ["/news", "/projects", "/teams", "/post", "/search"];
     const isSticky = !noStickyRoutes.includes(location.pathname);
 
     const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
@@ -34,12 +37,17 @@ const NavBar = () => {
                             <FontAwesomeIcon icon={faMagnifyingGlass} />
                         </NavLink>
 
+                        {/* New Post */}
+                        <NavLink to="/post" className={({ isActive }) => (isActive ? "text-green-700" : "hover:text-green-700")}>
+                            <FontAwesomeIcon icon={faPen} />
+                        </NavLink>
+
                         {/* Navigation Links */}
                         <NavLink to="/" className={({ isActive }) => (isActive ? "text-green-700" : "hover:text-green-700")}>
-                            Feed
+                            <FontAwesomeIcon icon={faNewspaper} />
                         </NavLink>
                         <NavLink to="/profile" className={({ isActive }) => (isActive ? "text-green-700" : "hover:text-green-700")}>
-                            Profile
+                            <FontAwesomeIcon icon={faUser} />
                         </NavLink>
                         <NavLink to="/login" className={({ isActive }) => (isActive ? "text-green-700" : "hover:text-green-700")}>
                             Sign in

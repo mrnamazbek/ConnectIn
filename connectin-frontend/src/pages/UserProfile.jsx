@@ -43,10 +43,11 @@ const UserProfile = () => {
                     <p className="text-gray-600 text-center mt-4">Loading profile...</p>
                 ) : user ? (
                     <div className="mt-2">
-                        <div className="text-center text-lg">
+                        <div className="text-center">
                             <p className="font-semibold">
                                 {user.first_name} {user.last_name}
                             </p>
+                            <p className="text-sm text-gray-500">{user.username}</p>
                             <p>{user.position || "Not specified"}</p>
                         </div>
                         <div className="mt-5">
@@ -79,7 +80,7 @@ const UserProfile = () => {
                     <p className="text-gray-600 text-center mt-4">User data not available.</p>
                 )}
                 <div className="flex justify-center mt-5">
-                    <button className="text-white bg-green-700 font-semibold px-3 shadow-md rounded-md cursor-pointer hover:bg-green-600">Edit profile</button>
+                    <button className="border border-green-700 text-white bg-green-700 font-semibold px-2 shadow-md rounded-md cursor-pointer hover:bg-green-600">Edit Profile</button>
                 </div>
             </div>
 
@@ -115,14 +116,11 @@ const UserProfile = () => {
                         <p className="text-gray-600">Loading skills...</p>
                     ) : skills.length > 0 ? (
                         skills.map((skill, index) => (
-                            <div key={index} className="flex justify-between items-center px-4 py-2">
+                            <div key={index} className="flex justify-between items-center px-4 py-2 border-b border-gray-200 last:border-0">
                                 <p className="text-gray-700">{skill.name}</p>
                                 <div className="flex space-x-2">
                                     <button className="hover:text-red-700">
                                         <FontAwesomeIcon icon={faTrashAlt} className="cursor-pointer" />
-                                    </button>
-                                    <button className="hover:text-green-700">
-                                        <FontAwesomeIcon icon={faEdit} className="cursor-pointer" />
                                     </button>
                                 </div>
                             </div>

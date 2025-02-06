@@ -1,29 +1,24 @@
-"""
-tag.py:
-Хранит теги (Tag), которые могут использоваться в статьях (Article) или проектах (Project).
-"""
-
 from sqlalchemy import Column, Integer, String, Table, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import Base
 
-# Проверяем, существует ли таблица, прежде чем объявлять её заново
-article_tags_association = Table(
-    "article_tags",
-    Base.metadata,
-    Column("article_id", Integer, ForeignKey("articles.id"), primary_key=True),
-    Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
-    extend_existing=True,  # Позволяет обновить таблицу, если она уже объявлена
-)
-
+# Many-to-Many between Tags and Projects
 project_tags_association = Table(
     "project_tags",
     Base.metadata,
     Column("project_id", Integer, ForeignKey("projects.id"), primary_key=True),
     Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
-    extend_existing=True,  # Аналогично, для таблицы project_tags
+    extend_existing=True
 )
 
+# ✅ Many-to-Many between Tags and Posts (for project posts)
+post_tags_association = Table(
+    "post_tags",
+    Base.metadata,
+    Column("post_id", Integer, ForeignKey("posts.id"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
+    extend_existing=True
+)
 
 class Tag(Base):
     __tablename__ = "tags"
@@ -31,16 +26,17 @@ class Tag(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False)
 
-    # Связи c Article
-    articles = relationship(
-        "Article",
-        secondary=article_tags_association,
-        back_populates="tags"
-    )
-    # Связи c Project
+    # ✅ Many-to-Many: Tags & Projects
     projects = relationship(
         "Project",
         secondary=project_tags_association,
+        back_populates="tags"
+    )
+
+    # ✅ Many-to-Many: Tags & Posts (for project posts)
+    posts = relationship(
+        "Post",
+        secondary=post_tags_association,
         back_populates="tags"
     )
 

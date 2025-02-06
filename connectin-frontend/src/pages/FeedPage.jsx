@@ -5,28 +5,27 @@ import ProjectsPage from "./ProjectsPage";
 import TeamsPage from "./TeamsPage";
 import SubNav from "../components/SubNav";
 import { fakePopularProjects, fakeNews, fakeProjects, fakeTeams } from "../data/data";
+import PublishPage from "./PublishPage";
+import PopularNews from "../components/PopularNews";
 
 const Feed = () => {
     return (
         <>
             <SubNav />
-            <div className="grid grid-cols-8 gap-4 my-5 min-h-screen items-start text-black">
-                {/* Left Column */}
+            <div className="grid grid-cols-8 gap-5 my-5 min-h-screen">
                 <div className="col-span-6">
-                    {/* Nested Grid */}
-                    <div className="grid grid-rows-[auto_1fr]">
-                        {/* Row 2: Feed Content */}
-                        <Routes>
-                            <Route index element={<Navigate to="news" />} />
-                            <Route path="news" element={<NewsPage fakeNews={fakeNews} />} />
-                            <Route path="projects" element={<ProjectsPage fakeProjects={fakeProjects} />} />
-                            <Route path="teams" element={<TeamsPage fakeTeams={fakeTeams} />} />
-                        </Routes>
-                    </div>
+                    <Routes>
+                        <Route index element={<Navigate to="news" />} />
+                        <Route path="news" element={<NewsPage fakeNews={fakeNews} />} />
+                        <Route path="projects" element={<ProjectsPage fakeProjects={fakeProjects} />} />
+                        <Route path="teams" element={<TeamsPage fakeTeams={fakeTeams} />} />
+                        <Route path="post" element={<PublishPage />} />
+                    </Routes>
                 </div>
-
-                {/* Right Column */}
-                <PopularProjects fakePopularProjects={fakePopularProjects} />
+                <div className="col-span-2 flex-col space-y-5">
+                    <PopularNews />
+                    <PopularProjects fakePopularProjects={fakePopularProjects} />
+                </div>
             </div>
         </>
     );

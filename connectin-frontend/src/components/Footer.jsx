@@ -15,7 +15,7 @@ const Footer = () => {
                     <div className="flex space-x-8">
                         {/* Right Section: Links */}
                         <NavLink to="/faq" className="transition hover:text-green-700">
-                            <FontAwesomeIcon icon={faQuestionCircle} className="mr-2" />
+                            <FontAwesomeIcon icon={faQuestionCircle} className="pr-1" />
                             FAQ
                         </NavLink>
                         <NavLink to="/about" className="transition hover:text-green-700">

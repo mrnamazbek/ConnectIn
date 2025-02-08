@@ -66,6 +66,12 @@ const PublishPage = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             alert("Post created successfully!");
+            setTitle("");
+            setContent("");
+            setPostType("news");
+            setProjectId("");
+            setTeamId("");
+            setSelectedTags([]);
         } catch (error) {
             console.error("Failed to create post:", error);
         }

@@ -76,3 +76,54 @@ def get_all_posts(db: Session = Depends(get_db)):
         })
 
     return formatted_posts  # ✅ Return formatted list
+
+@router.get("/my", response_model=List[PostOut])
+def get_user_posts(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retrieves posts created by the currently authenticated user.
+    """
+    user_posts = db.query(Post).filter(Post.author_id == current_user.id).all()
+
+    # ✅ Format posts correctly
+    formatted_posts = [
+        {
+            "id": post.id,
+            "title": post.title,
+            "content": post.content,
+            "post_type": post.post_type,
+            "author_id": post.author_id,
+            "project_id": post.project_id,
+            "team_id": post.team_id,
+            "skills": [skill.name for skill in post.skills],
+            "tags": [tag.name for tag in post.tags],
+        }
+        for post in user_posts
+    ]
+
+    return formatted_posts
+
+@router.delete("/{post_id}", status_code=204)
+def delete_post(
+    post_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Deletes a post if the current user is the author.
+    """
+    post = db.query(Post).filter(Post.id == post_id).first()
+    
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    # ✅ Ensure only the author can delete
+    if post.author_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this post")
+
+    db.delete(post)
+    db.commit()
+    
+    return {"message": "Post deleted successfully"}

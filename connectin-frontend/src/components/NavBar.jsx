@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router";
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSun, faMoon, faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import { faSun, faMoon, faMagnifyingGlass, faS } from "@fortawesome/free-solid-svg-icons";
 import { faUser } from "@fortawesome/free-regular-svg-icons";
 import { faNewspaper } from "@fortawesome/free-solid-svg-icons";
 import { faPen } from "@fortawesome/free-solid-svg-icons";
@@ -11,12 +11,17 @@ const NavBar = () => {
     const noStickyRoutes = ["/news", "/projects", "/teams", "/post", "/search"];
     const isSticky = !noStickyRoutes.includes(location.pathname);
 
-    const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+    const [isDark, setIsDark] = useState(localStorage.getItem("theme") === "dark");
 
     useEffect(() => {
-        document.documentElement.classList.toggle("dark", theme === "dark");
-        localStorage.setItem("theme", theme);
-    }, [theme]);
+        if (isDark) {
+            document.documentElement.classList.add("dark"); // ✅ Add "dark" class to <html>
+            localStorage.setItem("theme", "dark");
+        } else {
+            document.documentElement.classList.remove("dark"); // ✅ Remove "dark" class
+            localStorage.setItem("theme", "light");
+        }
+    }, [isDark]);
 
     return (
         <nav className={`grid grid-cols-8 bg-white border-b border-green-700 shadow-md ${isSticky ? "sticky top-0" : ""}`}>
@@ -28,8 +33,8 @@ const NavBar = () => {
 
                     <div className="space-x-5 font-semibold flex items-center">
                         {/* Theme Toggle */}
-                        <button onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
-                            <FontAwesomeIcon icon={theme === "light" ? faMoon : faSun} className="cursor-pointer text-gray-600 hover:text-green-700" />
+                        <button onClick={() => setIsDark(!isDark)}>
+                            <FontAwesomeIcon icon={isDark ? faSun : faMoon} className="cursor-pointer text-gray-600 hover:text-green-700" />
                         </button>
 
                         {/* Search */}

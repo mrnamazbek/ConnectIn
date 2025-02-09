@@ -10,6 +10,12 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     SECRET_KEY: str
 
+    #Google auth
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_SECRET: str
+    GOOGLE_REDIRECT_URI: str
+
+
     class Config:
         env_file = ".env"  # Load from .env
         env_file_encoding = "utf-8"

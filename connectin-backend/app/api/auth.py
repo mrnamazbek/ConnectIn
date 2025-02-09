@@ -18,6 +18,9 @@ from app.models.user import User
 from app.utils.auth import hash_password, verify_password
 from app.database.connection import get_db
 from app.core.config import settings
+from fastapi.responses import RedirectResponse
+from app.utils.auth import generate_google_login_url, handle_google_callback
+from app.models.user import User
 
 router = APIRouter()
 
@@ -132,3 +135,52 @@ def read_current_user(current_user: User = Depends(get_current_user)):
     Возвращает данные текущего пользователя (из токена).
     """
     return current_user
+
+
+#---------------------GOOGLE oAUTH----------------------------------------------
+@router.get("/google/login", summary="Google Login")
+async def google_login(request: Request):
+    """
+    Генерирует URL для авторизации через Google.
+    """
+    login_url = await generate_google_login_url(request)
+    return RedirectResponse(login_url)
+
+
+@router.get("/google/callback", summary="Google Callback")
+async def google_callback(request: Request, db: Session = Depends(get_db)):
+    """
+    Обрабатывает ответ от Google OAuth и регистрирует/логинит пользователя.
+    """
+    user_info = await handle_google_callback(request)
+    if not user_info:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Не удалось получить данные пользователя через Google."
+        )
+
+    # Проверяем, есть ли пользователь в базе
+    user = db.query(User).filter(User.email == user_info["email"]).first()
+    if not user:
+        # Создаем нового пользователя
+        user = User(
+            email=user_info["email"],
+            name=user_info["name"],
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    # Возвращаем JWT токен (или перенаправляем)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    payload = {
+        "sub": user.email,
+        "exp": datetime.utcnow() + access_token_expires,
+    }
+    access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user_info,
+    }

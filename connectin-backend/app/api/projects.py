@@ -13,12 +13,12 @@ from app.models.project import Project
 from app.models.user import User
 from app.schemas.project import ProjectCreate, ProjectOut, ProjectUpdate
 from app.api.auth import get_current_user
-from app.models.project import project_applications, project_members_association
+from app.models.project import project_applications, project_members_association, project_tags_association, project_skills_association
 from app.schemas.project import ApplicationDecisionRequest, ApplicationStatus
 
 router = APIRouter()
 
-# 🔹 Создать проект
+# 🔹 Создать проект с тегами и навыками
 @router.post("/", response_model=ProjectOut, summary="Создать проект")
 def create_project(
     project_data: ProjectCreate,
@@ -28,7 +28,9 @@ def create_project(
     """
     Создание нового проекта.
     Текущий пользователь становится владельцем проекта.
+    Принимает список тегов (tag_ids) и навыков (skill_ids).
     """
+    # ✅ Создаем проект
     new_project = Project(
         name=project_data.name,
         description=project_data.description,
@@ -37,7 +39,65 @@ def create_project(
     db.add(new_project)
     db.commit()
     db.refresh(new_project)
-    return new_project
+
+    # ✅ Добавляем теги, если они переданы
+    if project_data.tag_ids:
+        for tag_id in project_data.tag_ids:
+            db.execute(
+                project_tags_association.insert().values(
+                    project_id=new_project.id, tag_id=tag_id
+                )
+            )
+
+    # ✅ Добавляем навыки, если они переданы
+    if project_data.skill_ids:
+        for skill_id in project_data.skill_ids:
+            db.execute(
+                project_skills_association.insert().values(
+                    project_id=new_project.id, skill_id=skill_id
+                )
+            )
+
+    db.commit()
+
+    # ✅ Fetch project again with related tags and skills
+    db.refresh(new_project)
+    project_with_tags_and_skills = db.query(Project).filter(Project.id == new_project.id).first()
+
+    return {
+        "id": project_with_tags_and_skills.id,
+        "name": project_with_tags_and_skills.name,
+        "description": project_with_tags_and_skills.description,
+        "owner_id": project_with_tags_and_skills.owner_id,
+        "members": [ {"id": user.id, "username": user.username} for user in project_with_tags_and_skills.members ],
+        "applicants": [ {"id": user.id, "username": user.username} for user in project_with_tags_and_skills.applicants ],
+        "tags": [ {"id": tag.id, "name": tag.name} for tag in project_with_tags_and_skills.tags ],  # ✅ Convert tags to dict
+        "skills": [ {"id": skill.id, "name": skill.name} for skill in project_with_tags_and_skills.skills ]  # ✅ Convert skills to dict
+    }
+
+# 🔹 Получить список проектов, созданных текущим пользователем
+@router.get("/my", response_model=List[ProjectOut], summary="Мои проекты")
+def get_my_projects(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Получить список проектов, которые создал текущий пользователь.
+    """
+    projects = db.query(Project).filter(Project.owner_id == current_user.id).all()
+
+    formatted_projects = []
+    for project in projects:
+        formatted_projects.append({
+            "id": project.id,
+            "name": project.name,
+            "description": project.description,
+            "owner_id": project.owner_id,
+            "tags": [{"id": tag.id, "name": tag.name} for tag in project.tags],  # ✅ Include Tags
+            "skills": [{"id": skill.id, "name": skill.name} for skill in project.skills],  # ✅ Include Skills
+        })
+
+    return formatted_projects
 
 
 # 🔹 Получить все проекты

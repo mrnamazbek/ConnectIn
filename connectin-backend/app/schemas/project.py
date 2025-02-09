@@ -8,10 +8,8 @@ project.py:
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Dict
 from app.enums import ApplicationStatus
-# from .user import UserOut  # Если нужно выводить владельца
-# from .skill import SkillOut # Если нужно выводить навыки
 
 class ApplicationDecisionRequest(BaseModel):
     decision: ApplicationStatus
@@ -24,9 +22,10 @@ class ProjectBase(BaseModel):
 class ProjectCreate(ProjectBase):
     """
     Схема для создания проекта.
-    Можно добавить поля: owner_id, список skills (IDs), срок и т.д.
+    Добавлены теги и навыки.
     """
-    pass
+    tag_ids: List[int] = []  # ✅ IDs of selected tags
+    skill_ids: List[int] = []  # ✅ IDs of required skills
 
 
 class ProjectUpdate(BaseModel):
@@ -35,6 +34,8 @@ class ProjectUpdate(BaseModel):
     """
     name: Optional[str] = Field(None, max_length=200)
     description: Optional[str] = None
+    tag_ids: List[int] = []  # ✅ Allow updating tags
+    skill_ids: List[int] = []  # ✅ Allow updating skills
 
 
 class ProjectOut(BaseModel):
@@ -42,8 +43,10 @@ class ProjectOut(BaseModel):
     name: str
     description: str
     owner_id: int
-    members: List[int] = []  # List of user IDs who are members
-    applicants: List[int] = []  # List of user IDs who applied
+    members: List[Dict] = []  # ✅ List of member details
+    applicants: List[Dict] = []  # ✅ List of applicants
+    tags: List[Dict] = []  # ✅ Include tags in the response
+    skills: List[Dict] = []  # ✅ Include required skills
 
     class Config:
         orm_mode = True

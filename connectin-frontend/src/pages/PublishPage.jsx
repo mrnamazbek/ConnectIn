@@ -12,7 +12,7 @@ const PublishPage = () => {
     const [teamId, setTeamId] = useState("");
     const [skills, setSkills] = useState([]);
     const [tags, setTags] = useState([]);
-    const [selectedTags, setSelectedTags] = useState([]); // Store selected tags
+    const [selectedTags, setSelectedTags] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isLayoutReady, setIsLayoutReady] = useState(false);
     const cloud = useCKEditorCloud({ version: "44.1.0" });

@@ -12,6 +12,7 @@ from typing import List
 
 from app.database.connection import get_db
 from app.models.user import User
+from app.models.skill import Skill
 from app.schemas.user import UserOut, UserUpdate
 from app.api.auth import get_current_user
 
@@ -48,7 +49,6 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     return user
 
-
 @router.put("/me", response_model=UserOut, summary="Обновить свой профиль")
 def update_own_profile(
     user_data: UserUpdate,
@@ -72,6 +72,48 @@ def update_own_profile(
     db.refresh(current_user)
     return current_user
 
+@router.post("/me/skills", summary="Добавить навык в профиль")
+def add_skill_to_profile(
+    skill_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Позволяет пользователю добавлять навык в свой профиль.
+    """
+    skill = db.query(Skill).filter(Skill.id == skill_id).first()
+    if not skill:
+        raise HTTPException(status_code=404, detail="Навык не найден")
+
+    if skill in current_user.skills:
+        raise HTTPException(status_code=400, detail="Этот навык уже добавлен в профиль")
+
+    current_user.skills.append(skill)
+    db.commit()
+    return {"detail": "Навык успешно добавлен"}
+
+@router.delete("/me/skills/{skill_id}", summary="Удалить навык из профиля")
+def remove_skill_from_profile(
+    skill_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Удаляет навык у текущего пользователя.
+    """
+    skill = db.query(Skill).filter(Skill.id == skill_id).first()
+    if not skill:
+        raise HTTPException(status_code=404, detail="Навык не найден")
+
+    # Проверяем, есть ли этот навык у пользователя
+    if skill not in current_user.skills:
+        raise HTTPException(status_code=400, detail="Этот навык не добавлен у пользователя")
+
+    # Удаляем навык
+    current_user.skills.remove(skill)
+    db.commit()
+    return {"detail": "Навык удалён"}
+
 
 @router.delete("/me", summary="Удалить свою учётную запись")
 def delete_own_profile(
@@ -85,3 +127,4 @@ def delete_own_profile(
     db.delete(current_user)
     db.commit()
     return {"detail": "Ваш аккаунт был удалён"}
+

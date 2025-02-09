@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api import auth, projects, teams, users, posts, tags, todos
+from app.api import auth, projects, teams, users, posts, tags, skills, todos
 from fastapi.middleware.cors import CORSMiddleware
 
 def create_app() -> FastAPI:
@@ -28,6 +28,7 @@ def create_app() -> FastAPI:
     app.include_router(tags.router, prefix="/tags", tags=["Tags"])
     # Пример включения роутеров (также уже подключены auth, projects, teams и т.д.)
     app.include_router(todos.router, prefix="/todos", tags=["Todos"])
+    app.include_router(skills.router, prefix="/skills", tags=["Skills"])
 
 
     return app

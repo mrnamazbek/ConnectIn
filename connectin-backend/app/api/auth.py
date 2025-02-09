@@ -30,19 +30,29 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 30 минут (можно регулиров
 
 
 @router.post("/register", response_model=UserOut, summary="Создать аккаунт")
-def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
+def register_user(
+    user_data: UserCreate, 
+    db: Session = Depends(get_db)
+):
     """
     Регистрирует нового пользователя.
-    Проверяем, нет ли уже такого email в базе.
+    Проверяет, нет ли уже такого email в базе.
     Храним пароль в хэше (bcrypt), а не 'в открытую'.
     """
     existing_user = db.query(User).filter(
         (User.email == user_data.email) | (User.username == user_data.username)
     ).first()
+    
     if existing_user:
+        error_detail = (
+            "A user with this email already exists."
+            if existing_user.email == user_data.email
+            else "A user with this username already exists."
+        )
+        
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Пользователь с таким email или именем пользователя уже существует."
+            detail=error_detail
         )
 
     hashed_pw = hash_password(user_data.password)
@@ -55,6 +65,7 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     return new_user
+
 
 
 @router.post("/login", summary="Войти в систему")

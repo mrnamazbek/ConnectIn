@@ -13,25 +13,21 @@ import { useLocation } from "react-router";
 function App() {
     return (
         <Router>
-            <div className="flex flex-col min-h-screen"> {/* Ensure full height */}
+            <div className="flex flex-col min-h-screen">
                 <NavBar />
-                
-                {/* Main Content - Grows to Push Footer Down */}
                 <div className="flex-grow grid grid-cols-8">
                     <div className="col-start-2 col-span-6">
                         <Routes>
                             <Route path="/*" element={<FeedPage />} />
                             <Route path="/login" element={<LoginPage />} />
                             <Route path="/register" element={<RegisterPage />} />
-                            <Route path="/profile" element={<UserProfile />} />
+                            <Route path="/profile/*" element={<UserProfile />} />
                             <Route path="/project/:projectId" element={<ProjectProfile />} />
                             <Route path="/search" element={<SearchPage />} />
                             <Route path="*" element={<NotFoundPage />} />
                         </Routes>
                     </div>
                 </div>
-
-                {/* Footer Stays at Bottom */}
                 <ConditionalFooter />
             </div>
         </Router>
@@ -41,7 +37,6 @@ function App() {
 function ConditionalFooter() {
     const location = useLocation();
     const hiddenRoutes = ["/login", "/register"];
-
     return !hiddenRoutes.includes(location.pathname) ? <Footer /> : null;
 }
 

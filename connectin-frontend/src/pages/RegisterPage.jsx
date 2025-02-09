@@ -36,16 +36,25 @@ const RegisterPage = () => {
                     email: values.email,
                     password: values.password,
                 });
-                console.log("Registration successful:", response.data);
 
+                console.log("Registration successful:", response.data);
                 alert("Registration successful! Redirecting to login...");
                 navigate("/login");
             } catch (error) {
                 console.error("Registration failed:", error);
-                if (error.response && error.response.data.message) {
-                    setFieldError("email", error.response.data.message);
+
+                if (error.response && error.response.data.detail) {
+                    // Handle specific error messages for email or username
+                    if (error.response.data.detail.includes("email")) {
+                        setFieldError("email", error.response.data.detail);
+                    } else if (error.response.data.detail.includes("username")) {
+                        setFieldError("username", error.response.data.detail);
+                    } else {
+                        alert(error.response.data.detail);
+                    }
+                } else {
+                    alert("Registration failed. Please try again.");
                 }
-                alert("Registration failed. Please try again.");
             } finally {
                 setSubmitting(false);
             }
@@ -53,66 +62,6 @@ const RegisterPage = () => {
     });
 
     return (
-        // <div className="bg-white p-5 rounded-lg w-full max-w-lg">
-        //     <h1 className="text-3xl font-bold text-center mb-2">
-        //         <FontAwesomeIcon icon={faUsers} />
-        //         <span className="ml-3">ConnectIn</span>
-        //     </h1>
-        //     <p className="text-center text-black mb-6">Create your account to get started</p>
-        //     <hr className="mb-6" />
-        //     <form onSubmit={formik.handleSubmit}>
-        //         <div className="mb-4 text-black">
-        //             <label htmlFor="username" className="block text-black font-bold text-sm mb-2">
-        //                 Username
-        //             </label>
-        //             <input
-        //                 type="text"
-        //                 id="username"
-        //                 className={`w-full p-3 border ${formik.touched.username && formik.errors.username ? "border-red-500" : "border-black"} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-800`}
-        //                 placeholder="Enter your username"
-        //                 {...formik.getFieldProps("username")}
-        //             />
-        //             {formik.touched.username && formik.errors.username && <p className="text-red-500 text-sm mt-1">{formik.errors.username}</p>}
-        //         </div>
-        //         <div className="mb-4 text-black">
-        //             <label htmlFor="email" className="block text-black font-bold text-sm mb-2">
-        //                 Email
-        //             </label>
-        //             <input type="email" id="email" className={`w-full p-3 border ${formik.touched.email && formik.errors.email ? "border-red-500" : "border-black"} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-800`} placeholder="Enter your email" {...formik.getFieldProps("email")} />
-        //             {formik.touched.email && formik.errors.email && <p className="text-red-500 text-sm mt-1">{formik.errors.email}</p>}
-        //         </div>
-        //         <div className="mb-4 text-black">
-        //             <label htmlFor="password" className="block text-black font-bold text-sm mb-2">
-        //                 Password
-        //             </label>
-        //             <input
-        //                 type="password"
-        //                 id="password"
-        //                 className={`w-full p-3 border ${formik.touched.password && formik.errors.password ? "border-red-500" : "border-black"} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-800`}
-        //                 placeholder="Enter your password"
-        //                 {...formik.getFieldProps("password")}
-        //             />
-        //             {formik.touched.password && formik.errors.password && <p className="text-red-500 text-sm mt-1">{formik.errors.password}</p>}
-        //         </div>
-        //         <div className="mb-6 text-black">
-        //             <label htmlFor="confirmPassword" className="block text-black font-bold text-sm mb-2">
-        //                 Confirm Password
-        //             </label>
-        //             <input
-        //                 type="password"
-        //                 id="confirmPassword"
-        //                 className={`w-full p-3 border ${formik.touched.confirmPassword && formik.errors.confirmPassword ? "border-red-500" : "border-black"} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-800`}
-        //                 placeholder="Confirm your password"
-        //                 {...formik.getFieldProps("confirmPassword")}
-        //             />
-        //             {formik.touched.confirmPassword && formik.errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{formik.errors.confirmPassword}</p>}
-        //         </div>
-        //         <button type="submit" disabled={formik.isSubmitting} className="w-full border border-black text-black py-3 rounded-lg font-semibold hover:bg-gray-100 transition cursor-pointer">
-        //             {formik.isSubmitting ? "Registering..." : "Register"}
-        //         </button>
-        //     </form>
-        // </div>
-
         <div className="flex justify-center items-center min-h-screen -mt-13 px-4">
             <div className="flex flex-wrap md:flex-nowrap border border-green-700 rounded-md bg-white shadow-lg w-full max-w-3xl">
                 {/* Left Side: Form */}
@@ -122,7 +71,6 @@ const RegisterPage = () => {
 
                     <form onSubmit={formik.handleSubmit} className="mt-4">
                         <div className="flex flex-col space-y-3">
-                            {/* Username Field */}
                             <div className="flex flex-col space-y-2">
                                 <label className="font-semibold text-sm" htmlFor="username">
                                     Username
@@ -132,18 +80,22 @@ const RegisterPage = () => {
                                     type="text"
                                     className={`w-full text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none ${formik.touched.username && formik.errors.username ? "border-red-500" : ""}`}
                                     placeholder="Enter your username"
-                                    autoFocus
                                     {...formik.getFieldProps("username")}
                                 />
                                 {formik.touched.username && formik.errors.username && <p className="text-red-500 text-sm">{formik.errors.username}</p>}
                             </div>
 
-                            {/* Email Field */}
                             <div className="flex flex-col space-y-2">
                                 <label className="font-semibold text-sm" htmlFor="email">
                                     Email
                                 </label>
-                                <input id="email" type="email" className={`w-full text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none ${formik.touched.email && formik.errors.email ? "border-red-500" : ""}`} placeholder="Enter your email" autoFocus {...formik.getFieldProps("email")} />
+                                <input
+                                    id="email"
+                                    type="email"
+                                    className={`w-full text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none ${formik.touched.email && formik.errors.email ? "border-red-500" : ""}`}
+                                    placeholder="Enter your email"
+                                    {...formik.getFieldProps("email")}
+                                />
                                 {formik.touched.email && formik.errors.email && <p className="text-red-500 text-sm">{formik.errors.email}</p>}
                             </div>
 

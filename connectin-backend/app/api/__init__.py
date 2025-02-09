@@ -9,6 +9,7 @@ from .teams import router as teams_router
 from .users import router as users_router
 from .posts import router as posts_router
 from .tags import router as tags_router
+from .todos import router as todos_router
 
 # Можно также определить функцию init_routers(app)
 # для удобного подключения в main.py:

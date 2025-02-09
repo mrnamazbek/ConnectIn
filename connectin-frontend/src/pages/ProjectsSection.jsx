@@ -101,9 +101,7 @@ const ProjectsSection = ({ user }) => {
     };
 
     return (
-        <div className="bg-white border border-green-700 rounded-md shadow-sm p-5 self-start w-full hover:shadow-green-700 transition">
-            <h2 className="font-semibold">Projects</h2>
-
+        <div className="self-start w-full hover:shadow-green-700 transition">
             {/* 🔹 Toggle Create Project Form */}
             <button onClick={() => setIsFormOpen(!isFormOpen)} className="mt-3 w-full bg-green-700 text-white px-4 py-2 rounded-md font-semibold shadow-md hover:bg-green-600 transition flex justify-between items-center">
                 {isFormOpen ? "Hide Form" : "Create New Project"}
@@ -160,7 +158,7 @@ const ProjectsSection = ({ user }) => {
                 <p className="text-gray-600 mt-3">Loading projects...</p>
             ) : projects.length > 0 ? (
                 projects.map((project) => (
-                    <div key={project.id} className="p-4 border-b last:border-b-0">
+                    <div key={project.id} className="py-4 border-b last:border-b-0">
                         <h4 className="font-semibold">{project.name}</h4>
                         <p className="text-gray-600">{project.description}</p>
                         <div className="flex flex-wrap gap-2 mt-2">

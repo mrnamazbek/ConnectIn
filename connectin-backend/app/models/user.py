@@ -70,6 +70,33 @@ class User(Base):
 
     # ✅ A user can have multiple skills
     skills = relationship("Skill", secondary=user_skills_association, back_populates="users")
+    education = relationship("Education", back_populates="user", cascade="all, delete-orphan")
+    experience = relationship("Experience", back_populates="user", cascade="all, delete-orphan")
+
+
 
     def __repr__(self):
         return f"<User id={self.id} username={self.username} email={self.email}>"
+    
+class Education(Base):
+    __tablename__ = "education"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    institution = Column(String(255), nullable=False)
+    degree = Column(String(255), nullable=False)
+    start_year = Column(Integer, nullable=False)
+    end_year = Column(Integer, nullable=True)
+
+    user = relationship("User", back_populates="education")
+
+
+class Experience(Base):
+    __tablename__ = "experience"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    company = Column(String(255), nullable=False)
+    role = Column(String(255), nullable=False)
+    start_year = Column(Integer, nullable=False)
+    end_year = Column(Integer, nullable=True)
+
+    user = relationship("User", back_populates="experience")

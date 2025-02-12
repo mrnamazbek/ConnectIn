@@ -1,9 +1,9 @@
 # FastAPI and ASGI server
-fastapi
+fastapi~=0.100.0
 uvicorn[standard]==0.23.1
 
 # Database and ORM
-sqlalchemy==2.0.20
+sqlalchemy~=1.4.54
 psycopg2-binary==2.9.7
 
 # Caching
@@ -21,7 +21,7 @@ celery==5.3.4
 redis==4.5.5
 
 # Validation and serialization
-pydantic==2.10.6
+pydantic~=2.0.3
 
 # Testing
 pytest==7.4.2
@@ -30,3 +30,11 @@ httpx==0.24.1
 # Deployment and tools
 gunicorn==21.2.0
 docker==7.1.0
+
+app~=0.0.1
+auth~=0.5.3
+pydantic-settings~=2.5.2
+config~=0.5.1
+Authlib~=1.4.1
+alembic~=1.14.0
+python-dotenv~=1.0.0

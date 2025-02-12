@@ -1,35 +1,27 @@
 from fastapi import FastAPI
-from app.api import auth, projects, teams, users, posts, tags, skills, todos
-from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
+from app.api import auth, projects, teams, users, posts, tags, todos
+from app.core import settings
+
 
 def create_app() -> FastAPI:
-    """
-    Создаёт и настраивает экземпляр FastAPI.
-    """
     app = FastAPI(
-        title="Connecto API",
+        title="ConnectIn API",
         version="1.0.0",
-        description="Портал для взаимодействия профессиональных команд и владельцев проектов"
-    )
-    
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],  # Allow requests from your frontend
-        allow_credentials=True,  # Allow cookies/auth headers
-        allow_methods=["*"],  # Allow all HTTP methods
-        allow_headers=["*"],  # Allow all headers
+        description="Платформа для взаимодействия профессионалов"
     )
 
+    # Добавляем SessionMiddleware (обязателен для OAuth)
+    app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
+
+    # Подключаем маршруты
     app.include_router(auth.router, prefix="/auth", tags=["Auth"])
     app.include_router(projects.router, prefix="/projects", tags=["Projects"])
     app.include_router(teams.router, prefix="/teams", tags=["Teams"])
     app.include_router(users.router, prefix="/users", tags=["Users"])
     app.include_router(posts.router, prefix="/posts", tags=["Posts"])
     app.include_router(tags.router, prefix="/tags", tags=["Tags"])
-    # Пример включения роутеров (также уже подключены auth, projects, teams и т.д.)
     app.include_router(todos.router, prefix="/todos", tags=["Todos"])
-    app.include_router(skills.router, prefix="/skills", tags=["Skills"])
-
 
     return app
 

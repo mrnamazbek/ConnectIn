@@ -6,6 +6,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Settings(BaseSettings):
+    # ... существующие поля
+    GITHUB_CLIENT_ID: str
+    GITHUB_CLIENT_SECRET: str
+    GITHUB_REDIRECT_URI: str
+
     DATABASE_URL: str
     SECRET_KEY: str
     GOOGLE_CLIENT_ID: str

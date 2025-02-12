@@ -15,12 +15,14 @@ from sqlalchemy.orm import Session
 # Вновь включаем импорт схем
 from app.schemas.user import UserCreate, UserOut
 from app.models.user import User
-from app.utils.auth import hash_password, verify_password
+from app.utils import logger
+from app.utils.auth import hash_password, verify_password, oauth, get_github_user_info, generate_github_login_url
 from app.database.connection import get_db
 from app.core.config import settings
 from fastapi.responses import RedirectResponse
 from app.utils.auth import generate_google_login_url, handle_google_callback
 from app.models.user import User
+from app.utils.logger import get_logger
 
 router = APIRouter()
 
@@ -197,3 +199,68 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         "user": user_info,
     }
 
+
+# ... после Google-эндпоинтов
+
+@router.get("/github/login", summary="Войти через GitHub")
+async def github_login(request: Request):
+    """Редирект на страницу авторизации GitHub."""
+    login_url = await generate_github_login_url(request)
+    if not login_url:
+        raise HTTPException(
+            status_code=500,
+            detail="Ошибка настройки GitHub OAuth"
+        )
+    return RedirectResponse(url=login_url)
+
+
+@router.get("/github/callback", summary="GitHub Callback")
+async def github_callback(request: Request, db: Session = Depends(get_db)):
+    try:
+        token = await oauth.github.authorize_access_token(request)
+    except Exception as e:
+        raise HTTPException(401, detail="GitHub OAuth Error")
+
+    user_data = await get_github_user_info(token)
+    if not user_data or not user_data.get("email"):
+        raise HTTPException(400, detail="Не удалось получить email из GitHub")
+
+    # Формируем username
+    username = user_data.get("login") or user_data["email"].split("@")[0]
+
+    # Проверяем существующего пользователя
+    user = db.query(User).filter(
+        (User.email == user_data["email"]) |
+        (User.github == user_data["html_url"])  # 🔴 Используем колонку `github`
+    ).first()
+
+    if not user:
+        user = User(
+            email=user_data["email"],
+            username=username,
+            hashed_password=None,
+            github=user_data.get("html_url", ""),  # 🔴 Сохраняем URL профиля
+            # Остальные поля (city, position и т.д.) можно заполнить через фронтенд
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    else:
+        # Обновляем URL GitHub, если изменился
+        if user.github != user_data["html_url"]:
+            user.github = user_data["html_url"]
+            db.commit()
+
+    # Генерация JWT (аналогично Google)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    payload = {
+        "sub": user.email,
+        "exp": datetime.utcnow() + access_token_expires
+    }
+    access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": UserOut.from_orm(user)  # Используем обновленную схему
+    }

@@ -70,6 +70,64 @@ async def handle_google_callback(request: Request) -> dict:
         return None
 
 
+# ... после настройки Google OAuth
+
+# 🔵 Добавляем GitHub OAuth
+try:
+    oauth.register(
+        name="github",
+        client_id=settings.GITHUB_CLIENT_ID,
+        client_secret=settings.GITHUB_CLIENT_SECRET,
+        authorize_url="https://github.com/login/oauth/authorize",
+        access_token_url="https://github.com/login/oauth/access_token",
+        client_kwargs={"scope": "user:email"},  # Запрашиваем email
+    )
+    logger.info("✅ GitHub OAuth успешно настроен.")
+except Exception as e:
+    logger.error(f"❌ Ошибка настройки GitHub OAuth: {e}")
+
+#------------start github auth
+# 🔵 Функции для работы с GitHub
+async def generate_github_login_url(request: Request) -> str:
+    """Генерирует URL для перенаправления на GitHub OAuth."""
+    try:
+        redirect = await oauth.github.authorize_redirect(
+            request,
+            settings.GITHUB_REDIRECT_URI
+        )
+        return redirect.headers["location"]
+    except Exception as e:
+        logger.error(f"❌ Ошибка генерации GitHub URL: {e}")
+        return None
+
+
+async def get_github_user_info(token: dict) -> dict:
+    """Получает данные пользователя из GitHub API."""
+    try:
+        resp = await oauth.github.get("https://api.github.com/user", token=token)
+        user_data = resp.json()
+
+        # Если email не пришел, запрашиваем отдельно
+        if not user_data.get("email"):
+            resp_emails = await oauth.github.get(
+                "https://api.github.com/user/emails",
+                token=token
+            )
+            emails = resp_emails.json()
+            user_data["email"] = next(
+                (e["email"] for e in emails if e["primary"]),
+                None
+            )
+
+        # Добавляем URL профиля GitHub
+        user_data["html_url"] = user_data.get("html_url", "")  # Пример: "https://github.com/johndoe"
+        return user_data
+    except Exception as e:
+        logger.error(f"❌ Ошибка получения данных GitHub: {e}")
+        return None
+
+#---------------end github------------
+
 def hash_password(password: str) -> str:
     """
     📌 Возвращает хэш пароля, используя bcrypt.

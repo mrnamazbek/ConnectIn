@@ -166,13 +166,16 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             detail="Не удалось получить данные пользователя через Google."
         )
 
+    # 🛠 Генерируем username, если его нет
+    username = user_info.get("name", "").replace(" ", "_") or user_info["email"].split("@")[0]
+
     # Проверяем, есть ли пользователь в базе
     user = db.query(User).filter(User.email == user_info["email"]).first()
     if not user:
         # Создаем нового пользователя
         user = User(
             email=user_info["email"],
-            username=user_info["username"],
+            username=username,  # ✅ Исправлено
         )
         db.add(user)
         db.commit()

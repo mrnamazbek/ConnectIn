@@ -144,7 +144,14 @@ async def google_login(request: Request):
     Генерирует URL для авторизации через Google.
     """
     login_url = await generate_google_login_url(request)
-    return RedirectResponse(login_url)
+
+    if not login_url:
+        raise HTTPException(
+            status_code=500,
+            detail="Не удалось сформировать Google OAuth URL"
+        )
+
+    return RedirectResponse(url=login_url)  # ✅ Теперь это правильный URL!
 
 
 @router.get("/google/callback", summary="Google Callback")

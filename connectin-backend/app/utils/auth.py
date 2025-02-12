@@ -35,15 +35,16 @@ except Exception as e:
 async def generate_google_login_url(request: Request) -> str:
     """
     📌 Генерирует URL для входа через Google OAuth.
-    Пользователь будет перенаправлен на страницу Google для входа.
     """
     try:
         login_url = await oauth.google.authorize_redirect(request, settings.GOOGLE_REDIRECT_URI)
-        logger.info(f"🔹 Сформирован Google Login URL: {login_url}")
-        return login_url
+        redirect_url = login_url.headers["location"]  # ✅ Получаем реальный URL из заголовков
+        logger.info(f"🔹 Google Login URL: {redirect_url}")
+        return redirect_url
     except Exception as e:
         logger.error(f"❌ Ошибка генерации Google Login URL: {e}")
         return None
+
 
 
 async def handle_google_callback(request: Request) -> dict:

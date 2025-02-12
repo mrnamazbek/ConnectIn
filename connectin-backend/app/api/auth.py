@@ -7,7 +7,7 @@
 
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -165,7 +165,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         # Создаем нового пользователя
         user = User(
             email=user_info["email"],
-            name=user_info["name"],
+            username=user_info["username"],
         )
         db.add(user)
         db.commit()

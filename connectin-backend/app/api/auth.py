@@ -166,22 +166,24 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             detail="Не удалось получить данные пользователя через Google."
         )
 
-    # 🛠 Генерируем username, если его нет
     username = user_info.get("name", "").replace(" ", "_") or user_info["email"].split("@")[0]
 
-    # Проверяем, есть ли пользователь в базе
     user = db.query(User).filter(User.email == user_info["email"]).first()
+
     if not user:
-        # Создаем нового пользователя
+        # ✅ Добавляем `google_id`, `google_refresh_token`, `hashed_password = None`
         user = User(
             email=user_info["email"],
-            username=username,  # ✅ Исправлено
+            username=username,
+            hashed_password=None,  # 🔹 Разрешаем NULL
+            google_id=user_info.get("sub"),  # ID из Google OAuth
+            google_refresh_token=None,  # 🔹 Можно добавить в будущем
         )
         db.add(user)
         db.commit()
         db.refresh(user)
 
-    # Возвращаем JWT токен (или перенаправляем)
+    # Генерация JWT токена
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
         "sub": user.email,
@@ -194,3 +196,4 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         "token_type": "bearer",
         "user": user_info,
     }
+

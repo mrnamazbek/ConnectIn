@@ -53,6 +53,10 @@ class User(Base):
     linkedin = Column(String(255), nullable=True)
     telegram = Column(String(255), nullable=True)
 
+    #google auth
+    google_id = Column(String(255), unique=True)
+    google_refresh_token = Column(String(255))
+
     # ✅ A user can be a member of multiple teams
     teams = relationship("Team", secondary=user_teams_association, back_populates="members")
 

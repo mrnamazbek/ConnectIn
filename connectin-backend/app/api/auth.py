@@ -18,8 +18,9 @@ from app.models.user import User
 from app.utils.auth import hash_password, verify_password
 from app.database.connection import get_db
 from app.core.config import settings
-# from fastapi.responses import RedirectResponse
-# from app.utils.auth import generate_google_login_url, handle_google_callback
+from fastapi.responses import RedirectResponse
+from app.utils.auth import generate_google_login_url, handle_google_callback
+from app.models.user import User
 
 router = APIRouter()
 
@@ -32,29 +33,19 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 30 минут (можно регулиров
 
 
 @router.post("/register", response_model=UserOut, summary="Создать аккаунт")
-def register_user(
-    user_data: UserCreate, 
-    db: Session = Depends(get_db)
-):
+def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     """
     Регистрирует нового пользователя.
-    Проверяет, нет ли уже такого email в базе.
+    Проверяем, нет ли уже такого email в базе.
     Храним пароль в хэше (bcrypt), а не 'в открытую'.
     """
     existing_user = db.query(User).filter(
         (User.email == user_data.email) | (User.username == user_data.username)
     ).first()
-    
     if existing_user:
-        error_detail = (
-            "A user with this email already exists."
-            if existing_user.email == user_data.email
-            else "A user with this username already exists."
-        )
-        
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=error_detail
+            detail="Пользователь с таким email или именем пользователя уже существует."
         )
 
     hashed_pw = hash_password(user_data.password)
@@ -67,7 +58,6 @@ def register_user(
     db.commit()
     db.refresh(new_user)
     return new_user
-
 
 
 @router.post("/login", summary="Войти в систему")
@@ -147,50 +137,50 @@ def read_current_user(current_user: User = Depends(get_current_user)):
     return current_user
 
 
-# #---------------------GOOGLE oAUTH----------------------------------------------
-# @router.get("/google/login", summary="Google Login")
-# async def google_login(request: Request):
-#     """
-#     Генерирует URL для авторизации через Google.
-#     """
-#     login_url = await generate_google_login_url(request)
-#     return RedirectResponse(login_url)
+#---------------------GOOGLE oAUTH----------------------------------------------
+@router.get("/google/login", summary="Google Login")
+async def google_login(request: Request):
+    """
+    Генерирует URL для авторизации через Google.
+    """
+    login_url = await generate_google_login_url(request)
+    return RedirectResponse(login_url)
 
 
-# @router.get("/google/callback", summary="Google Callback")
-# async def google_callback(request: Request, db: Session = Depends(get_db)):
-#     """
-#     Обрабатывает ответ от Google OAuth и регистрирует/логинит пользователя.
-#     """
-#     user_info = await handle_google_callback(request)
-#     if not user_info:
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="Не удалось получить данные пользователя через Google."
-#         )
+@router.get("/google/callback", summary="Google Callback")
+async def google_callback(request: Request, db: Session = Depends(get_db)):
+    """
+    Обрабатывает ответ от Google OAuth и регистрирует/логинит пользователя.
+    """
+    user_info = await handle_google_callback(request)
+    if not user_info:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Не удалось получить данные пользователя через Google."
+        )
 
-#     # Проверяем, есть ли пользователь в базе
-#     user = db.query(User).filter(User.email == user_info["email"]).first()
-#     if not user:
-#         # Создаем нового пользователя
-#         user = User(
-#             email=user_info["email"],
-#             name=user_info["name"],
-#         )
-#         db.add(user)
-#         db.commit()
-#         db.refresh(user)
+    # Проверяем, есть ли пользователь в базе
+    user = db.query(User).filter(User.email == user_info["email"]).first()
+    if not user:
+        # Создаем нового пользователя
+        user = User(
+            email=user_info["email"],
+            name=user_info["name"],
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
 
-#     # Возвращаем JWT токен (или перенаправляем)
-#     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-#     payload = {
-#         "sub": user.email,
-#         "exp": datetime.utcnow() + access_token_expires,
-#     }
-#     access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    # Возвращаем JWT токен (или перенаправляем)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    payload = {
+        "sub": user.email,
+        "exp": datetime.utcnow() + access_token_expires,
+    }
+    access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
-#     return {
-#         "access_token": access_token,
-#         "token_type": "bearer",
-#         "user": user_info,
-#     }
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user_info,
+    }

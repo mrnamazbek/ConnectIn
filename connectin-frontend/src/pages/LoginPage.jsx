@@ -34,11 +34,7 @@ const LoginPage = () => {
                         headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     }
                 );
-
-                console.log("Login successful:", response.data);
                 localStorage.setItem("token", response.data.access_token);
-
-                alert(`Welcome ${response.data.user.username}!`);
                 navigate("/");
             } catch (error) {
                 console.error("Login failed:", error);
@@ -48,6 +44,15 @@ const LoginPage = () => {
             }
         },
     });
+
+    const handleOAuthLogin = async (provider) => {
+        try {
+            window.location.href = `http://127.0.0.1:8000/auth/${provider}/login`;
+        } catch (error) {
+            console.error(`OAuth login failed for ${provider}:`, error);
+            alert(`Failed to login with ${provider}.`);
+        }
+    };
 
     return (
         <div className="flex justify-center items-center min-h-screen -mt-13 px-4">
@@ -100,10 +105,10 @@ const LoginPage = () => {
 
                         {/* OAuth Buttons */}
                         <div className="flex justify-between space-x-3 mt-4">
-                            <button type="button" className="w-full flex items-center justify-center border border-gray-200 py-2 font-semibold rounded-md shadow-md hover:bg-gray-100 transition cursor-pointer">
+                            <button type="button" className="w-full flex items-center justify-center border border-gray-200 py-2 font-semibold rounded-md shadow-md hover:bg-gray-100 transition cursor-pointer" onClick={() => handleOAuthLogin("google")}>
                                 <FontAwesomeIcon icon={faGoogle} className="mr-2" /> Google
                             </button>
-                            <button type="button" className="w-full flex items-center justify-center border border-gray-200 py-2 font-semibold rounded-md shadow-md hover:bg-gray-100 transition cursor-pointer">
+                            <button type="button" className="w-full flex items-center justify-center border border-gray-200 py-2 font-semibold rounded-md shadow-md hover:bg-gray-100 transition cursor-pointer" onClick={() => handleOAuthLogin("github")}>
                                 <FontAwesomeIcon icon={faGithub} className="mr-2" /> Github
                             </button>
                         </div>

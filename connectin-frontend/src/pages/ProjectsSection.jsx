@@ -27,7 +27,6 @@ const ProjectsSection = ({ user }) => {
             const response = await axios.get("http://127.0.0.1:8000/projects/my", {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            console.log(response.data);
             setProjects(response.data);
         } catch (error) {
             console.error("Failed to fetch projects:", error);
@@ -158,30 +157,33 @@ const ProjectsSection = ({ user }) => {
                 <p className="text-gray-600 mt-3">Loading projects...</p>
             ) : projects.length > 0 ? (
                 projects.map((project) => (
-                    <div key={project.id} className="py-4 border-b last:border-b-0">
-                        <h4 className="font-semibold">{project.name}</h4>
-                        <p className="text-gray-600">{project.description}</p>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            <p>Tags:</p>
-                            {project.tags.map((tag) => (
-                                <span key={tag.id} className="bg-gray-200 text-gray-700 px-2 py-1 rounded-md text-sm">
-                                    {tag.name}
-                                </span>
-                            ))}
+                    <div key={project.id} className="py-4 border-b border-gray-300 last:border-b-0">
+                        <div className="flex justify-between items-center">
+                            <div className="flex flex-col">
+                                <h4 className="font-semibold">{project.name}</h4>
+                                <p className="text-gray-600">{project.description}</p>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                    {project.tags.map((tag, index) => (
+                                        <span key={tag.id} className="text-xs text-gray-500">
+                                            {tag.name}
+                                            {index < project.tags.length - 1 && ", "}
+                                        </span>
+                                    ))}
+                                </div>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                    {project.skills.map((skill) => (
+                                        <span key={skill.id} className="bg-green-200 text-green-700 px-2 py-1 rounded-md text-xs">
+                                            {skill.name}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                            {user.id === project.owner_id && (
+                                <button onClick={() => handleDeleteProject(project.id, project.owner_id)} className="hover:text-red-700 transition">
+                                    <FontAwesomeIcon icon={faTrashAlt} />
+                                </button>
+                            )}
                         </div>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            <p>Skills:</p>
-                            {project.skills.map((skill) => (
-                                <span key={skill.id} className="bg-green-200 text-green-700 px-2 py-1 rounded-md text-sm">
-                                    {skill.name}
-                                </span>
-                            ))}
-                        </div>
-                        {user.id === project.owner_id && (
-                            <button onClick={() => handleDeleteProject(project.id, project.owner_id)} className="hover:text-red-700 transition">
-                                <FontAwesomeIcon icon={faTrashAlt} />
-                            </button>
-                        )}
                     </div>
                 ))
             ) : (

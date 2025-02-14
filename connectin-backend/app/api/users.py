@@ -6,7 +6,8 @@
 - (Опционально) Удаление своей учётной записи
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
+from pydantic import HttpUrl
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -15,6 +16,8 @@ from app.models.user import User, Education, Experience
 from app.models.skill import Skill
 from app.schemas.user import UserOut, UserUpdate, EducationCreate, ExperienceCreate, EducationUpdate, ExperienceUpdate, EducationOut, ExperienceOut
 from app.api.auth import get_current_user
+# from app.utils.s3 import upload_file_to_s3, delete_file_from_s3
+
 
 router = APIRouter()
 
@@ -36,6 +39,34 @@ def read_own_profile(current_user: User = Depends(get_current_user)):
     (По сути, то же, что и /auth/me, но можно расширить).
     """
     return current_user
+
+# @router.post("/me/avatar", summary="Upload profile picture")
+# def upload_profile_picture(
+#     file: UploadFile = File(...),
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_user)
+# ):
+#     """
+#     Uploads a profile picture to S3 and updates the user profile.
+#     """
+#     if file.content_type not in ["image/jpeg", "image/png"]:
+#         return {"error": "Invalid file type. Only JPEG and PNG are allowed."}
+
+#     # Upload to S3
+#     image_url = upload_file_to_s3(file, "profile_pictures")
+#     if not image_url:
+#         return {"error": "Failed to upload image"}
+
+#     # Delete old image if exists
+#     if current_user.profile_picture:
+#         delete_file_from_s3(current_user.profile_picture)
+
+#     # Save URL in DB
+#     current_user.profile_picture = image_url
+#     db.commit()
+#     db.refresh(current_user)
+# 
+#    return {"message": "Profile picture updated", "image_url": image_url}
 
 # ✅ Add Education Entry
 @router.post("/me/education", summary="Добавить образование", response_model=EducationOut)
@@ -154,21 +185,36 @@ def update_own_profile(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Позволяет пользователю обновлять своё имя, аватар или другие поля.
-    Пароль меняется в /auth (можно сделать отдельно).
+    Позволяет пользователю обновлять своё имя, фамилию, город, позицию и ссылки на соцсети.
+    Пароль меняется в /auth (отдельно).
     """
-    # Если UserUpdate содержит поля, мы их применяем
-    if user_data.username is not None:
-        current_user.username = user_data.username
-    if user_data.full_name is not None:
-        current_user.full_name = user_data.full_name
-    if user_data.bio is not None:
-        current_user.bio = user_data.bio
-    # Добавьте любые поля, которые есть в вашей модели User
+
+    if user_data.email and user_data.email != current_user.email:
+        existing_user = db.query(User).filter(User.email == user_data.email).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Этот email уже используется другим пользователем."
+            )
+
+    if user_data.username and user_data.username != current_user.username:
+        existing_user = db.query(User).filter(User.username == user_data.username).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Это имя пользователя уже занято."
+            )
+
+    # ✅ Convert `HttpUrl` objects to strings before saving
+    update_data = user_data.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        if isinstance(value, HttpUrl):  # ✅ Convert HttpUrl to string
+            update_data[key] = str(value)
+        setattr(current_user, key, update_data[key])
 
     db.commit()
     db.refresh(current_user)
-    return current_user
+    return UserOut.from_orm(current_user)
 
 @router.post("/me/skills", summary="Добавить навык в профиль")
 def add_skill_to_profile(

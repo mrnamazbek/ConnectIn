@@ -18,9 +18,6 @@ router = APIRouter()
 
 @router.get("/", response_model=List[SkillOut], summary="Получить список всех skills")
 def read_skills(db: Session = Depends(get_db)):
-    """
-    Возвращает список всех sklls.
-    """
     return db.query(Skill).all()
 
 

@@ -6,7 +6,6 @@ import axios from "axios";
 const ActionsSection = ({ userPosts, loading, setUserPosts }) => {
     const navigate = useNavigate();
 
-    // 🔹 Delete Post Handler
     const handleDeletePost = async (postId) => {
         if (!window.confirm("Are you sure you want to delete this post?")) return;
 
@@ -16,7 +15,6 @@ const ActionsSection = ({ userPosts, loading, setUserPosts }) => {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            // ✅ Remove post from state after successful deletion
             setUserPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
 
             alert("Post deleted successfully!");
@@ -28,9 +26,9 @@ const ActionsSection = ({ userPosts, loading, setUserPosts }) => {
     return (
         <div>
             <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold text-lg">Actions</h3>
+                <h3 className="font-semibold">Actions</h3>
                 <button
-                    className="border border-green-700 text-white bg-green-700 font-semibold px-2 shadow-sm rounded-md cursor-pointer hover:bg-green-600"
+                    className="text-white bg-green-700 font-semibold px-2 shadow-sm rounded-md cursor-pointer hover:bg-green-600"
                     onClick={() => navigate("/post")} // ✅ Navigate to /post
                 >
                     New Post
@@ -45,15 +43,16 @@ const ActionsSection = ({ userPosts, loading, setUserPosts }) => {
                     <div key={post.id} className="bg-white border border-gray-300 mb-4 last:mb-0 p-4 rounded-lg shadow-sm hover:shadow-md transition">
                         {/* Post Content */}
                         <div className="flex-1">
-                            <h5 className="font-semibold text-lg">{post.title}</h5>
+                            <h5 className="font-semibold">{post.title}</h5>
                             <p className="text-gray-600 mt-2 break-words" dangerouslySetInnerHTML={{ __html: post.content }} />
 
                             {/* Tags Section */}
                             {post.tags.length > 0 && (
                                 <div className="flex flex-wrap gap-2 mt-2">
                                     {post.tags.map((tag, index) => (
-                                        <span key={index} className="text-xs bg-gray-200 px-2 py-1 rounded-md">
+                                        <span key={index} className="text-xs text-gray-500">
                                             {tag}
+                                            {index < post.tags.length - 1 && ", "}
                                         </span>
                                     ))}
                                 </div>

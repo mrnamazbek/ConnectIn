@@ -49,12 +49,10 @@ class User(Base):
     last_name = Column(String(50), nullable=True)
     city = Column(String(100), nullable=True)
     position = Column(String(100), nullable=True)
-    #github auth
     github = Column(String(255), nullable=True)
-
     linkedin = Column(String(255), nullable=True)
     telegram = Column(String(255), nullable=True)
-    #google auth
+    # avatar_url = Column(String, nullable=True) 
     google_id = Column(String(255), unique=True)
     google_refresh_token = Column(String(255))
 

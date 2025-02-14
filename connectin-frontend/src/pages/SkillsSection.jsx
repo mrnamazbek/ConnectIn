@@ -7,17 +7,16 @@ const SkillsSection = ({ skills, setSkills, loading }) => {
     const [availableSkills, setAvailableSkills] = useState([]);
     const [showAllSkills, setShowAllSkills] = useState(false);
     const [selectedSkills, setSelectedSkills] = useState([]);
+    const [hoveredSkill, setHoveredSkill] = useState(null); // Track hovered skill ID
 
-    // Fetch all skills from the API
     useEffect(() => {
         const fetchAvailableSkills = async () => {
             try {
                 const token = localStorage.getItem("token");
-                const response = await axios.get("http://127.0.0.1:8000/skills/", {
+                const response = await axios.get("http://127.0.0.1:8000/skills", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
-                // Filter out already added skills
                 const filteredSkills = response.data.filter((skill) => !skills.some((userSkill) => userSkill.id === skill.id));
                 setAvailableSkills(filteredSkills);
             } catch (error) {
@@ -28,16 +27,10 @@ const SkillsSection = ({ skills, setSkills, loading }) => {
         fetchAvailableSkills();
     }, [skills]);
 
-    // Function to select/unselect a skill
     const handleSelectSkill = (skill) => {
-        if (selectedSkills.some((s) => s.id === skill.id)) {
-            setSelectedSkills(selectedSkills.filter((s) => s.id !== skill.id));
-        } else {
-            setSelectedSkills([...selectedSkills, skill]);
-        }
+        setSelectedSkills((prevSelected) => (prevSelected.some((s) => s.id === skill.id) ? prevSelected.filter((s) => s.id !== skill.id) : [...prevSelected, skill]));
     };
 
-    // Function to save selected skills
     const handleSaveSkills = async () => {
         try {
             const token = localStorage.getItem("token");
@@ -55,7 +48,6 @@ const SkillsSection = ({ skills, setSkills, loading }) => {
         }
     };
 
-    // Function to delete a skill
     const handleDeleteSkill = async (skillId) => {
         if (!window.confirm("Are you sure you want to remove this skill?")) return;
 
@@ -75,7 +67,6 @@ const SkillsSection = ({ skills, setSkills, loading }) => {
     return (
         <div>
             <div className="flex justify-between items-center mb-2">
-                <p className="font-semibold">Skills</p>
                 <button className="cursor-pointer hover:text-green-700" onClick={() => setShowAllSkills(!showAllSkills)}>
                     {showAllSkills ? <FontAwesomeIcon icon={faMinus} /> : <FontAwesomeIcon icon={faPlus} />}
                 </button>
@@ -87,11 +78,13 @@ const SkillsSection = ({ skills, setSkills, loading }) => {
                     <p className="text-gray-600">Loading skills...</p>
                 ) : skills.length > 0 ? (
                     skills.map((skill) => (
-                        <span key={skill.id} className="flex items-center shadow-sm rounded-md px-3 py-1 bg-green-700 text-white">
+                        <span key={skill.id} className="flex items-center shadow-sm rounded-md px-2 py-1 bg-green-700 text-white" onMouseEnter={() => setHoveredSkill(skill.id)} onMouseLeave={() => setHoveredSkill(null)}>
                             {skill.name}
-                            <button className="ml-2 text-white hover:text-red-400 transition" onClick={() => handleDeleteSkill(skill.id)}>
-                                <FontAwesomeIcon icon={faTrashAlt} size="sm" />
-                            </button>
+                            {hoveredSkill === skill.id && (
+                                <button className="ml-2 text-white hover:text-red-400 transition right-2" onClick={() => handleDeleteSkill(skill.id)}>
+                                    <FontAwesomeIcon icon={faTrashAlt} size="sm" />
+                                </button>
+                            )}
                         </span>
                     ))
                 ) : (

@@ -82,8 +82,8 @@ class ExperienceOut(BaseModel):
         from_attributes = True  # ✅ FIXED: Use `from_attributes` to support ORM conversion
 
 class UserBase(BaseModel):
-    """Общие поля пользователей (Create/Update)."""
-    email: EmailStr
+    """Общие поля пользователей (используется для Create/Update)."""
+    email: Optional[EmailStr] = None
     username: Optional[str] = Field(None, max_length=50)
     first_name: Optional[str] = Field(None, max_length=50)
     last_name: Optional[str] = Field(None, max_length=50)
@@ -91,18 +91,16 @@ class UserBase(BaseModel):
     position: Optional[str] = Field(None, max_length=100)
     github: Optional[HttpUrl] = None
     linkedin: Optional[HttpUrl] = None
-    telegram: Optional[HttpUrl] = None  # ✅ Fix type
-
+    telegram: Optional[HttpUrl] = None
+    # avatar_url: Optional[HttpUrl] = None  # ✅ NEW: URL for profile picture
 
 class UserCreate(UserBase):
     """Схема для регистрации пользователя."""
     password: str = Field(..., min_length=6)
 
-
 class UserUpdate(UserBase):
     """Схема для обновления данных пользователя."""
-    pass  # ✅ No need to redefine fields
-
+    pass  # ✅ Inherits all fields from UserBase
 
 class UserOut(BaseModel):
     """
@@ -118,10 +116,11 @@ class UserOut(BaseModel):
     github: Optional[HttpUrl] = None
     linkedin: Optional[HttpUrl] = None
     telegram: Optional[HttpUrl] = None
+    # avatar_url: Optional[HttpUrl] = None  # ✅ NEW: Added to response model
     skills: List[SkillBase] = []
     projects: List[ProjectBase] = []
-    education: List[EducationOut] = []  # ✅ Ensure Pydantic `EducationOut` is used
-    experience: List[ExperienceOut] = []  # ✅ Ensure Pydantic `ExperienceOut` is used
+    education: List[EducationOut] = []
+    experience: List[ExperienceOut] = []
 
     @classmethod
     def from_orm(cls, user):
@@ -137,11 +136,12 @@ class UserOut(BaseModel):
             github=user.github,
             linkedin=user.linkedin,
             telegram=user.telegram,
+            # avatar_url=user.avatar_url,  # ✅ Add this field to response
             skills=[SkillBase.from_orm(skill) for skill in user.skills],
             projects=[ProjectBase.from_orm(project) for project in user.projects],
-            education=[EducationOut.from_orm(edu) for edu in user.education],  # ✅ FIXED
-            experience=[ExperienceOut.from_orm(exp) for exp in user.experience]  # ✅ FIXED
+            education=[EducationOut.from_orm(edu) for edu in user.education],
+            experience=[ExperienceOut.from_orm(exp) for exp in user.experience]
         )
 
     class Config:
-        from_attributes = True  # ✅ Fix ORM issue
+        from_attributes = True

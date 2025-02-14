@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrashAlt, faPlus, faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
+import { useNavigate } from "react-router";
 
 const ProjectsSection = ({ user }) => {
+    const navigate = useNavigate();
     const [projects, setProjects] = useState([]);
     const [tags, setTags] = useState([]);
     const [skills, setSkills] = useState([]);
@@ -177,6 +179,12 @@ const ProjectsSection = ({ user }) => {
                                         </span>
                                     ))}
                                 </div>
+                                <button
+                                    onClick={() => navigate(`/project/${project.id}`)} // ✅ Navigate to project profile
+                                    className="mt-2 text-green-700 font-semibold flex items-center hover:underline"
+                                >
+                                    View Project
+                                </button>
                             </div>
                             {user.id === project.owner_id && (
                                 <button onClick={() => handleDeleteProject(project.id, project.owner_id)} className="hover:text-red-700 transition">

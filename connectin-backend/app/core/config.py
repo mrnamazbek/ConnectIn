@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_SECRET: str = Field(..., env="GITHUB_CLIENT_SECRET")
     GITHUB_REDIRECT_URI: str = Field(..., env="GITHUB_REDIRECT_URI")
 
+    # 🏎 Redis Cache
+    REDIS_URL: str = Field("redis://localhost:6379", env="REDIS_URL")
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

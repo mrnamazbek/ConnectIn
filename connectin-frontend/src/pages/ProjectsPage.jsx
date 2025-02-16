@@ -8,7 +8,6 @@ const ProjectsPage = ({ fakeProjects }) => {
                 <div className="space-y-5">
                     {fakeProjects.map((post) => (
                         <div key={post.id} className="bg-white shadow-md rounded-md border border-green-700 p-5">
-                            {/* Author & Theme */}
                             <div className="flex items-center mb-4">
                                 <img src="https://media.tenor.com/HmFcGkSu58QAAAAM/silly.gif" alt={post.author} className="w-10 h-10 rounded-full" />
                                 <div className="ml-5">
@@ -17,11 +16,9 @@ const ProjectsPage = ({ fakeProjects }) => {
                                 </div>
                             </div>
 
-                            {/* Content */}
                             <p className="text-gray-700 mb-3">{post.content}</p>
                             <p className="text-xs text-gray-500">Posted on: {new Date(post.date).toLocaleDateString()}</p>
 
-                            {/* Tags */}
                             <div className="mt-3">
                                 {post.tags.map((tag, idx) => (
                                     <span key={idx} className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full mr-2">
@@ -30,7 +27,6 @@ const ProjectsPage = ({ fakeProjects }) => {
                                 ))}
                             </div>
 
-                            {/* Buttons */}
                             <div className="flex space-x-4 justify-between mt-4">
                                 <button className="mt-2 rounded-md shadow-md px-3 bg-green-700 text-white font-semibold cursor-pointer hover:bg-green-600">Apply</button>
                                 <div className="space-x-5">

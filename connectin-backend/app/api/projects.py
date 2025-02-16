@@ -118,7 +118,9 @@ def read_project(project_id: int, db: Session = Depends(get_db)):
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Проект не найден")
-    return project
+
+    return ProjectOut.from_orm(project)  # ✅ Fix: Convert SQLAlchemy model to Pydantic dictionary
+
 
 
 # 🔹 Обновить проект

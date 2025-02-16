@@ -127,3 +127,23 @@ def delete_post(
     db.commit()
     
     return {"message": "Post deleted successfully"}
+
+@router.get("/search", response_model=List[PostOut])
+def search_posts(
+    query: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Searches posts by title, content, or associated tags.
+    """
+    if not query:
+        return []  # ✅ Return empty list if no query is provided
+
+    # 🔹 Search in title, content, or tags
+    posts = db.query(Post).filter(
+        (Post.title.ilike(f"%{query}%")) |
+        (Post.content.ilike(f"%{query}%")) |
+        (Post.tags.any(Tag.name.ilike(f"%{query}%")))  # ✅ Search in tags
+    ).all()
+
+    return [PostOut.from_orm(post) for post in posts]

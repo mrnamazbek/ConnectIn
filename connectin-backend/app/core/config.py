@@ -1,30 +1,39 @@
-import os
-from pydantic_settings import BaseSettings
-from dotenv import load_dotenv
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, PostgresDsn
+from typing import Optional
 
-# Load environment variables from .env
-load_dotenv()
 
 class Settings(BaseSettings):
-    AWS_ACCESS_KEY_ID: str
-    AWS_SECRET_ACCESS_KEY: str
-    AWS_BUCKET_NAME: str
+    # 🌍 Environment
+    ENVIRONMENT: str = Field("development", env="ENVIRONMENT")
 
-    # ... существующие поля
-    GITHUB_CLIENT_ID: str
-    GITHUB_CLIENT_SECRET: str
-    GITHUB_REDIRECT_URI: str
+    # 🔐 Security
+    SECRET_KEY: str = Field(..., env="SECRET_KEY")
 
-    DATABASE_URL: str
-    SECRET_KEY: str
+    # 🛢 Database
+    DATABASE_URL: PostgresDsn = Field(..., env="DATABASE_URL")
 
-    GOOGLE_CLIENT_ID: str
-    GOOGLE_CLIENT_SECRET: str
-    GOOGLE_REDIRECT_URI: str
+    # ☁️ AWS S3
+    AWS_ACCESS_KEY_ID: str = Field(..., env="AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY: str = Field(..., env="AWS_SECRET_ACCESS_KEY")
+    AWS_BUCKET_NAME: str = Field(..., env="AWS_BUCKET_NAME")
+    AWS_REGION: str = Field(..., env="AWS_REGION")
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    # 🔑 OAuth Providers
+    GOOGLE_CLIENT_ID: str = Field(..., env="GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET: str = Field(..., env="GOOGLE_CLIENT_SECRET")
+    GOOGLE_REDIRECT_URI: str = Field(..., env="GOOGLE_REDIRECT_URI")
 
-# Create a global instance of settings
+    GITHUB_CLIENT_ID: str = Field(..., env="GITHUB_CLIENT_ID")
+    GITHUB_CLIENT_SECRET: str = Field(..., env="GITHUB_CLIENT_SECRET")
+    GITHUB_REDIRECT_URI: str = Field(..., env="GITHUB_REDIRECT_URI")
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        case_sensitive=True
+    )
+
+
 settings = Settings()

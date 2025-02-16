@@ -21,6 +21,19 @@ const UserProfile = () => {
     const [showExperienceForm, setShowExperienceForm] = useState(false);
     const [newEducation, setNewEducation] = useState({ institution: "", degree: "", start_year: "", end_year: "" });
     const [newExperience, setNewExperience] = useState({ company: "", role: "", start_year: "", end_year: "" });
+    const [editMode, setEditMode] = useState(false);
+    const [updatedUser, setUpdatedUser] = useState({
+        first_name: "",
+        last_name: "",
+        position: "",
+        city: "",
+        email: "",
+        github: "",
+        linkedin: "",
+        telegram: "",
+    });
+    const [errors, setErrors] = useState({});
+
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -30,17 +43,14 @@ const UserProfile = () => {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
-                console.log("✅ User Data Fetched:", response.data);
-                console.log("📚 Education Data:", response.data.education);
-                console.log("🛠️ Experience Data:", response.data.experience);
-
                 setUser(response.data);
+                setUpdatedUser(response.data);
                 setSkills(response.data.skills || []);
                 setProjects(response.data.projects || []);
                 setEducation(response.data.education || []);
                 setExperience(response.data.experience || []);
             } catch (error) {
-                console.error("❌ Failed to fetch user data", error);
+                console.error("Failed to fetch user data", error);
             } finally {
                 setLoading(false);
             }
@@ -165,54 +175,86 @@ const UserProfile = () => {
         }
     };
 
+    // ✅ Handle form input changes
+    const handleChange = (e) => {
+        setUpdatedUser({ ...updatedUser, [e.target.name]: e.target.value });
+    };
+
+    // ✅ Validate email format
+    const validateForm = () => {
+        const newErrors = {};
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailRegex.test(updatedUser.email)) {
+            newErrors.email = "Invalid email format";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    // ✅ Handle form submission
+    const handleSave = async () => {
+        if (!validateForm()) return;
+
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.put("http://127.0.0.1:8000/users/me", updatedUser, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            setUser(response.data);
+            setEditMode(false);
+        } catch (error) {
+            console.error("Failed to update profile", error);
+            alert("Failed to update profile. Please try again.");
+        }
+    };
     return (
-        <div className="grid grid-cols-8 gap-4 my-5 text-black">
-            {/* Profile Section */}
+        <div className="grid grid-cols-8 gap-4 my-4">
             <div className="col-span-6 bg-white p-5 shadow-sm rounded-md border border-green-700 flex flex-col self-start hover:shadow-green-700 transition">
-                <div className="flex flex-col">
-                    <img src="/pngimg.com - pokemon_PNG129.png" alt="Profile" className="rounded-full w-32 h-32 object-cover border border-black" />
-                </div>
+                <div className="flex space-x-5">
+                    <img src="https://media.tenor.com/HmFcGkSu58QAAAAM/silly.gif" alt="Profile" className="rounded-full w-32 h-32 object-cover border border-black" />
 
-                {loading ? (
-                    <p className="text-gray-600 mt-4">Loading profile...</p>
-                ) : user ? (
-                    <div className="mt-3">
-                        <p className="font-semibold">
-                            {user.first_name} {user.last_name} <span className="text-sm text-gray-500">{user.username}</span>
-                        </p>
-                        <p>{user.position || "Position not specified"}</p>
-                        <p className="text-sm">{user.city || "Location not specified"}</p>
-                        <a href="mailto:" rel="noopener noreferrer" className="text-sm text-blue-600 font-semibold hover:underline hover:underline-offset-2">
-                            {user.email}
-                        </a>
-
-                        {/* Social Links */}
-                        <div className="flex space-x-5 mt-4">
-                            {user.github && (
-                                <a href={user.github} target="_blank" rel="noopener noreferrer">
-                                    <FontAwesomeIcon icon={faGithub} size="lg" className="hover:text-green-700 transition" />
-                                </a>
-                            )}
-                            {user.linkedin && (
-                                <a href={user.linkedin} target="_blank" rel="noopener noreferrer">
-                                    <FontAwesomeIcon icon={faLinkedin} size="lg" className="hover:text-green-700 transition" />
-                                </a>
-                            )}
-                            {user.telegram && (
-                                <a href={user.telegram.startsWith("http") ? user.telegram : `https://t.me/${user.telegram}`} target="_blank" rel="noopener noreferrer">
-                                    <FontAwesomeIcon icon={faTelegram} size="lg" className="hover:text-green-700 transition" />
-                                </a>
-                            )}
+                    {loading ? (
+                        <p className="text-gray-600">Loading profile...</p>
+                    ) : user ? (
+                        <div className="flex flex-col space-y-2">
+                            <p className="">
+                                {user.first_name} {user.last_name} <span className="text-sm text-gray-500">{user.username}</span>
+                            </p>
+                            <p>{user.position || "Role not specified"}</p>
+                            <p>{user.city || "Location not specified"}</p>
+                            <a href={`mailto:${user.email}`} rel="noopener noreferrer" className="text-sm text-blue-500 font-semibold hover:underline hover:underline-offset-2">
+                                {user.email}
+                            </a>
+                            <div className="flex space-x-5">
+                                {user.github && (
+                                    <a href={user.github} target="_blank" rel="noopener noreferrer">
+                                        <FontAwesomeIcon icon={faGithub} size="lg" className="hover:text-green-700 transition" />
+                                    </a>
+                                )}
+                                {user.linkedin && (
+                                    <a href={user.linkedin} target="_blank" rel="noopener noreferrer">
+                                        <FontAwesomeIcon icon={faLinkedin} size="lg" className="hover:text-green-700 transition" />
+                                    </a>
+                                )}
+                                {user.telegram && (
+                                    <a href={user.telegram.startsWith("http") ? user.telegram : `https://t.me/${user.telegram}`} target="_blank" rel="noopener noreferrer">
+                                        <FontAwesomeIcon icon={faTelegram} size="lg" className="hover:text-green-700 transition" />
+                                    </a>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                ) : (
-                    <p className="text-gray-600 text-center mt-4">User data not available.</p>
-                )}
+                    ) : (
+                        <p className="text-gray-600">User data not available.</p>
+                    )}
+                </div>
             </div>
 
-            <div className="col-span-2 flex-col space-y-5">
+            <div className="col-span-2 flex-col space-y-4">
                 <div className="bg-white border border-green-700 rounded-md shadow-sm p-5 self-start w-full hover:shadow-green-700 transition">
-                    <p className="font-semibold text-lg">Projects</p>
+                    <p className="font-semibold">Projects</p>
                     {loading ? (
                         <p className="text-gray-600">Loading projects...</p>
                     ) : projects.length > 0 ? (
@@ -230,7 +272,7 @@ const UserProfile = () => {
                     )}
                 </div>
                 <div className="col-span-2 bg-white border border-green-700 rounded-md shadow-sm p-5 self-start w-full hover:shadow-green-700 transition">
-                    <p className="font-semibold text-lg">Projects</p>
+                    <p className="font-semibold">Projects</p>
                     {loading ? (
                         <p className="text-gray-600">Loading projects...</p>
                     ) : projects.length > 0 ? (
@@ -250,8 +292,6 @@ const UserProfile = () => {
             </div>
 
             <div className="col-span-6 bg-white border border-green-700 rounded-md shadow-sm p-5 w-full hover:shadow-green-700 transition">
-                {/* 🔹 Education Section */}
-
                 <h4 className="font-semibold">Education</h4>
                 {education.map((edu, index) => {
                     console.log("Education Entry:", edu); // ✅ Debug: Ensure data is correct
@@ -325,9 +365,7 @@ const UserProfile = () => {
                 </div>
             </div>
 
-            {/* Main Section with Navigation Menu */}
             <div className="col-span-6 bg-white border border-green-700 rounded-md shadow-sm p-5 w-full hover:shadow-green-700 transition">
-                {/* Navigation Tabs */}
                 <div className="flex mb-4 space-x-5 border-b border-gray-300 ">
                     <NavLink to="/profile/projects" className={({ isActive }) => (isActive ? "text-green-700 py-1" : "hover:text-green-700 py-1")}>
                         Projects
@@ -340,7 +378,6 @@ const UserProfile = () => {
                     </NavLink>
                 </div>
 
-                {/* Routes for Sections */}
                 <Routes>
                     <Route index element={<Navigate to="projects" />} />
                     <Route path="projects" element={<ProjectsSection user={user} projects={projects} loading={loading} />} />

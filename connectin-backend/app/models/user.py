@@ -58,6 +58,8 @@ class User(Base):
     google_id = Column(String(255), unique=True)
     google_refresh_token = Column(String(255))
 
+    avatar_url = Column(String(500), nullable=True)  # URL изображения в S3
+
     # ✅ A user can be a member of multiple teams
     teams = relationship("Team", secondary=user_teams_association, back_populates="members")
 

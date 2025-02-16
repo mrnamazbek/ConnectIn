@@ -6,6 +6,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Settings(BaseSettings):
+    AWS_ACCESS_KEY_ID: str
+    AWS_SECRET_ACCESS_KEY: str
+    AWS_BUCKET_NAME: str
+
     # ... существующие поля
     GITHUB_CLIENT_ID: str
     GITHUB_CLIENT_SECRET: str
@@ -13,6 +17,7 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str
     SECRET_KEY: str
+
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
     GOOGLE_REDIRECT_URI: str

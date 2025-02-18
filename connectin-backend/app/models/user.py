@@ -44,7 +44,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, nullable=False, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=True)
     first_name = Column(String(50), nullable=True)
     last_name = Column(String(50), nullable=True)
     city = Column(String(100), nullable=True)
@@ -52,11 +52,9 @@ class User(Base):
     github = Column(String(255), nullable=True)
     linkedin = Column(String(255), nullable=True)
     telegram = Column(String(255), nullable=True)
-    # avatar_url = Column(String, nullable=True) 
+    avatar_url = Column(String, nullable=True) 
     google_id = Column(String(255), unique=True)
     google_refresh_token = Column(String(255))
-
-    avatar_url = Column(String(500), nullable=True)  # URL изображения в S3
 
     # ✅ A user can be a member of multiple teams
     teams = relationship("Team", secondary=user_teams_association, back_populates="members")

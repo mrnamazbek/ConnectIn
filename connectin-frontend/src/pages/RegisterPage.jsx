@@ -10,6 +10,14 @@ import { faGoogle, faGithub } from "@fortawesome/free-brands-svg-icons";
 const RegisterPage = () => {
     const navigate = useNavigate();
 
+    const handleGoogleLogin = () => {
+        window.location.href = "http://127.0.0.1:8000/auth/google/login"; // Redirect to Google OAuth
+    };
+
+    const handleGitHubLogin = () => {
+        window.location.href = "http://127.0.0.1:8000/auth/github/login"; // Redirect to GitHub OAuth
+    };
+
     const validationSchema = Yup.object({
         username: Yup.string().min(3, "Username must be at least 3 characters").required("Username is required"),
         email: Yup.string().email("Invalid email address").required("Email is required"),
@@ -36,15 +44,10 @@ const RegisterPage = () => {
                     email: values.email,
                     password: values.password,
                 });
-
-                console.log("Registration successful:", response.data);
-                alert("Registration successful! Redirecting to login...");
                 navigate("/login");
             } catch (error) {
                 console.error("Registration failed:", error);
-
                 if (error.response && error.response.data.detail) {
-                    // Handle specific error messages for email or username
                     if (error.response.data.detail.includes("email")) {
                         setFieldError("email", error.response.data.detail);
                     } else if (error.response.data.detail.includes("username")) {
@@ -138,10 +141,10 @@ const RegisterPage = () => {
 
                         {/* OAuth Buttons */}
                         <div className="flex justify-between space-x-3 mt-4">
-                            <button type="button" className="w-full flex items-center justify-center border shadow-md border-gray-200 py-2 font-semibold rounded-md hover:bg-gray-100 transition cursor-pointer">
+                            <button onClick={handleGoogleLogin} type="button" className="w-full flex items-center justify-center border shadow-md border-gray-200 py-2 font-semibold rounded-md hover:bg-gray-100 transition cursor-pointer">
                                 <FontAwesomeIcon icon={faGoogle} className="mr-2" /> Google
                             </button>
-                            <button type="button" className="w-full flex items-center justify-center border border-gray-200 shadow-md py-2 font-semibold rounded-md hover:bg-gray-100 transition cursor-pointer">
+                            <button onClick={handleGitHubLogin} type="button" className="w-full flex items-center justify-center border border-gray-200 shadow-md py-2 font-semibold rounded-md hover:bg-gray-100 transition cursor-pointer">
                                 <FontAwesomeIcon icon={faGithub} className="mr-2" /> Github
                             </button>
                         </div>

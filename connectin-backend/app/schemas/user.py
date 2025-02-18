@@ -103,9 +103,6 @@ class UserUpdate(UserBase):
     pass  # ✅ Inherits all fields from UserBase
 
 class UserOut(BaseModel):
-    """
-    Возвращает **пользователя + навыки + проекты + образование + опыт**.
-    """
     id: int
     email: EmailStr
     username: Optional[str] = None
@@ -116,7 +113,7 @@ class UserOut(BaseModel):
     github: Optional[HttpUrl] = None
     linkedin: Optional[HttpUrl] = None
     telegram: Optional[HttpUrl] = None
-    # avatar_url: Optional[HttpUrl] = None  # ✅ NEW: Added to response model
+    avatar_url: Optional[str] = None  # ✅ Add this field
     skills: List[SkillBase] = []
     projects: List[ProjectBase] = []
     education: List[EducationOut] = []
@@ -124,7 +121,6 @@ class UserOut(BaseModel):
 
     @classmethod
     def from_orm(cls, user):
-        """ ✅ Convert SQLAlchemy objects to Pydantic models manually. """
         return cls(
             id=user.id,
             email=user.email,
@@ -136,7 +132,7 @@ class UserOut(BaseModel):
             github=user.github,
             linkedin=user.linkedin,
             telegram=user.telegram,
-            # avatar_url=user.avatar_url,  # ✅ Add this field to response
+            avatar_url=user.avatar_url,  # ✅ Now frontend gets avatar
             skills=[SkillBase.from_orm(skill) for skill in user.skills],
             projects=[ProjectBase.from_orm(project) for project in user.projects],
             education=[EducationOut.from_orm(edu) for edu in user.education],

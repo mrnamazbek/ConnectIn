@@ -100,14 +100,30 @@ def get_my_projects(
     return formatted_projects
 
 
-# 🔹 Получить все проекты
+# Получить все проекты
 @router.get("/", response_model=List[ProjectOut], summary="Список всех проектов")
 def read_projects(db: Session = Depends(get_db)):
     """
     Получаем список всех проектов, доступных в базе.
     """
-    return db.query(Project).all()
+    projects = db.query(Project).all()
 
+    formatted_projects = []
+    for project in projects:
+        formatted_projects.append({
+            "id": project.id,
+            "name": project.name,
+            "description": project.description,
+            "owner": {
+                "id": project.owner.id,
+                "username": project.owner.username,
+                "avatar_url": project.owner.avatar_url,
+            } if project.owner else None,
+            "skills": [{"id": skill.id, "name": skill.name} for skill in project.skills],  # ✅ Fetch skills properly
+            "tags": [{"id": tag.id, "name": tag.name} for tag in project.tags],  # ✅ Fetch tags properly
+        })
+
+    return formatted_projects
 
 # 🔹 Получить один проект по ID
 @router.get("/{project_id}", response_model=ProjectOut, summary="Детали проекта")

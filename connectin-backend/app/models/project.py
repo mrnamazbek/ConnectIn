@@ -12,6 +12,14 @@ project_skills_association = Table(
     extend_existing=True
 )
 
+project_tags_association = Table(
+    "project_tags",
+    Base.metadata,
+    Column("project_id", Integer, ForeignKey("projects.id"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
+    extend_existing=True
+)
+
 # Many-to-Many: Project ↔ Members
 project_members_association = Table(
     "project_members",

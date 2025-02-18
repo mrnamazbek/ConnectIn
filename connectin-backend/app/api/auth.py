@@ -16,7 +16,7 @@
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-from jose import JWTError, jwt
+from jose import ExpiredSignatureError, JWTError, jwt
 from fastapi.responses import RedirectResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -89,6 +89,7 @@ limiter = Limiter(key_func=get_remote_address)
 @router.post("/login", summary="Войти в систему")
 @limiter.limit("5 per minute")  # Ограничение: максимум 5 запросов в минуту с одного IP
 def login_user(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
@@ -98,10 +99,10 @@ def login_user(
     """
     # Ищем пользователя по username (используем email как username)
     user = db.query(User).filter(User.username == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    if not user or (user.hashed_password and not verify_password(form_data.password, user.hashed_password)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверный логин или пароль."
+            detail="Invalid username or password."
         )
 
     # Генерация JWT-токена
@@ -128,18 +129,24 @@ def get_current_user(
     - Декодирует токен для получения email.
     - Если токен недействителен или пользователь не найден, выбрасывает HTTPException.
     """
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Неверные учетные данные или токен истёк",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_exp": True})
         email: str = payload.get("sub")
         if not email:
-            raise credentials_exception
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Недействительный токен: email отсутствует"
+            )
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Срок действия токена истёк"
+        )
     except JWTError:
-        raise credentials_exception
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Неверный токен"
+        )
 
     user = db.query(User).filter(User.email == email).first()
     if not user:
@@ -150,12 +157,13 @@ def get_current_user(
     return user
 
 
+
 @router.get("/me", response_model=UserOut, summary="Текущий пользователь")
 def read_current_user(current_user: User = Depends(get_current_user)):
     """
     Возвращает данные текущего пользователя, извлеченные из токена.
     """
-    return current_user
+    return UserOut.from_orm(current_user)
 
 
 # ---------------------- Google OAuth ----------------------
@@ -202,9 +210,11 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         user = User(
             email=user_info["email"],
             username=username,
-            hashed_password=None,  # Для OAuth пользователей пароль отсутствует
-            google_id=user_info.get("sub"),  # Сохраняем Google ID, если доступен
-            # Дополнительно можно сохранить URL аватара: user_info.get("picture")
+            hashed_password=None,  # OAuth users don't have passwords
+            google_id=user_info.get("sub"),
+            avatar_url=user_info.get("picture"),  # ✅ Store Google Profile Picture
+            first_name=user_info.get("given_name"),
+            last_name=user_info.get("family_name"),
         )
         db.add(user)
         db.commit()
@@ -219,12 +229,9 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     }
     access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     logger.info(f"JWT-токен сгенерирован для Google пользователя: {user.email}")
+    frontend_url = f"http://localhost:5173/news?token={access_token}"
+    return RedirectResponse(url=frontend_url)
 
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": user_info,
-    }
 
 
 # ---------------------- GitHub OAuth (пример) ----------------------

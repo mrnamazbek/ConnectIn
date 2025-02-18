@@ -57,25 +57,29 @@ def create_post(
 def get_all_posts(db: Session = Depends(get_db)):
     """
     Retrieves all posts with correctly formatted tags.
+    Ensures that the `author` field is always present.
     """
     posts = db.query(Post).all()
 
-    # ✅ Convert each post to a dictionary and extract tag names
-    formatted_posts = []
-    for post in posts:
-        formatted_posts.append({
-            "id": post.id,
-            "title": post.title,
-            "content": post.content,
-            "post_type": post.post_type,
-            "author_id": post.author_id,
-            "project_id": post.project_id,
-            "team_id": post.team_id,
-            "skills": [skill.name for skill in post.skills],  # ✅ Extract skill names
-            "tags": [tag.name for tag in post.tags],  # ✅ Extract tag names
-        })
+    return [
+        PostOut(
+            id=post.id,
+            title=post.title,
+            content=post.content,
+            post_type=post.post_type,
+            author_id=post.author_id,
+            project_id=post.project_id,
+            team_id=post.team_id,
+            tags=[tag.name for tag in post.tags],
+            author={
+                "username": post.author.username if post.author else "Unknown",  
+                "avatar_url": post.author.avatar_url if post.author and post.author.avatar_url else None
+            },
+            date=post.created_at if hasattr(post, "created_at") else None
+        )
+        for post in posts
+    ]
 
-    return formatted_posts  # ✅ Return formatted list
 
 @router.get("/my", response_model=List[PostOut])
 def get_user_posts(
@@ -97,7 +101,7 @@ def get_user_posts(
             "author_id": post.author_id,
             "project_id": post.project_id,
             "team_id": post.team_id,
-            "skills": [skill.name for skill in post.skills],
+            # "skills": [skill.name for skill in post.skills],
             "tags": [tag.name for tag in post.tags],
         }
         for post in user_posts

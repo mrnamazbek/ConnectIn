@@ -115,7 +115,7 @@ const ProjectProfile = ({ user }) => {
     };
 
     return (
-        <div className="max-w-5xl mx-auto my-6 p-6 bg-white shadow-md rounded-lg border border-green-700">
+        <div className="mx-auto my-4 p-5 bg-white shadow-sm rounded-md border border-green-700">
             {loading ? (
                 <p>Loading...</p>
             ) : project ? (

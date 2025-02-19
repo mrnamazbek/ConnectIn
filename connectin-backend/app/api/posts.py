@@ -1,10 +1,3 @@
-"""
-Этот модуль отвечает за работу с постами:
-- Создание постов с тегами и навыками.
-- Получение списка постов.
-- Поиск постов с использованием Elasticsearch для быстрого полнотекстового поиска.
-"""
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
@@ -17,20 +10,17 @@ from app.models.tag import Tag
 from app.schemas.post import PostCreate, PostOut
 from app.api.auth import get_current_user
 
-# Импорт клиента Elasticsearch
-from app.utils.elasticsearch_client import get_es_client
-
 router = APIRouter()
 
-
-@router.post("/", response_model=PostOut, summary="Создать пост")
+# 🔹 Create a Post (With Tag Selection)
+@router.post("/", response_model=PostOut)
 def create_post(
-        post_data: PostCreate,
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user),
+    post_data: PostCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
-    Создает новый пост с тегами и навыками.
+    Creates a new post. Users can assign tags (for news & project posts).
     """
     if post_data.post_type not in ["news", "project", "team"]:
         raise HTTPException(status_code=400, detail="Invalid post type.")
@@ -41,42 +31,36 @@ def create_post(
         post_type=post_data.post_type,
         author_id=current_user.id if post_data.post_type != "team" else None
     )
+
     if post_data.post_type == "team":
         team = db.query(Team).filter(Team.id == post_data.team_id).first()
         if not team:
             raise HTTPException(status_code=404, detail="Team not found.")
         new_post.team_id = team.id
 
+    # ✅ Assign Tags (Fix)
     if post_data.tag_ids:
         selected_tags = db.query(Tag).filter(Tag.id.in_(post_data.tag_ids)).all()
         if not selected_tags:
             raise HTTPException(status_code=400, detail="Invalid tags selected.")
-        new_post.tags = selected_tags
+        new_post.tags = selected_tags  # ✅ Assign the retrieved tags
 
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
 
-    # Индексируем пост в Elasticsearch
-    es = get_es_client()
-    es.index(index="posts", id=new_post.id, body={
-        "id": new_post.id,
-        "title": new_post.title,
-        "content": new_post.content,
-        "post_type": new_post.post_type,
-        "author_id": new_post.author_id,
-        "tags": [tag.name for tag in new_post.tags] if new_post.tags else []
-    })
-
-    return PostOut.from_orm(new_post)
+    return PostOut.from_orm(new_post)  # ✅ Ensure tag names are returned
 
 
-@router.get("/", response_model=List[PostOut], summary="Список всех постов")
+# 🔹 Get All Posts
+@router.get("/", response_model=List[PostOut])
 def get_all_posts(db: Session = Depends(get_db)):
     """
-    Возвращает список всех постов.
+    Retrieves all posts with correctly formatted tags.
     """
     posts = db.query(Post).all()
+
+    # ✅ Convert each post to a dictionary and extract tag names
     formatted_posts = []
     for post in posts:
         formatted_posts.append({
@@ -87,49 +71,25 @@ def get_all_posts(db: Session = Depends(get_db)):
             "author_id": post.author_id,
             "project_id": post.project_id,
             "team_id": post.team_id,
-            "skills": [skill.name for skill in post.skills],
-            "tags": [tag.name for tag in post.tags],
+            "skills": [skill.name for skill in post.skills],  # ✅ Extract skill names
+            "tags": [tag.name for tag in post.tags],  # ✅ Extract tag names
         })
-    return formatted_posts
 
+    return formatted_posts  # ✅ Return formatted list
 
-@router.get("/search", response_model=List[PostOut], summary="Поиск постов")
-def search_posts(query: str, db: Session = Depends(get_db)):
-    """
-    Выполняет поиск постов с использованием Elasticsearch.
-    Ищет по полям title, content и tags.
-    """
-    if not query:
-        return []
-
-    es = get_es_client()
-    # Формируем запрос к Elasticsearch
-    es_query = {
-        "query": {
-            "multi_match": {
-                "query": query,
-                "fields": ["title", "content", "tags"]
-            }
-        }
-    }
-    res = es.search(index="posts", body=es_query)
-    post_ids = [hit["_source"]["id"] for hit in res["hits"]["hits"]]
-    posts = db.query(Post).filter(Post.id.in_(post_ids)).all()
-    return [PostOut.from_orm(post) for post in posts]
-
-
-@router.get("/my", response_model=List[PostOut], summary="Мои посты")
+@router.get("/my", response_model=List[PostOut])
 def get_user_posts(
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
-    Возвращает посты, созданные текущим пользователем.
+    Retrieves posts created by the currently authenticated user.
     """
     user_posts = db.query(Post).filter(Post.author_id == current_user.id).all()
-    formatted_posts = []
-    for post in user_posts:
-        formatted_posts.append({
+
+    # ✅ Format posts correctly
+    formatted_posts = [
+        {
             "id": post.id,
             "title": post.title,
             "content": post.content,
@@ -139,24 +99,51 @@ def get_user_posts(
             "team_id": post.team_id,
             "skills": [skill.name for skill in post.skills],
             "tags": [tag.name for tag in post.tags],
-        })
+        }
+        for post in user_posts
+    ]
+
     return formatted_posts
 
-
-@router.delete("/{post_id}", status_code=204, summary="Удалить пост")
+@router.delete("/{post_id}", status_code=204)
 def delete_post(
-        post_id: int,
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user)
+    post_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
-    Удаляет пост, если текущий пользователь является автором.
+    Deletes a post if the current user is the author.
     """
     post = db.query(Post).filter(Post.id == post_id).first()
+    
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
+
+    # ✅ Ensure only the author can delete
     if post.author_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this post")
+
     db.delete(post)
     db.commit()
+    
     return {"message": "Post deleted successfully"}
+
+@router.get("/search", response_model=List[PostOut])
+def search_posts(
+    query: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Searches posts by title, content, or associated tags.
+    """
+    if not query:
+        return []  # ✅ Return empty list if no query is provided
+
+    # 🔹 Search in title, content, or tags
+    posts = db.query(Post).filter(
+        (Post.title.ilike(f"%{query}%")) |
+        (Post.content.ilike(f"%{query}%")) |
+        (Post.tags.any(Tag.name.ilike(f"%{query}%")))  # ✅ Search in tags
+    ).all()
+
+    return [PostOut.from_orm(post) for post in posts]

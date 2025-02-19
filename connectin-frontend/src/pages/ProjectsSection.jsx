@@ -186,7 +186,7 @@ const ProjectsSection = ({ user }) => {
                                     View Project
                                 </button>
                             </div>
-                            {user.id === project.owner_id && (
+                            {user?.id === project?.owner_id && (
                                 <button onClick={() => handleDeleteProject(project.id, project.owner_id)} className="hover:text-red-700 transition">
                                     <FontAwesomeIcon icon={faTrashAlt} />
                                 </button>

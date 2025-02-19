@@ -24,7 +24,7 @@ const NavBar = () => {
     }, [isDark]);
 
     return (
-        <nav className={`grid grid-cols-8 bg-white border-b border-green-700 shadow-md ${isSticky ? "sticky top-0" : ""}`}>
+        <nav className={`grid grid-cols-8 bg-white text-sm border-b border-green-700 shadow-md ${isSticky ? "sticky top-0" : ""}`}>
             <div className="col-start-2 col-span-6">
                 <div className="flex justify-between items-center py-3">
                     <NavLink to="/" className="font-semibold text-green-700">

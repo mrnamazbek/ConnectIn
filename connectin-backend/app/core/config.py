@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = Field(..., env="SECRET_KEY")
 
     # 🛢 Database
-    DATABASE_URL: PostgresDsn = Field(..., env="DATABASE_URL")
+    DATABASE_URL: str = Field(..., env="DATABASE_URL")
 
     # ☁️ AWS S3
     AWS_ACCESS_KEY_ID: str = Field(..., env="AWS_ACCESS_KEY_ID")

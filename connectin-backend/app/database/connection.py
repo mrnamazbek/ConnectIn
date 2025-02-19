@@ -8,7 +8,7 @@ from app.core.config import settings
 
 # Создаём движок SQLAlchemy, используя настройки из config
 engine = create_engine(
-    settings.DATABASE_URL,  # из Settings
+    str(settings.DATABASE_URL),  # из Settings
     echo=False,             # echo=True для отладки, пишет SQL в консоль
     future=True             # API SQLAlchemy 2.0
 )

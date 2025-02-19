@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     # 🏎 Redis Cache
     REDIS_URL: str = Field("redis://localhost:6379", env="REDIS_URL")
 
+    # Добавляем поле для Elasticsearch
+    ELASTICSEARCH_URL: str = Field("http://127.0.0.1:9200", env="ELASTICSEARCH_URL")
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

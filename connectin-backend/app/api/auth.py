@@ -89,6 +89,7 @@ limiter = Limiter(key_func=get_remote_address)
 @router.post("/login", summary="Войти в систему")
 @limiter.limit("5 per minute")  # Ограничение: максимум 5 запросов в минуту с одного IP
 def login_user(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):

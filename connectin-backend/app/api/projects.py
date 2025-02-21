@@ -75,7 +75,6 @@ def create_project(
         "skills": [ {"id": skill.id, "name": skill.name} for skill in project_with_tags_and_skills.skills ]  # ✅ Convert skills to dict
     }
 
-# 🔹 Получить список проектов, созданных текущим пользователем
 @router.get("/my", response_model=List[ProjectOut], summary="Мои проекты")
 def get_my_projects(
     db: Session = Depends(get_db),
@@ -92,7 +91,11 @@ def get_my_projects(
             "id": project.id,
             "name": project.name,
             "description": project.description,
-            "owner_id": project.owner_id,
+            "owner": {  # ✅ Fix here: Return `owner` object instead of just `owner_id`
+                "id": project.owner.id,
+                "username": project.owner.username,
+                "avatar_url": project.owner.avatar_url
+            },
             "tags": [{"id": tag.id, "name": tag.name} for tag in project.tags],  # ✅ Include Tags
             "skills": [{"id": skill.id, "name": skill.name} for skill in project.skills],  # ✅ Include Skills
         })
@@ -109,17 +112,33 @@ def read_projects(db: Session = Depends(get_db)):
     return db.query(Project).all()
 
 
-# 🔹 Получить один проект по ID
-@router.get("/{project_id}", response_model=ProjectOut, summary="Детали проекта")
+@router.get("/{project_id}", response_model=ProjectOut, summary="Получить проект по ID")
 def read_project(project_id: int, db: Session = Depends(get_db)):
     """
-    Получить информацию по конкретному проекту.
+    Получить один проект по ID.
     """
     project = db.query(Project).filter(Project.id == project_id).first()
+
     if not project:
         raise HTTPException(status_code=404, detail="Проект не найден")
 
-    return ProjectOut.from_orm(project)  # ✅ Fix: Convert SQLAlchemy model to Pydantic dictionary
+    # ✅ Convert SQLAlchemy model to dictionary format for Pydantic
+    formatted_project = {
+        "id": project.id,
+        "name": project.name,
+        "description": project.description,
+        "owner": {  # ✅ Convert `owner` to a dictionary
+            "id": project.owner.id,
+            "username": project.owner.username,
+            "avatar_url": project.owner.avatar_url
+        } if project.owner else None,
+        "tags": [{"id": tag.id, "name": tag.name} for tag in project.tags],  # ✅ Convert Tags
+        "skills": [{"id": skill.id, "name": skill.name} for skill in project.skills],  # ✅ Convert Skills
+        "members": [{"id": user.id, "username": user.username} for user in project.members],  # ✅ Convert Members
+        "applicants": [{"id": user.id, "username": user.username} for user in project.applicants],  # ✅ Convert Applicants
+    }
+
+    return formatted_project  # ✅ Now it matches `ProjectOut` schema
 
 
 

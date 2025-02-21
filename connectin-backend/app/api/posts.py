@@ -71,7 +71,6 @@ def get_all_posts(db: Session = Depends(get_db)):
             "author_id": post.author_id,
             "project_id": post.project_id,
             "team_id": post.team_id,
-            "skills": [skill.name for skill in post.skills],  # ✅ Extract skill names
             "tags": [tag.name for tag in post.tags],  # ✅ Extract tag names
         })
 
@@ -97,7 +96,6 @@ def get_user_posts(
             "author_id": post.author_id,
             "project_id": post.project_id,
             "team_id": post.team_id,
-            "skills": [skill.name for skill in post.skills],
             "tags": [tag.name for tag in post.tags],
         }
         for post in user_posts

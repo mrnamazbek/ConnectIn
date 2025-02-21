@@ -1,42 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from .base import Base
-from .tag import project_tags_association
-
-# Many-to-Many: Project ↔ Skills
-project_skills_association = Table(
-    "project_skills",
-    Base.metadata,
-    Column("project_id", Integer, ForeignKey("projects.id"), primary_key=True),
-    Column("skill_id", Integer, ForeignKey("skills.id"), primary_key=True),
-    extend_existing=True
-)
-
-project_tags_association = Table(
-    "project_tags",
-    Base.metadata,
-    Column("project_id", Integer, ForeignKey("projects.id"), primary_key=True),
-    Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
-    extend_existing=True
-)
-
-# Many-to-Many: Project ↔ Members
-project_members_association = Table(
-    "project_members",
-    Base.metadata,
-    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
-    Column("project_id", Integer, ForeignKey("projects.id"), primary_key=True),
-    extend_existing=True
-)
-
-# Many-to-Many: Project ↔ Applicants
-project_applications = Table(
-    "project_applications",
-    Base.metadata,
-    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
-    Column("project_id", Integer, ForeignKey("projects.id"), primary_key=True),
-    extend_existing=True
-)
+from .associations import project_skills_association, project_tags_association, project_members_association, project_applications
 
 class Project(Base):
     __tablename__ = "projects"
@@ -44,7 +9,7 @@ class Project(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
-    owner_id = Column(Integer, ForeignKey("users.id"))
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
 
     # ✅ The owner relationship
     owner = relationship("User", back_populates="owned_projects")

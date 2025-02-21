@@ -26,4 +26,4 @@ class PostOut(BaseModel):
     author: Dict[str, Optional[str]] = {"username": "Unknown", "avatar_url": None}
 
     class Config:
-        orm_mode = True
+        from_attributes = True

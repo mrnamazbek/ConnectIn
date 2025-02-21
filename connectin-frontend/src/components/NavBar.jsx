@@ -51,6 +51,9 @@ const NavBar = () => {
                         <NavLink to="/" className={({ isActive }) => (isActive ? "text-green-700" : "hover:text-green-700")}>
                             <FontAwesomeIcon icon={faNewspaper} />
                         </NavLink>
+                        <NavLink to="/chats" className={({ isActive }) => (isActive ? "text-green-700" : "hover:text-green-700")}>
+                            Chat
+                        </NavLink>
                         <NavLink to="/profile" className={({ isActive }) => (isActive ? "text-green-700" : "hover:text-green-700")}>
                             <FontAwesomeIcon icon={faUser} />
                         </NavLink>

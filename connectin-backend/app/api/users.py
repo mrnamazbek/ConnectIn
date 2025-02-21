@@ -75,6 +75,105 @@ def update_own_profile(
     db.refresh(current_user)
     return current_user
 
+# ✅ Add Education Entry
+@router.post("/me/education", summary="Добавить образование", response_model=EducationOut)
+def add_education(
+    education_data: EducationCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    new_education = Education(user_id=current_user.id, **education_data.dict())
+    db.add(new_education)
+    db.commit()
+    db.refresh(new_education)
+    return new_education
+
+
+# ✅ Update Education Entry
+@router.put("/me/education/{education_id}", summary="Обновить запись об образовании", response_model=EducationCreate)
+def update_education(
+    education_id: int,
+    education_data: EducationUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    education = db.query(Education).filter(Education.id == education_id, Education.user_id == current_user.id).first()
+    if not education:
+        raise HTTPException(status_code=404, detail="Запись об образовании не найдена")
+
+    for key, value in education_data.dict(exclude_unset=True).items():
+        setattr(education, key, value)
+
+    db.commit()
+    db.refresh(education)
+    return education
+
+
+# ✅ Delete Education Entry
+@router.delete("/me/education/{education_id}", summary="Удалить запись об образовании")
+def delete_education(
+    education_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    education = db.query(Education).filter(Education.id == education_id, Education.user_id == current_user.id).first()
+    if not education:
+        raise HTTPException(status_code=404, detail="Запись об образовании не найдена")
+
+    db.delete(education)
+    db.commit()
+    return {"detail": "Образование удалено"}
+
+
+# ✅ Add Experience Entry
+@router.post("/me/experience", summary="Добавить опыт работы", response_model=ExperienceOut)
+def add_experience(
+    experience_data: ExperienceCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    new_experience = Experience(user_id=current_user.id, **experience_data.dict())
+    db.add(new_experience)
+    db.commit()
+    db.refresh(new_experience)
+    return new_experience
+
+
+# ✅ Update Experience Entry
+@router.put("/me/experience/{experience_id}", summary="Обновить запись о работе", response_model=ExperienceCreate)
+def update_experience(
+    experience_id: int,
+    experience_data: ExperienceUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    experience = db.query(Experience).filter(Experience.id == experience_id, Experience.user_id == current_user.id).first()
+    if not experience:
+        raise HTTPException(status_code=404, detail="Запись о работе не найдена")
+
+    for key, value in experience_data.dict(exclude_unset=True).items():
+        setattr(experience, key, value)
+
+    db.commit()
+    db.refresh(experience)
+    return experience
+
+
+# ✅ Delete Experience Entry
+@router.delete("/me/experience/{experience_id}", summary="Удалить запись о работе")
+def delete_experience(
+    experience_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    experience = db.query(Experience).filter(Experience.id == experience_id, Experience.user_id == current_user.id).first()
+    if not experience:
+        raise HTTPException(status_code=404, detail="Запись о работе не найдена")
+
+    db.delete(experience)
+    db.commit()
+    return {"detail": "Опыт работы удален"}
+
 @router.delete("/me", summary="Удалить свою учётную запись")
 def delete_own_profile(
     db: Session = Depends(get_db),

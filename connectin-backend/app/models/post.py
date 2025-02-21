@@ -1,15 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from .base import Base
-
-# Many-to-Many: Post ↔ Tags (for project posts)
-post_tags_association = Table(
-    "post_tags",
-    Base.metadata,
-    Column("post_id", Integer, ForeignKey("posts.id"), primary_key=True),
-    Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True),
-    extend_existing=True
-)
+from .associations import post_tags_association
 
 class Post(Base):
     __tablename__ = "posts"

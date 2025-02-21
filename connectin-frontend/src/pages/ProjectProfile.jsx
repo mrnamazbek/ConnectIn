@@ -52,7 +52,7 @@ const ProjectProfile = ({ user }) => {
 
     const handleApply = async () => {
         try {
-            await axios.post(`http://127.0.0.1:8000/projects/${projectId}/apply`, {}, {
+            await axios.post(`http://127.0.0.1:8000/projects/${projectId}/apply`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
             });
             alert("Application submitted!");
@@ -63,10 +63,7 @@ const ProjectProfile = ({ user }) => {
 
     const handleApprove = async (applicantId) => {
         try {
-            await axios.post(`http://127.0.0.1:8000/projects/${projectId}/applications/${applicantId}/decision`, 
-                { decision: "accepted" }, 
-                { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
-            );
+            await axios.post(`http://127.0.0.1:8000/projects/${projectId}/applications/${applicantId}/decision`, { decision: "accepted" }, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
             alert("User approved!");
             fetchProjectMembers();
             fetchProjectApplications();
@@ -77,10 +74,7 @@ const ProjectProfile = ({ user }) => {
 
     const handleReject = async (applicantId) => {
         try {
-            await axios.post(`http://127.0.0.1:8000/projects/${projectId}/applications/${applicantId}/decision`, 
-                { decision: "rejected" }, 
-                { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
-            );
+            await axios.post(`http://127.0.0.1:8000/projects/${projectId}/applications/${applicantId}/decision`, { decision: "rejected" }, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
             alert("Application rejected!");
             fetchProjectApplications();
         } catch (error) {
@@ -109,9 +103,7 @@ const ProjectProfile = ({ user }) => {
     };
 
     const toggleTaskCompletion = (taskId) => {
-        setTasks(tasks.map(task => 
-            task.id === taskId ? { ...task, completed: !task.completed } : task
-        ));
+        setTasks(tasks.map((task) => (task.id === taskId ? { ...task, completed: !task.completed } : task)));
     };
 
     return (
@@ -122,7 +114,7 @@ const ProjectProfile = ({ user }) => {
                 <>
                     <h2 className="text-xl font-semibold">{project.name}</h2>
                     <p className="text-gray-700 mt-2">{project.description}</p>
-                    
+
                     {/* Tags and Skills */}
                     <div className="mt-4">
                         <h3 className="font-semibold">Tags & Skills</h3>

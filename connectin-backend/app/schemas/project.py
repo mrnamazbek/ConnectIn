@@ -10,6 +10,7 @@ project.py:
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict
 from app.enums import ApplicationStatus
+from .skill import SkillOut
 
 class ApplicationDecisionRequest(BaseModel):
     decision: ApplicationStatus
@@ -55,8 +56,8 @@ class ProjectOut(BaseModel):
     owner: UserOut  # ✅ Include full owner details instead of just owner_id
     members: List[Dict] = []  
     applicants: List[Dict] = []  
-    tags: List[Dict] = []  
-    skills: List[Dict] = []  
+    tags: List[TagOut] = []  
+    skills: List[SkillOut] = []  
 
     class Config:
         from_attributes = True  # ✅ Ensure ORM conversion works correctly

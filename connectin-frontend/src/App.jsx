@@ -9,6 +9,7 @@ import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import SearchPage from "./pages/SearchPage";
 import { useLocation } from "react-router";
+import ChatPage from "./pages/ChatPage";
 
 function App() {
     return (
@@ -24,6 +25,7 @@ function App() {
                             <Route path="/profile/*" element={<UserProfile />} />
                             <Route path="/project/:projectId" element={<ProjectProfile />} />
                             <Route path="/search" element={<SearchPage />} />
+                            <Route path="/chats" element={<ChatPage/>} />
                             <Route path="*" element={<NotFoundPage />} />
                         </Routes>
                     </div>

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import auth, projects, teams, users, posts, tags, todos, skills
+from app.api import auth, projects, teams, users, posts, tags, todos, skills, chats, chat_ws
 from app.core import settings
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -47,8 +47,9 @@ def create_app() -> FastAPI:
     app.include_router(tags.router, prefix="/tags", tags=["Tags"])
     app.include_router(skills.router, prefix="/skills", tags=["Skills"])
     app.include_router(todos.router, prefix="/todos", tags=["Todos"])
+    app.include_router(chats.router, prefix="/chats", tags=["Chats"])
+    app.include_router(chat_ws.router, prefix="/chats/ws", tags=["Chat WebSocket"])
 
     return app
-
 
 app = create_app()

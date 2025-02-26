@@ -133,10 +133,10 @@ class UserOut(BaseModel):
             linkedin=user.linkedin,
             telegram=user.telegram,
             avatar_url=user.avatar_url,  # ✅ Now frontend gets avatar
-            skills=[SkillBase.from_orm(skill) for skill in user.skills],
-            projects=[ProjectBase.from_orm(project) for project in user.projects],
-            education=[EducationOut.from_orm(edu) for edu in user.education],
-            experience=[ExperienceOut.from_orm(exp) for exp in user.experience]
+            skills=[SkillBase.model_validate(skill) for skill in user.skills],
+            projects=[ProjectBase.model_validate(project) for project in user.projects],
+            education=[EducationOut.model_validate(edu) for edu in user.education],
+            experience=[ExperienceOut.model_validate(exp) for exp in user.experience]
         )
 
     class Config:

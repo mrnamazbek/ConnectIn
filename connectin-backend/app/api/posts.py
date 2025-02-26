@@ -49,7 +49,7 @@ def create_post(
     db.commit()
     db.refresh(new_post)
 
-    return PostOut.from_orm(new_post)  # ✅ Ensure tag names are returned
+    return PostOut.model_validate(new_post)  # ✅ Ensure tag names are returned
 
 
 # 🔹 Get All Posts
@@ -144,4 +144,4 @@ def search_posts(
         (Post.tags.any(Tag.name.ilike(f"%{query}%")))  # ✅ Search in tags
     ).all()
 
-    return [PostOut.from_orm(post) for post in posts]
+    return [PostOut.model_validate(post) for post in posts]

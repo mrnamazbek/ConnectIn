@@ -24,14 +24,26 @@ async def create_refresh_token(user_id: str, expires_in: int = 60 * 60 * 24 * 7)
 
 # Функция для проверки и получения данных refresh-токена
 async def verify_refresh_token(token: str) -> dict:
-    """
-    Проверяет refresh-токен из Redis и возвращает данные, если токен действителен.
-    """
     redis = await get_redis()
     data = await redis.get(f"refresh:{token}")
-    if data:
-        return json.loads(data)
-    return None
+
+    if not data:
+        return None
+
+    token_data = json.loads(data)
+
+    # Проверяем срок действия
+    expiration = datetime.fromisoformat(token_data["exp"])
+    if datetime.utcnow() > expiration:
+        await delete_refresh_token(token)
+        return None
+
+    # Дополнительная проверка формата
+    if "user_id" not in token_data:
+        await delete_refresh_token(token)
+        return None
+
+    return token_data
 
 # Функция для удаления refresh-токена (например, при logout)
 async def delete_refresh_token(token: str) -> None:

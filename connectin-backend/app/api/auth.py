@@ -109,7 +109,7 @@ def login_user(
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
         "sub": user.email,
-        "exp": datetime.utcnow() + access_token_expires
+        "exp": datetime.now() + access_token_expires
     }
     access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     logger.info(f"JWT-токен сгенерирован для пользователя: {user.email}")
@@ -216,7 +216,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
         "sub": user.email,
-        "exp": datetime.utcnow() + access_token_expires,
+        "exp": datetime.now() + access_token_expires,
     }
     access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     logger.info(f"JWT-токен сгенерирован для Google пользователя: {user.email}")
@@ -288,7 +288,7 @@ async def github_callback(request: Request, db: Session = Depends(get_db)):
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
         "sub": user.email,
-        "exp": datetime.utcnow() + access_token_expires
+        "exp": datetime.now() + access_token_expires
     }
     access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     logger.info(f"JWT-токен сгенерирован для GitHub пользователя: {user.email}")
@@ -296,5 +296,5 @@ async def github_callback(request: Request, db: Session = Depends(get_db)):
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "user": UserOut.from_orm(user)
+        "user": UserOut.model_validate(user)
     }

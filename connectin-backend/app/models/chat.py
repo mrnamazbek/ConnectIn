@@ -1,64 +1,65 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Enum
-from sqlalchemy.orm import relationship
 from datetime import datetime
-from enum import Enum as PyEnum
+from enum import Enum
+from sqlalchemy import Column, ForeignKey, Integer, Text, DateTime, Enum as SQLEnum
+from sqlalchemy.orm import relationship, validates
 from .base import Base
 from .associations import conversation_participants
 
 
-# Определяем типы чатов с помощью встроенного Enum из Python.
-class ConversationType(PyEnum):
-    direct = "direct"  # 🔹 Чат один на один (direct)
-    project = "project"  # 🔹 Групповой чат для проекта
-    team = "team"  # 🔹 Групповой чат для команды
+class ConversationType(str, Enum):
+    """Типы чатов с автоматическим приведением к строке"""
+    DIRECT = "direct"  # Личная переписка
+    PROJECT = "project"  # Чат проекта
+    TEAM = "team"  # Чат команды
 
 
-# Класс Conversation описывает сущность "Разговор" (чат)
 class Conversation(Base):
     __tablename__ = "conversations"
 
-    # Уникальный идентификатор разговора
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, comment="Уникальный ID чата")
+    type = Column(SQLEnum(ConversationType), nullable=False, comment="Тип чата")
+    project_id = Column(Integer, ForeignKey("projects.id"), comment="Связь с проектом")
+    team_id = Column(Integer, ForeignKey("teams.id"), comment="Связь с командой")
 
-    # Тип разговора, используя наш Python Enum. Это может быть direct, project или team.
-    type = Column(Enum(ConversationType), nullable=False)
+    # Отношения
+    participants = relationship(
+        "User",
+        secondary=conversation_participants,
+        back_populates="conversations",
+        lazy="selectin",  # Оптимизация загрузки
+        cascade="save-update, merge"
+    )
 
-    # Идентификатор проекта (если чат связан с проектом), может быть NULL.
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
+    messages = relationship(
+        "Message",
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="Message.timestamp"
+    )
 
-    # Идентификатор команды (если чат связан с командой), может быть NULL.
-    team_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
-
-    # Связь с участниками разговора.
-    # Используется вспомогательная таблица (association table) conversation_participants для связи многие-ко-многим.
-    participants = relationship("User", secondary=conversation_participants, back_populates="conversations")
-
-    # Связь с сообщениями в разговоре.
-    # При удалении разговора все связанные сообщения будут удалены благодаря cascade="all, delete".
-    messages = relationship("Message", back_populates="conversation", cascade="all, delete")
+    @validates('type')
+    def validate_type(self, key, value):
+        """Валидация типа чата при создании"""
+        if not isinstance(value, ConversationType):
+            raise ValueError("Недопустимый тип чата")
+        return value
 
 
-# Класс Message описывает сущность "Сообщение"
 class Message(Base):
     __tablename__ = "messages"
 
-    # Уникальный идентификатор сообщения
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, comment="Уникальный ID сообщения")
+    content = Column(Text, nullable=False, comment="Текст сообщения")
+    timestamp = Column(DateTime, default=datetime.now(), index=True, comment="Время отправки")
 
-    # Идентификатор разговора, к которому принадлежит сообщение
-    conversation_id = Column(Integer, ForeignKey("conversations.id"))
+    # Внешние ключи
+    conversation_id = Column(Integer, ForeignKey("conversations.id", ondelete="CASCADE"))
+    sender_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"))
 
-    # Идентификатор отправителя сообщения
-    sender_id = Column(Integer, ForeignKey("users.id"))
-
-    # Содержимое сообщения
-    content = Column(Text, nullable=False)
-
-    # Время создания сообщения. По умолчанию устанавливается текущее время.
-    timestamp = Column(DateTime, default=datetime.utcnow)
-
-    # Связь с пользователем, который отправил сообщение.
-    sender = relationship("User", back_populates="messages")
-
-    # Связь с разговором, к которому относится сообщение.
+    # Отношения
+    sender = relationship("User", back_populates="messages", lazy="joined")
     conversation = relationship("Conversation", back_populates="messages")
+
+    def __repr__(self):
+        return f"<Message {self.id} from {self.sender_id}>"

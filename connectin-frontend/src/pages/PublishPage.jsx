@@ -13,30 +13,43 @@ const PublishPage = () => {
     const [skills, setSkills] = useState([]);
     const [tags, setTags] = useState([]);
     const [selectedTags, setSelectedTags] = useState([]);
+    const [selectedSkills, setSelectedSkills] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isLayoutReady, setIsLayoutReady] = useState(false);
     const cloud = useCKEditorCloud({ version: "44.1.0" });
 
     // 🔹 Fetch Tags from DB
     useEffect(() => {
-        const fetchTags = async () => {
+        const fetchData = async () => {
             try {
-                const response = await axios.get("http://127.0.0.1:8000/tags/");
-                setTags(response.data);
+                const tagRes = await axios.get("http://127.0.0.1:8000/tags/");
+                setTags(tagRes.data);
+
+                if (postType === "project") {
+                    const skillRes = await axios.get("http://127.0.0.1:8000/skills/");
+                    setSkills(skillRes.data);
+                }
             } catch (error) {
-                console.error("Failed to fetch tags:", error);
+                console.error("Failed to fetch data:", error);
             }
         };
 
-        fetchTags();
+        fetchData();
         setIsLayoutReady(true);
 
         return () => setIsLayoutReady(false);
-    }, []);
+    }, [postType]);
 
     // 🔹 Handle Tag Selection
     const handleTagSelection = (tagId) => {
         setSelectedTags((prevTags) => (prevTags.includes(tagId) ? prevTags.filter((id) => id !== tagId) : [...prevTags, tagId]));
+    };
+
+      // 🔹 Handle Skill Selection
+      const handleSkillSelection = (skillId) => {
+        setSelectedSkills((prevSkills) =>
+            prevSkills.includes(skillId) ? prevSkills.filter((id) => id !== skillId) : [...prevSkills, skillId]
+        );
     };
 
     // 🔹 Submit Post
@@ -53,18 +66,14 @@ const PublishPage = () => {
 
             const payload = {
                 title,
-                content,  // ✅ Ensure content is being sent correctly
+                content, // ✅ Ensure content is being sent correctly
                 post_type: postType,
                 project_id: projectId ? parseInt(projectId) : null,
                 team_id: teamId ? parseInt(teamId) : null,
-                tag_ids: selectedTags,  // ✅ Send tag IDs properly
+                tag_ids: selectedTags, // ✅ Send tag IDs properly
             };
 
-            await axios.post(
-                "http://127.0.0.1:8000/posts",
-                payload,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await axios.post("http://127.0.0.1:8000/posts", payload, { headers: { Authorization: `Bearer ${token}` } });
             alert("Post created successfully!");
             setTitle("");
             setContent("");
@@ -95,7 +104,6 @@ const PublishPage = () => {
             FontColor,
             FontFamily,
             FontSize,
-            Heading,
             Highlight,
             Indent,
             IndentBlock,
@@ -121,7 +129,6 @@ const PublishPage = () => {
             editorConfig: {
                 toolbar: {
                     items: [
-                        "heading",
                         "|",
                         "fontSize",
                         "fontFamily",
@@ -158,7 +165,6 @@ const PublishPage = () => {
                     FontColor,
                     FontFamily,
                     FontSize,
-                    Heading,
                     Highlight,
                     Indent,
                     IndentBlock,
@@ -180,17 +186,6 @@ const PublishPage = () => {
                 ],
                 fontFamily: { supportAllValues: true },
                 fontSize: { options: [10, 12, 14, "default", 18, 20, 22], supportAllValues: true },
-                heading: {
-                    options: [
-                        { model: "paragraph", title: "Paragraph", class: "ck-heading_paragraph" },
-                        { model: "heading1", view: "h1", title: "Heading 1", class: "ck-heading_heading1" },
-                        { model: "heading2", view: "h2", title: "Heading 2", class: "ck-heading_heading2" },
-                        { model: "heading3", view: "h3", title: "Heading 3", class: "ck-heading_heading3" },
-                        { model: "heading4", view: "h4", title: "Heading 4", class: "ck-heading_heading4" },
-                        { model: "heading5", view: "h5", title: "Heading 5", class: "ck-heading_heading5" },
-                        { model: "heading6", view: "h6", title: "Heading 6", class: "ck-heading_heading6" },
-                    ],
-                },
                 licenseKey: LICENSE_KEY,
                 link: {
                     addTargetToExternalLinks: true,
@@ -237,6 +232,23 @@ const PublishPage = () => {
                         ))
                     ) : (
                         <p className="text-gray-500 text-sm">No tags available.</p>
+                    )}
+                </div>
+            )}
+
+             {/* 🔹 Skill Selection (Only for Project Posts) */}
+             {postType === "project" && (
+                <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-sm">Select Required Skills:</p>
+                    {skills.length > 0 ? (
+                        skills.map((skill) => (
+                            <button key={skill.id} onClick={() => handleSkillSelection(skill.id)}
+                                className={`px-2 py-1 shadow-sm rounded-md text-sm cursor-pointer transition ${selectedSkills.includes(skill.id) ? "bg-green-700 text-white" : ""}`}>
+                                {skill.name}
+                            </button>
+                        ))
+                    ) : (
+                        <p className="text-gray-500 text-sm">No skills available.</p>
                     )}
                 </div>
             )}

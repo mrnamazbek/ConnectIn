@@ -33,6 +33,21 @@ def read_own_profile(current_user: User = Depends(get_current_user)):
     """
     return current_user
 
+@router.get("/search", response_model=List[UserOut], summary="Поиск пользователей")
+def search_users(
+    query: str,
+    db: Session = Depends(get_db)
+):
+    if not query:
+        return []
+
+    users = db.query(User).filter(
+        (User.username.ilike(f"%{query}%")) |
+        (User.email.ilike(f"%{query}%"))
+    ).all()
+
+    return users
+
 @router.get("/{user_id}", response_model=UserOut, summary="Профиль конкретного пользователя")
 def read_user(user_id: int, db: Session = Depends(get_db)):
     """

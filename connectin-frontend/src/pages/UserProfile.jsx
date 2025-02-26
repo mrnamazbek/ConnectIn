@@ -34,6 +34,11 @@ const UserProfile = () => {
     });
     const [errors, setErrors] = useState({});
 
+    const degreeOptions = ["High School Diploma", "Associate's Degree", "Bachelor's Degree", "Master's Degree", "PhD", "Other"];
+
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: 50 }, (_, i) => currentYear - i); // Last 50 years
+
     useEffect(() => {
         const fetchUserData = async () => {
             try {
@@ -310,15 +315,44 @@ const UserProfile = () => {
                         </div>
                     );
                 })}
-                <button onClick={() => setShowEducationForm(!showEducationForm)} className="mt-2 text-green-700 font-semibold flex items-center">
+                <button onClick={() => setShowEducationForm(!showEducationForm)} className="mt-2 text-sm text-green-700 font-semibold flex items-center cursor-pointer">
                     <FontAwesomeIcon icon={faPlus} className="mr-2" /> Add Education
                 </button>
+                {/* 🔹 Education Form */}
                 {showEducationForm && (
-                    <div className="mt-2 flex flex-col space-y-2">
+                    <div className="mt-2 flex flex-col space-y-2 text-sm">
                         <input type="text" placeholder="Institution" className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newEducation.institution} onChange={(e) => setNewEducation({ ...newEducation, institution: e.target.value })} />
-                        <input type="text" placeholder="Degree" className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newEducation.degree} onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })} />
-                        <input type="number" placeholder="Start Year" className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newEducation.start_year} onChange={(e) => setNewEducation({ ...newEducation, start_year: e.target.value })} />
-                        <input type="number" placeholder="End Year" className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newEducation.end_year} onChange={(e) => setNewEducation({ ...newEducation, end_year: e.target.value })} />
+
+                        {/* 🔹 Degree Select Dropdown */}
+                        <select className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newEducation.degree} onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })}>
+                            <option value="">Select Degree</option>
+                            {degreeOptions.map((degree, index) => (
+                                <option key={index} value={degree}>
+                                    {degree}
+                                </option>
+                            ))}
+                        </select>
+
+                        {/* 🔹 Start Year Dropdown */}
+                        <select className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newEducation.start_year} onChange={(e) => setNewEducation({ ...newEducation, start_year: e.target.value })}>
+                            <option value="">Select Start Year</option>
+                            {years.map((year) => (
+                                <option key={year} value={year}>
+                                    {year}
+                                </option>
+                            ))}
+                        </select>
+
+                        {/* 🔹 End Year Dropdown */}
+                        <select className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newEducation.end_year} onChange={(e) => setNewEducation({ ...newEducation, end_year: e.target.value })}>
+                            <option value="">Select End Year</option>
+                            {years.map((year) => (
+                                <option key={year} value={year}>
+                                    {year}
+                                </option>
+                            ))}
+                        </select>
+
                         <button onClick={handleAddEducation} className="text-white bg-green-700 font-semibold px-3 py-1 rounded-md">
                             Save
                         </button>
@@ -329,7 +363,6 @@ const UserProfile = () => {
                 <div className="mt-4">
                     <h4 className="font-semibold">Experience</h4>
                     {experience.map((exp) => {
-                        console.log("Experience Entry:", exp); // ✅ Debug: Ensure data is correct
                         return (
                             <div key={exp.id} className="flex justify-between items-center p-2 border-b border-gray-300 last:border-0">
                                 <p>
@@ -339,22 +372,41 @@ const UserProfile = () => {
                                     icon={faTrashAlt}
                                     className="text-red-500 cursor-pointer hover:text-red-700"
                                     onClick={() => {
-                                        console.log("Deleting Experience ID:", exp.id); // ✅ Check if ID is valid before calling delete
                                         handleDeleteExperience(exp.id);
                                     }}
                                 />
                             </div>
                         );
                     })}
-                    <button onClick={() => setShowExperienceForm(!showExperienceForm)} className="mt-2 text-green-700 font-semibold flex items-center">
+                    <button onClick={() => setShowExperienceForm(!showExperienceForm)} className="mt-2 text-sm text-green-700 font-semibold flex items-center cursor-pointer">
                         <FontAwesomeIcon icon={faPlus} className="mr-2" /> Add Experience
                     </button>
+                    {/* 🔹 Experience Form */}
                     {showExperienceForm && (
-                        <div className="mt-2 flex flex-col space-y-2">
+                        <div className="mt-2 flex flex-col space-y-2 text-sm">
                             <input type="text" placeholder="Company" className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newExperience.company} onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })} />
                             <input type="text" placeholder="Role" className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newExperience.role} onChange={(e) => setNewExperience({ ...newExperience, role: e.target.value })} />
-                            <input type="number" placeholder="Start Year" className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newExperience.start_year} onChange={(e) => setNewExperience({ ...newExperience, start_year: e.target.value })} />
-                            <input type="number" placeholder="End Year" className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newExperience.end_year} onChange={(e) => setNewExperience({ ...newExperience, end_year: e.target.value })} />
+
+                            {/* 🔹 Start Year Dropdown */}
+                            <select className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newExperience.start_year} onChange={(e) => setNewExperience({ ...newExperience, start_year: e.target.value })}>
+                                <option value="">Select Start Year</option>
+                                {years.map((year) => (
+                                    <option key={year} value={year}>
+                                        {year}
+                                    </option>
+                                ))}
+                            </select>
+
+                            {/* 🔹 End Year Dropdown */}
+                            <select className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newExperience.end_year} onChange={(e) => setNewExperience({ ...newExperience, end_year: e.target.value })}>
+                                <option value="">Select End Year</option>
+                                {years.map((year) => (
+                                    <option key={year} value={year}>
+                                        {year}
+                                    </option>
+                                ))}
+                            </select>
+
                             <button onClick={handleAddExperience} className="text-white bg-green-700 font-semibold px-3 py-1 rounded-md">
                                 Save
                             </button>

@@ -25,7 +25,7 @@ function App() {
                             <Route path="/profile/*" element={<UserProfile />} />
                             <Route path="/project/:projectId" element={<ProjectProfile />} />
                             <Route path="/search" element={<SearchPage />} />
-                            <Route path="/chats" element={<ChatPage/>} />
+                            <Route path="/chats" element={<ChatPage />} />
                             <Route path="*" element={<NotFoundPage />} />
                         </Routes>
                     </div>

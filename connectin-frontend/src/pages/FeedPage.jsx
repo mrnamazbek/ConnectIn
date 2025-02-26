@@ -7,6 +7,7 @@ import SubNav from "../components/SubNav";
 import { fakePopularProjects, fakeNews, fakeProjects, fakeTeams } from "../data/data";
 import PublishPage from "./PublishPage";
 import PopularNews from "../components/PopularNews";
+import PostPage from "./PostPage";
 
 const Feed = () => {
     return (
@@ -20,6 +21,7 @@ const Feed = () => {
                         <Route path="projects" element={<ProjectsPage fakeProjects={fakeProjects} />} />
                         <Route path="teams" element={<TeamsPage fakeTeams={fakeTeams} />} />
                         <Route path="post" element={<PublishPage />} />
+                        <Route path="/posts/:postId" element={<PostPage />} />
                     </Routes>
                 </div>
                 <div className="col-span-2 flex-col space-y-5">

@@ -52,15 +52,14 @@ def create_post(
     return PostOut.from_orm(new_post)  # ✅ Ensure tag names are returned
 
 
-# 🔹 Get All Posts
+# Get All Posts
 @router.get("/", response_model=List[PostOut])
 def get_all_posts(db: Session = Depends(get_db)):
     """
-    Retrieves all posts with correctly formatted tags.
+    Retrieves all posts including author details.
     """
     posts = db.query(Post).all()
 
-    # ✅ Convert each post to a dictionary and extract tag names
     formatted_posts = []
     for post in posts:
         formatted_posts.append({
@@ -71,10 +70,39 @@ def get_all_posts(db: Session = Depends(get_db)):
             "author_id": post.author_id,
             "project_id": post.project_id,
             "team_id": post.team_id,
-            "tags": [tag.name for tag in post.tags],  # ✅ Extract tag names
+            "tags": [tag.name for tag in post.tags],  
+            "author": {
+                "username": post.author.username if post.author else "Unknown",
+                "avatar_url": post.author.avatar_url if post.author and post.author.avatar_url else None
+            }
         })
 
-    return formatted_posts  # ✅ Return formatted list
+    return formatted_posts
+
+@router.get("/{post_id}", response_model=PostOut)
+def get_single_post(post_id: int, db: Session = Depends(get_db)):
+    """
+    Retrieves a single post by ID, including author details and tags.
+    """
+    post = db.query(Post).filter(Post.id == post_id).first()
+
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    return PostOut(
+        id=post.id,
+        title=post.title,
+        content=post.content,
+        post_type=post.post_type,
+        author_id=post.author_id,
+        project_id=post.project_id,
+        team_id=post.team_id,
+        tags=[tag.name for tag in post.tags],  # Extract tag names
+        author={
+            "username": post.author.username if post.author else "Unknown",
+            "avatar_url": post.author.avatar_url if post.author and post.author.avatar_url else None
+        },
+    )
 
 @router.get("/my", response_model=List[PostOut])
 def get_user_posts(

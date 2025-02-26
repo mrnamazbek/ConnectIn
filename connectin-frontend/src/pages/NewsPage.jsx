@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { NavLink } from "react-router";
 import { faBookmark, faComment, faHeart } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -39,10 +40,9 @@ export default function NewsPage() {
                             <div key={article.id} className="bg-white border border-green-700 rounded-md shadow-md p-5">
                                 {/* 🔹 Author & Avatar */}
                                 <div className="flex items-center mb-4">
-                                    <img src={article.author.avatar_url || "https://media.tenor.com/HmFcGkSu58QAAAAM/silly.gif"} alt={article.author.username} className="w-8 h-8 rounded-full border" />
-                                    <p className="font-semibold ml-2">{article.author.username}</p>
+                                    <img src={article.author.avatar_url || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} alt={article.author.username || "User"} className="w-8 h-8 rounded-full border" />
+                                    <p className="text-sm font-semibold ml-2">{article.author.username || "Unknown"}</p>
                                 </div>
-
                                 {/* 🔹 Tags */}
                                 {article.tags.length > 0 && (
                                     <div className="my-3">
@@ -59,7 +59,7 @@ export default function NewsPage() {
                                 <p className="font-semibold mb-2">{article.title}</p>
 
                                 {/* 🔹 Content */}
-                                <p className="text-gray-700 mb-3" dangerouslySetInnerHTML={{__html: article.content}} />
+                                <p className="text-gray-700 mb-3" dangerouslySetInnerHTML={{ __html: article.content }} />
 
                                 {/* 🔹 Date */}
                                 <p className="text-xs text-gray-500">{article.date ? `Posted on: ${new Date(article.date).toLocaleDateString()}` : "Date not available"}</p>
@@ -77,7 +77,9 @@ export default function NewsPage() {
                                             <FontAwesomeIcon icon={faBookmark} />
                                         </button>
                                     </div>
-                                    <button className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition">Read</button>
+                                    <NavLink to={`/posts/${article.id}`} className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition">
+                                        Read
+                                    </NavLink>{" "}
                                 </div>
                             </div>
                         ))}

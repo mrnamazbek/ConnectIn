@@ -35,6 +35,7 @@ const LoginPage = () => {
                     }
                 );
                 localStorage.setItem("token", response.data.access_token);
+                console.log("Login successful:", response.data);
                 navigate("/");
             } catch (error) {
                 console.error("Login failed:", error);

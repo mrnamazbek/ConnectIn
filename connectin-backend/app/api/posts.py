@@ -48,7 +48,8 @@ def create_post(
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
-    return PostOut.from_orm(new_post)
+
+    return PostOut.model_validate(new_post)  # ✅ Ensure tag names are returned
 
 
 # Get All Posts with Counts
@@ -200,119 +201,4 @@ def search_posts(
         (Post.tags.any(Tag.name.ilike(f"%{query}%")))  # ✅ Search in tags
     ).all()
 
-    return [PostOut.from_orm(post) for post in posts]
-
-# ✅ Like Post
-@router.post("/{post_id}/like")
-def like_post(post_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    existing_like = db.query(PostLike).filter_by(user_id=current_user.id, post_id=post_id).first()
-    if existing_like:
-        db.delete(existing_like)
-        db.commit()
-        return {"detail": "Like removed"}
-    
-    new_like = PostLike(user_id=current_user.id, post_id=post_id)
-    db.add(new_like)
-    db.commit()
-    return {"detail": "Post liked"}
-
-@router.get("/{post_id}/likes")
-def get_likes(post_id: int, db: Session = Depends(get_db)):
-    like_count = db.query(PostLike).filter_by(post_id=post_id).count()
-    return {"likes": like_count}
-
-@router.get("/{post_id}/is_liked")
-def is_post_liked(post_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    existing_like = db.query(PostLike).filter_by(user_id=current_user.id, post_id=post_id).first()
-    return {"is_liked": existing_like is not None}
-
-# ✅ Save Post
-@router.post("/{post_id}/save")
-def save_post(post_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    existing_save = db.query(SavedPost).filter_by(user_id=current_user.id, post_id=post_id).first()
-    if existing_save:
-        db.delete(existing_save)
-        db.commit()
-        return {"detail": "Post unsaved"}
-
-    new_save = SavedPost(user_id=current_user.id, post_id=post_id)
-    db.add(new_save)
-    db.commit()
-    return {"detail": "Post saved"}
-
-@router.get("/{post_id}/is_saved")
-def is_post_saved(post_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    existing_save = db.query(SavedPost).filter_by(user_id=current_user.id, post_id=post_id).first()
-    return {"is_saved": existing_save is not None}
-
-# Get comments
-@router.get("/{post_id}/comments", response_model=List[CommentOut])
-def get_post_comments(post_id: int, db: Session = Depends(get_db)):
-    """
-    Retrieves all comments for a specific post.
-    """
-    post = db.query(Post).filter(Post.id == post_id).first()
-
-    if not post:
-        raise HTTPException(status_code=404, detail="Post not found")
-
-    comments = db.query(PostComment).filter(PostComment.post_id == post_id).all()
-
-    return [
-        CommentOut(
-            id=comment.id,
-            content=comment.content,
-            user_id=comment.user_id,  # ✅ Ensure `user_id` is directly returned
-            created_at=comment.created_at
-        )
-        for comment in comments
-    ]
-
-@router.post("/{post_id}/comment", response_model=CommentOut)
-def comment_post(
-    post_id: int,
-    comment_data: CommentCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    # Check if the post exists
-    post = db.query(Post).filter(Post.id == post_id).first()
-    if not post:
-        raise HTTPException(status_code=404, detail="Post not found")
-
-    # Create the new comment
-    new_comment = PostComment(
-        content=comment_data.content,
-        user_id=current_user.id,
-        post_id=post_id
-    )
-    db.add(new_comment)
-    db.commit()
-    db.refresh(new_comment)
-
-    # Construct the response matching CommentOut
-    return CommentOut(
-        id=new_comment.id,
-        content=new_comment.content,
-        user_id=new_comment.user_id,
-        created_at=new_comment.created_at,
-        user={
-            "username": new_comment.user.username if new_comment.user else "Unknown",
-            "avatar_url": new_comment.user.avatar_url if new_comment.user and new_comment.user.avatar_url else None
-        }
-    )
-
-# Get likes for a post
-@router.get("/{post_id}/likes", response_model=List[int])
-def get_post_likes(post_id: int, db: Session = Depends(get_db)):
-    """
-    Retrieves all user IDs who liked a specific post.
-    """
-    post = db.query(Post).filter(Post.id == post_id).first()
-
-    if not post:
-        raise HTTPException(status_code=404, detail="Post not found")
-
-    likes = db.query(PostLike).filter(PostLike.post_id == post_id).all()
-
-    return [like.user_id for like in likes]  # ✅ Return user IDs who liked the post
+    return [PostOut.model_validate(post) for post in posts]

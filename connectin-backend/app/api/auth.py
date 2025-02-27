@@ -164,17 +164,9 @@ def read_current_user(current_user: User = Depends(get_current_user)):
 @router.get("/google/login", summary="Google Login")
 async def google_login(request: Request):
     """
-    Генерирует URL для авторизации через Google OAuth и перенаправляет пользователя.
-    Используется функция generate_google_login_url, которая возвращает строковый URL.
+    Generates and redirects to Google OAuth login page.
     """
-    login_url = await generate_google_login_url(request)
-    if not login_url:
-        raise HTTPException(
-            status_code=500,
-            detail="Не удалось сформировать Google OAuth URL"
-        )
-    logger.info(f"Перенаправление на Google Login: {login_url}")
-    return RedirectResponse(url=login_url)
+    return await generate_google_login_url(request)  # No need for extra RedirectResponse
 
 
 @router.get("/google/callback", summary="Google Callback")

@@ -50,7 +50,7 @@ const ActionsSection = ({ userPosts, loading, setUserPosts }) => {
                             {post.tags.length > 0 && (
                                 <div className="flex flex-wrap gap-2 mt-2">
                                     {post.tags.map((tag, index) => (
-                                        <span key={index} className="text-xs text-gray-500">
+                                        <span key={index} className="text-xs text-gray-500 underline underline-offset-2">
                                             {tag}
                                             {index < post.tags.length - 1 && ", "}
                                         </span>

@@ -8,9 +8,9 @@ from .associations import conversation_participants
 
 class ConversationType(str, Enum):
     """Типы чатов с автоматическим приведением к строке"""
-    DIRECT = "direct"  # Личная переписка
-    PROJECT = "project"  # Чат проекта
-    TEAM = "team"  # Чат команды
+    direct = "direct"  # Личная переписка
+    project = "project"  # Чат проекта
+    team = "team"  # Чат команды
 
 
 class Conversation(Base):

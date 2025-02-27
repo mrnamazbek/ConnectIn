@@ -85,7 +85,9 @@ const SkillsSection = ({ skills, setSkills, loading }) => {
                                     <FontAwesomeIcon icon={faTrashAlt} size="sm" />
                                 </button>
                             )}
+                            
                         </span>
+                        
                     ))
                 ) : (
                     <p className="text-gray-700">No skills added yet.</p>

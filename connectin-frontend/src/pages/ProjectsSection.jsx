@@ -166,7 +166,7 @@ const ProjectsSection = ({ user }) => {
                                 <p className="text-gray-600">{project.description}</p>
                                 <div className="flex flex-wrap gap-2 mt-2">
                                     {project.tags.map((tag, index) => (
-                                        <span key={tag.id} className="text-xs text-gray-500">
+                                        <span key={tag.id} className="text-xs text-gray-500 underline underline-offset-2">
                                             {tag.name}
                                             {index < project.tags.length - 1 && ", "}
                                         </span>
@@ -179,14 +179,8 @@ const ProjectsSection = ({ user }) => {
                                         </span>
                                     ))}
                                 </div>
-                                <button
-                                    onClick={() => navigate(`/project/${project.id}`)} // ✅ Navigate to project profile
-                                    className="mt-2 text-green-700 font-semibold flex items-center hover:underline"
-                                >
-                                    View Project
-                                </button>
                             </div>
-                            {user?.id === project?.owner_id && (
+                            {user.id === project.owner_id && (
                                 <button onClick={() => handleDeleteProject(project.id, project.owner_id)} className="hover:text-red-700 transition">
                                     <FontAwesomeIcon icon={faTrashAlt} />
                                 </button>

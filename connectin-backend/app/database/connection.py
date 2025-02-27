@@ -10,7 +10,8 @@ from app.core.config import settings
 engine = create_engine(
     str(settings.DATABASE_URL),  # из Settings
     echo=False,             # echo=True для отладки, пишет SQL в консоль
-    future=True             # API SQLAlchemy 2.0
+    future=True,            # API SQLAlchemy 2.0
+    pool_recycle=3600       # переподключение к базе каждый час
 )
 
 # создаём фабрику сессий

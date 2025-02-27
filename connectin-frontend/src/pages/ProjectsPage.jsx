@@ -48,9 +48,13 @@ const ProjectsPage = () => {
                 return;
             }
 
-            await axios.post(`http://127.0.0.1:8000/projects/${projectId}/apply`, {}, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await axios.post(
+                `http://127.0.0.1:8000/projects/${projectId}/apply`,
+                {},
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
 
             alert("Application submitted!");
         } catch (error) {
@@ -73,18 +77,13 @@ const ProjectsPage = () => {
                         </div>
 
                         {/* 🔹 Tags */}
-                        <div className="flex flex-wrap my-2">
-                            {project.tags.length > 0 && (
-                                <div className="flex flex-wrap mt-2 text-xs text-gray-500">
-                                    {project.tags.map((tag) => tag.name).join(" • ")}
-                                </div>
-                            )}
-                        </div>
+                        <div className="flex flex-wrap my-2">{project.tags.length > 0 && <div className="flex flex-wrap mt-2 text-xs text-gray-500">{project.tags.map((tag) => tag.name).join(" • ")}</div>}</div>
 
                         {/* 🔹 Project Details */}
                         <h3 className="text-lg font-bold">{project.name}</h3>
                         <p className="text-gray-700 mb-3">{project.description}</p>
 
+                        {/* 🔹 Skills */}
                         <div className="mt-3 flex flex-wrap gap-2">
                             {project.skills.length > 0 ? (
                                 project.skills.map((skill) => (
@@ -103,26 +102,22 @@ const ProjectsPage = () => {
                                 <button className="text-gray-500 hover:text-green-700 transition cursor-pointer">
                                     <FontAwesomeIcon icon={faArrowUp} />
                                 </button>
+                                <span className="text-gray-700 font-bold">{project.vote_count}</span>
                                 <button className="text-gray-500 hover:text-red-700 transition cursor-pointer">
                                     <FontAwesomeIcon icon={faArrowDown} />
                                 </button>
+                                <span className="text-gray-500">{project.comments_count} comments</span>
                             </div>
 
                             {/* ✅ Show Apply Button only if the user is not the owner */}
                             {currentUser && currentUser.id !== project.owner.id && (
-                                <button 
-                                    onClick={() => handleApply(project.id)} 
-                                    className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition"
-                                >
+                                <button onClick={() => handleApply(project.id)} className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition">
                                     Apply
                                 </button>
                             )}
 
                             {/* ✅ Show "View Project" button */}
-                            <NavLink 
-                                to={`/project/${project.id}`} 
-                                className="rounded shadow-sm text-sm px-6 py-2 border border-blue-700 hover:text-white font-semibold cursor-pointer hover:bg-blue-700 transition"
-                            >
+                            <NavLink to={`/project/${project.id}`} className="rounded shadow-sm text-sm px-6 py-2 border border-blue-700 hover:text-white font-semibold cursor-pointer hover:bg-blue-700 transition">
                                 View Project
                             </NavLink>
                         </div>

@@ -15,6 +15,9 @@ from app.schemas.project import ProjectCreate, ProjectOut, ProjectUpdate
 from app.api.auth import get_current_user
 from app.models.project import project_applications, project_members_association, project_tags_association, project_skills_association
 from app.schemas.project import ApplicationDecisionRequest, ApplicationStatus
+from app.models.vote import ProjectVote
+from app.models.comment import ProjectComment
+from app.schemas.comment import CommentOut, CommentCreate
 
 router = APIRouter()
 
@@ -363,3 +366,32 @@ def remove_user_from_project(
     db.commit()
 
     return {"detail": "Пользователь удален из проекта"}
+
+# ✅ Upvote/Downvote Project
+@router.post("/{project_id}/vote")
+def vote_project(project_id: int, is_upvote: bool, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    existing_vote = db.query(ProjectVote).filter_by(user_id=current_user.id, project_id=project_id).first()
+    
+    if existing_vote:
+        if existing_vote.is_upvote == is_upvote:
+            db.delete(existing_vote)
+            db.commit()
+            return {"detail": "Vote removed"}
+        else:
+            existing_vote.is_upvote = is_upvote
+            db.commit()
+            return {"detail": "Vote changed"}
+
+    new_vote = ProjectVote(user_id=current_user.id, project_id=project_id, is_upvote=is_upvote)
+    db.add(new_vote)
+    db.commit()
+    return {"detail": "Vote added"}
+
+# ✅ Comment on Project
+@router.post("/{project_id}/comment", response_model=CommentOut)
+def comment_project(project_id: int, comment_data: CommentCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    new_comment = ProjectComment(content=comment_data.content, user_id=current_user.id, project_id=project_id)
+    db.add(new_comment)
+    db.commit()
+    db.refresh(new_comment)
+    return new_comment

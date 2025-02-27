@@ -21,9 +21,10 @@ class PostOut(BaseModel):
     team_id: Optional[int] = None
     tags: List[str] = []
     date: Optional[str] = None
-
-    # ✅ Ensure the author field is **never missing**
     author: Dict[str, Optional[str]] = {"username": "Unknown", "avatar_url": None}
+    likes_count: int = 0
+    comments_count: int = 0
+    saves_count: int = 0
 
     class Config:
         from_attributes = True

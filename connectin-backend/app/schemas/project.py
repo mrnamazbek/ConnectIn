@@ -49,15 +49,16 @@ class ProjectUpdate(BaseModel):
     skill_ids: List[int] = []  # ✅ Allow updating skills
 
 class ProjectOut(BaseModel):
-    """ Updated schema to return project details. """
     id: int
     name: str
     description: str
-    owner: UserOut  # ✅ Include full owner details instead of just owner_id
-    members: List[Dict] = []  
-    applicants: List[Dict] = []  
-    tags: List[TagOut] = []  
-    skills: List[SkillOut] = []  
+    owner: UserOut
+    members: List[Dict] = []
+    applicants: List[Dict] = []
+    tags: List[TagOut] = []
+    skills: List[SkillOut] = []
+    comments_count: int = 0 
+    vote_count: int = 0  
 
     class Config:
-        from_attributes = True  # ✅ Ensure ORM conversion works correctly
+        from_attributes = True

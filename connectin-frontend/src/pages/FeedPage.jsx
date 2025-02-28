@@ -8,6 +8,7 @@ import { fakePopularProjects, fakeNews, fakeProjects, fakeTeams } from "../data/
 import PublishPage from "./PublishPage";
 import PopularNews from "../components/PopularNews";
 import PostPage from "./PostPage";
+import ProjectPage from "./ProjectPage";
 
 const Feed = () => {
     return (
@@ -17,11 +18,12 @@ const Feed = () => {
                 <div className="col-span-6">
                     <Routes>
                         <Route index element={<Navigate to="news" />} />
-                        <Route path="news" element={<NewsPage fakeNews={fakeNews} />} />
-                        <Route path="projects" element={<ProjectsPage fakeProjects={fakeProjects} />} />
+                        <Route path="news" element={<NewsPage />} />
+                        <Route path="projects" element={<ProjectsPage />} />
                         <Route path="teams" element={<TeamsPage fakeTeams={fakeTeams} />} />
                         <Route path="post" element={<PublishPage />} />
-                        <Route path="/posts/:postId" element={<PostPage />} />
+                        <Route path="posts/:postId" element={<PostPage />} />
+                        <Route path="project/:projectId" element={<ProjectPage />} />
                     </Routes>
                 </div>
                 <div className="col-span-2 flex-col space-y-5">

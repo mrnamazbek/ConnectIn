@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Text, DateTime, func
+from datetime import datetime 
+from sqlalchemy import Column, DateTime, Integer, String, ForeignKey, Text, func
 from sqlalchemy.orm import relationship
 from .base import Base
 
@@ -19,12 +20,10 @@ class ProjectComment(Base):
     __tablename__ = "project_comments"
 
     id = Column(Integer, primary_key=True, index=True)
-    content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=func.now())
-
+    content = Column(String, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime, default=datetime.now(), nullable=False) 
 
-    user = relationship("User", back_populates="project_comments")  # ✅ Fix backref name
+    user = relationship("User", back_populates="project_comments")
     project = relationship("Project", back_populates="comments")
-

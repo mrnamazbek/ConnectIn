@@ -160,8 +160,8 @@ const ProjectPage = () => {
             <ProjectCard project={project} currentUser={currentUser} handleApply={handleApply} handleUpvote={handleUpvote} handleDownvote={handleDownvote} showViewProject={false} showCommentsLink={true} />
             <div className="my-5">
                 <h3 className="font-semibold text-lg mb-2">Comments ({comments.length})</h3>
-                <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Write a comment..." className="w-full p-2 border rounded" />
-                <button onClick={handleCommentSubmit} className="mt-2 bg-blue-500 text-white px-4 py-2 rounded">
+                <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Write a comment..." className="w-full p-2 border border-gray-200 rounded-md shadow-sm bg-white focus:outline-none" />
+                <button onClick={handleCommentSubmit} className="mt-2 border border-green-700 hover:bg-green-700 hover:text-white transition cursor-pointer px-4 py-2 rounded-md shadow-sm">
                     Submit
                 </button>
             </div>

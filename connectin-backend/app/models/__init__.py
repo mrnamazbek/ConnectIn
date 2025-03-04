@@ -23,7 +23,6 @@ from relations.associations import (
     project_skills_association,
     project_members_association,
     project_applications,
-from .associations import (
     conversation_participants,
     post_tags_association,
     project_applications,
@@ -36,9 +35,9 @@ from .associations import (
 
 __all__ = [
     "Base",
-    "Chat",
+    #"Chat",
     "Conversation",
-    "ConversationParticipant",
+    #"ConversationParticipant",
     "User",
     "Team",
     "Project",

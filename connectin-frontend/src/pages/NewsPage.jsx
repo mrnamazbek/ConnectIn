@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { NavLink } from "react-router";
-import { faBookmark, faComment, faHeart } from "@fortawesome/free-regular-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { PostCard, LoadingMessage, ErrorMessage, NoDataMessage } from "../components/Post/PostCard";
 
 export default function NewsPage() {
     const [news, setNews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [likedPosts, setLikedPosts] = useState({});
+    const [savedPosts, setSavedPosts] = useState({});
 
     useEffect(() => {
         fetchNews();
@@ -15,8 +15,12 @@ export default function NewsPage() {
 
     const fetchNews = async () => {
         try {
-            const response = await axios.get("http://127.0.0.1:8000/posts/");
+            const response = await axios.get("http://127.0.0.1:8000/posts/?post_type=news");
             setNews(response.data);
+            await Promise.all([
+                fetchLikeStatuses(response.data),
+                fetchSaveStatuses(response.data), // Fetch save statuses
+            ]);
         } catch (error) {
             console.error("Error fetching news:", error);
             setError("Failed to load news. Please try again.");
@@ -25,63 +29,108 @@ export default function NewsPage() {
         }
     };
 
+    const fetchLikeStatuses = async (posts) => {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        try {
+            const likePromises = posts.map((post) =>
+                axios
+                    .get(`http://127.0.0.1:8000/posts/${post.id}/is_liked`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    })
+                    .then((response) => ({ postId: post.id, isLiked: response.data.is_liked }))
+            );
+            const likeResults = await Promise.all(likePromises);
+            setLikedPosts(
+                likeResults.reduce((acc, { postId, isLiked }) => {
+                    acc[postId] = isLiked;
+                    return acc;
+                }, {})
+            );
+        } catch (error) {
+            console.error("Error fetching like statuses:", error);
+        }
+    };
+
+    const fetchSaveStatuses = async (posts) => {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        try {
+            const savePromises = posts.map((post) =>
+                axios
+                    .get(`http://127.0.0.1:8000/posts/${post.id}/is_saved`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    })
+                    .then((response) => ({ postId: post.id, isSaved: response.data.is_saved }))
+            );
+            const saveResults = await Promise.all(savePromises);
+            setSavedPosts(
+                saveResults.reduce((acc, { postId, isSaved }) => {
+                    acc[postId] = isSaved;
+                    return acc;
+                }, {})
+            );
+        } catch (error) {
+            console.error("Error fetching save statuses:", error);
+        }
+    };
+
+    const handleLike = async (postId) => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            console.error("User not authenticated");
+            return;
+        }
+
+        try {
+            const isCurrentlyLiked = likedPosts[postId] || false;
+            await axios.post(`http://127.0.0.1:8000/posts/${postId}/like`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            setLikedPosts((prev) => ({ ...prev, [postId]: !isCurrentlyLiked }));
+            setNews((prevNews) => prevNews.map((post) => (post.id === postId ? { ...post, likes_count: post.likes_count + (isCurrentlyLiked ? -1 : 1) } : post)));
+        } catch (error) {
+            console.error("Error liking post:", error);
+        }
+    };
+
+    const handleSave = async (postId) => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            console.error("User not authenticated");
+            return;
+        }
+
+        try {
+            const isCurrentlySaved = savedPosts[postId] || false;
+            const response = await axios.post(`http://127.0.0.1:8000/posts/${postId}/save`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            setSavedPosts((prev) => ({ ...prev, [postId]: !isCurrentlySaved }));
+            setNews((prevNews) => prevNews.map((post) => (post.id === postId ? { ...post, saves_count: post.saves_count + (isCurrentlySaved ? -1 : 1) } : post)));
+        } catch (error) {
+            console.error("Error saving post:", error);
+        }
+    };
+
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col">
             <div className="flex-grow container mx-auto">
                 {loading ? (
-                    <p className="text-center text-gray-500">Loading news...</p>
+                    <LoadingMessage />
                 ) : error ? (
-                    <p className="text-center text-red-500">{error}</p>
+                    <ErrorMessage message={error} />
                 ) : news.length === 0 ? (
-                    <p className="text-center text-gray-500">No news articles found.</p>
+                    <NoDataMessage message="No news articles found." />
                 ) : (
                     <div className="flex flex-col space-y-5">
                         {news.map((article) => (
-                            <div key={article.id} className="bg-white border border-green-700 rounded-md shadow-md p-5">
-                                {/* 🔹 Author & Avatar */}
-                                <div className="flex items-center mb-4">
-                                    <img src={article.author.avatar_url || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} alt={article.author.username || "User"} className="w-8 h-8 rounded-full border" />
-                                    <p className="text-sm font-semibold ml-2">{article.author.username || "Unknown"}</p>
-                                </div>
-                                {/* 🔹 Tags */}
-                                {article.tags.length > 0 && (
-                                    <div className="my-3">
-                                        {article.tags.map((tag, index) => (
-                                            <span key={index} className="text-xs text-gray-500 whitespace-nowrap">
-                                                {tag}
-                                                {index < article.tags.length - 1 ? " • " : ""}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {/* 🔹 Title */}
-                                <p className="font-semibold mb-2">{article.title}</p>
-
-                                {/* 🔹 Content */}
-                                <p className="text-gray-700 mb-3" dangerouslySetInnerHTML={{ __html: article.content }} />
-
-                                {/* 🔹 Date */}
-                                <p className="text-xs text-gray-500">{article.date ? `Posted on: ${new Date(article.date).toLocaleDateString()}` : "Date not available"}</p>
-
-                                {/* 🔹 Buttons */}
-                                <div className="flex justify-between">
-                                    <div className="space-x-5 mt-3">
-                                        <button className="text-gray-500 hover:text-red-700 transition cursor-pointer">
-                                            <FontAwesomeIcon icon={faHeart} />
-                                        </button>
-                                        <button className="text-gray-500 hover:text-gray-700 transition cursor-pointer">
-                                            <FontAwesomeIcon icon={faComment} />
-                                        </button>
-                                        <button className="text-gray-500 hover:text-green-700 transition cursor-pointer">
-                                            <FontAwesomeIcon icon={faBookmark} />
-                                        </button>
-                                    </div>
-                                    <NavLink to={`/posts/${article.id}`} className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition">
-                                        Read
-                                    </NavLink>{" "}
-                                </div>
-                            </div>
+                            <PostCard
+                                key={article.id}
+                                post={article}
+                                onLike={() => handleLike(article.id)}
+                                onSave={() => handleSave(article.id)} 
+                                isLiked={likedPosts[article.id] || false}
+                                isSaved={savedPosts[article.id] || false} 
+                            />
                         ))}
                     </div>
                 )}

@@ -27,34 +27,11 @@ export default function SearchPage() {
 
     return (
         <div className="grid grid-cols-8 gap-4 my-5 min-h-screen items-start text-black">
-            <div className="col-span-6 flex flex-col space-y-4">
-                {/* 🔹 Search Bar */}
-                <div className="flex space-x-5">
-                    <input type="text" placeholder="Search for posts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-white text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm" />
-                    <button onClick={fetchSearchResults} className="font-semibold shadow-md bg-green-700 text-white px-4 rounded-md hover:bg-green-600 transition cursor-pointer">
-                        Search
-                    </button>
-                </div>
-
-                {/* 🔹 Search Results (only shown after search is triggered) */}
-                {searched && (
-                    <div className="bg-white border border-gray-200 p-4 rounded-md shadow-sm">
-                        {loading ? (
-                            <p className="text-gray-500">Searching...</p>
-                        ) : (
-                            searchResults.map((post) => (
-                                <div key={post.id} className="py-5 first:pt-0 last:pb-0 border-b last:border-b-0">
-                                    <h3 className="font-semibold">{post.title}</h3>
-                                    <p className="text-gray-600" dangerouslySetInnerHTML={{ __html: post.content }} />
-                                    <p className="text-sm text-gray-500">Tags: {post.tags.length > 0 ? post.tags.join(", ") : "No tags"}</p>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                )}
+            <div className="col-span-6 flex space-x-5">
+                <input type="text" placeholder="Search for..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-white text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm" />
+                <button className="font-semibold shadow-md bg-green-700 text-white px-4 rounded-md hover:bg-green-600 transition cursor-pointer">Search</button>
             </div>
 
-            {/* 🔹 Display Popular Projects */}
             <PopularProjects fakePopularProjects={fakePopularProjects} />
         </div>
     );

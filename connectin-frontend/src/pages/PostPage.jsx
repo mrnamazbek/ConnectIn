@@ -1,18 +1,24 @@
 import React, { useEffect, useState } from "react";
+import { useParams, useLocation } from "react-router";
 import axios from "axios";
-import { useParams } from "react-router";
-import { faBookmark, faComment, faHeart } from "@fortawesome/free-regular-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { PostCard, LoadingMessage, ErrorMessage, NoDataMessage } from "../components/Post/PostCard";
 
 export default function PostPage() {
-    const { postId } = useParams(); 
-    const [post, setPost] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const { postId } = useParams();
+    const location = useLocation();
+    const [post, setPost] = useState(location.state?.post || null);
+    const [comments, setComments] = useState([]);
+    const [isLiked, setIsLiked] = useState(false);
+    const [loading, setLoading] = useState(!post);
     const [error, setError] = useState(null);
+    const [commentContent, setCommentContent] = useState("");
+    const [commentError, setCommentError] = useState(null);
 
     useEffect(() => {
-        fetchPost();
-    }, [postId]);
+        if (!post) fetchPost();
+        fetchComments();
+        fetchLikeStatus();
+    }, [postId, post]);
 
     const fetchPost = async () => {
         try {
@@ -26,66 +32,118 @@ export default function PostPage() {
         }
     };
 
+    const fetchComments = async () => {
+        try {
+            const response = await axios.get(`http://127.0.0.1:8000/posts/${postId}/comments`);
+            setComments(response.data);
+        } catch (error) {
+            console.error("Error fetching comments:", error);
+        }
+    };
+
+    const fetchLikeStatus = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            const response = await axios.get(`http://127.0.0.1:8000/posts/${postId}/is_liked`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setIsLiked(response.data.is_liked);
+        } catch (error) {
+            console.error("Error fetching like status:", error);
+        }
+    };
+
+    const handleLike = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            await axios.post(`http://127.0.0.1:8000/posts/${postId}/like`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            setIsLiked(!isLiked);
+            setPost((prev) => ({
+                ...prev,
+                likes_count: prev.likes_count + (isLiked ? -1 : 1),
+            }));
+        } catch (error) {
+            console.error("Error liking post:", error);
+        }
+    };
+
+    const handleCommentSubmit = async (e) => {
+        e.preventDefault();
+        if (!commentContent.trim()) {
+            setCommentError("Comment cannot be empty.");
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                setCommentError("You must be logged in to comment.");
+                return;
+            }
+
+            const response = await axios.post(`http://127.0.0.1:8000/posts/${postId}/comment`, { content: commentContent }, { headers: { Authorization: `Bearer ${token}` } });
+
+            // Add the new comment to the list
+            setComments((prev) => [...prev, response.data]);
+            setPost((prev) => ({
+                ...prev,
+                comments_count: prev.comments_count + 1,
+            }));
+            setCommentContent("");
+            setCommentError(null);
+        } catch (error) {
+            console.error("Error submitting comment:", error.response?.data || error.message);
+            setCommentError(error.response?.data?.detail || "Failed to submit comment. Please try again.");
+        }
+    };
+
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col">
             <div className="flex-grow container mx-auto">
                 {loading ? (
-                    <p className="text-center text-gray-500">Loading post...</p>
+                    <LoadingMessage />
                 ) : error ? (
-                    <p className="text-center text-red-500">{error}</p>
+                    <ErrorMessage message={error} />
                 ) : !post ? (
-                    <p className="text-center text-gray-500">Post not found.</p>
+                    <NoDataMessage message="Post not found." />
                 ) : (
                     <div className="flex flex-col space-y-5">
-                        <div className="bg-white border border-green-700 rounded-md shadow-md p-5">
-                            {/* 🔹 Author & Avatar */}
-                            <div className="flex items-center mb-4">
-                                <img src={post.author.avatar_url || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
-                                     alt={post.author.username || "User"} 
-                                     className="w-8 h-8 rounded-full border" />
-                                <p className="text-sm font-semibold ml-2">{post.author.username || "Unknown"}</p>
-                            </div>
-
-                            {/* 🔹 Tags */}
-                            {post.tags.length > 0 && (
-                                <div className="my-3">
-                                    {post.tags.map((tag, index) => (
-                                        <span key={index} className="text-xs text-gray-500 whitespace-nowrap">
-                                            {tag}
-                                            {index < post.tags.length - 1 ? " • " : ""}
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* 🔹 Title */}
-                            <p className="font-semibold mb-2">{post.title}</p>
-
-                            {/* 🔹 Content */}
-                            <p className="text-gray-700 mb-3" dangerouslySetInnerHTML={{ __html: post.content }} />
-
-                            {/* 🔹 Date */}
-                            <p className="text-xs text-gray-500">{post.date ? `Posted on: ${new Date(post.date).toLocaleDateString()}` : "Date not available"}</p>
-
-                            {/* 🔹 Buttons */}
-                            <div className="flex justify-between">
-                                <div className="space-x-5 mt-3">
-                                    <button className="text-gray-500 hover:text-red-700 transition cursor-pointer">
-                                        <FontAwesomeIcon icon={faHeart} />
-                                    </button>
-                                    <button className="text-gray-500 hover:text-gray-700 transition cursor-pointer">
-                                        <FontAwesomeIcon icon={faComment} />
-                                    </button>
-                                    <button className="text-gray-500 hover:text-green-700 transition cursor-pointer">
-                                        <FontAwesomeIcon icon={faBookmark} />
-                                    </button>
-                                </div>
-                                <button className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition">
-                                    Read More
-                                </button>
-                            </div>
-                        </div>
+                        <PostCard post={post} showReadButton={false} onLike={handleLike} isLiked={isLiked} />
                     </div>
+                )}
+            </div>
+
+            {/* Comment Writing Form */}
+            <div className="my-5">
+                <h3 className="font-semibolb">Write a Comment</h3>
+                <form onSubmit={handleCommentSubmit} className="flex flex-col space-y-2">
+                    <textarea value={commentContent} onChange={(e) => setCommentContent(e.target.value)} placeholder="Add your comment..." className="w-full bg-white my-2 p-2 border border-gray-200 rounded-md shadow-sm focus:outline-none" rows="3" />
+                    {commentError && <p className="text-red-500 text-sm">{commentError}</p>}
+                    <button type="submit" className="w-1/6 rounded-md shadow-sm text-sm px-4 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition">
+                        Submit
+                    </button>
+                </form>
+            </div>
+
+            {/* Comments Section */}
+            <div>
+                <h3 className="font-semibold">Comments ({comments.length})</h3>
+                {comments.length > 0 ? (
+                    comments.map((comment) => (
+                        <div key={comment.id} className="py-3 border-b border-gray-500 first:border-t-0 last:border-b-0">
+                            <div className="flex items-center">
+                                <img src={comment.user?.avatar_url || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} alt={comment.user?.username || "User"} className="w-6 h-6 rounded-full border mr-2" />
+                                <p className="text-sm font-semibold">{comment.user?.username || "Unknown User"}</p>
+                            </div>
+                            <p className="mt-2">{comment.content}</p>
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-gray-500">No comments yet.</p>
                 )}
             </div>
         </div>

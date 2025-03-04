@@ -4,6 +4,9 @@
 Добавлена система заявок: пользователи могут подавать заявки, а владельцы проектов их одобрять/отклонять.
 """
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy import Integer, case, func
 from fastapi import APIRouter, Depends, HTTPException #,status
 from sqlalchemy.orm import Session
 from typing import List
@@ -16,8 +19,18 @@ from app.schemas.project import ProjectCreate, ProjectOut, ProjectUpdate, Applic
 from app.api.v1.auth_router import get_current_user
 from app.models.project import project_applications, project_members_association, project_tags_association, project_skills_association
 from app.schemas.project import ApplicationDecisionRequest, ApplicationStatus
+from app.models.vote import ProjectVote
+from app.models.comment import ProjectComment
+from app.schemas.comment import CommentOut, CommentCreate
 
 router = APIRouter()
+
+class VoteRequest(BaseModel):
+    is_upvote: bool
+
+class VoteStatusResponse(BaseModel):
+    has_voted: bool
+    is_upvote: bool | None = None
 
 # 🔹 Создать проект с тегами и навыками
 @router.post("/", response_model=ProjectOut, summary="Создать проект")
@@ -92,7 +105,7 @@ def get_my_projects(
             "id": project.id,
             "name": project.name,
             "description": project.description,
-            "owner": {  # ✅ Fix here: Return `owner` object instead of just `owner_id`
+            "owner": {
                 "id": project.owner.id,
                 "username": project.owner.username,
                 "avatar_url": project.owner.avatar_url
@@ -105,43 +118,59 @@ def get_my_projects(
 
 
 # 🔹 Получить все проекты
-@router.get("/", response_model=List[ProjectOut], summary="Список всех проектов")
+@router.get("/", response_model=List[ProjectOut])
 def read_projects(db: Session = Depends(get_db)):
-    """
-    Получаем список всех проектов, доступных в базе.
-    """
-    return db.query(Project).all()
+    projects = db.query(Project).all()
 
+    return [
+        ProjectOut(
+            id=project.id,
+            name=project.name,
+            description=project.description,
+            owner={
+                "id": project.owner.id,
+                "username": project.owner.username,
+                "avatar_url": project.owner.avatar_url
+            } if project.owner else None,
+            tags=[{"id": tag.id, "name": tag.name} for tag in project.tags],
+            skills=[{"id": skill.id, "name": skill.name} for skill in project.skills],
+            members=[{"id": user.id, "username": user.username} for user in project.members],
+            applicants=[{"id": user.id, "username": user.username} for user in project.applicants],
+            comments_count=len(project.comments),
+            vote_count=db.query(
+                func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
+            ).filter(ProjectVote.project_id == project.id).scalar() or 0
+        )
+        for project in projects
+    ]
 
-@router.get("/{project_id}", response_model=ProjectOut, summary="Получить проект по ID")
+@router.get("/{project_id}", response_model=ProjectOut)
 def read_project(project_id: int, db: Session = Depends(get_db)):
-    """
-    Получить один проект по ID.
-    """
     project = db.query(Project).filter(Project.id == project_id).first()
 
     if not project:
-        raise HTTPException(status_code=404, detail="Проект не найден")
+        raise HTTPException(status_code=404, detail="Project not found")
 
-    # ✅ Convert SQLAlchemy model to dictionary format for Pydantic
-    formatted_project = {
-        "id": project.id,
-        "name": project.name,
-        "description": project.description,
-        "owner": {  # ✅ Convert `owner` to a dictionary
+    vote_count = db.query(
+        func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
+    ).filter(ProjectVote.project_id == project_id).scalar() or 0
+
+    return ProjectOut(
+        id=project.id,
+        name=project.name,
+        description=project.description,
+        owner={
             "id": project.owner.id,
             "username": project.owner.username,
             "avatar_url": project.owner.avatar_url
         } if project.owner else None,
-        "tags": [{"id": tag.id, "name": tag.name} for tag in project.tags],  # ✅ Convert Tags
-        "skills": [{"id": skill.id, "name": skill.name} for skill in project.skills],  # ✅ Convert Skills
-        "members": [{"id": user.id, "username": user.username} for user in project.members],  # ✅ Convert Members
-        "applicants": [{"id": user.id, "username": user.username} for user in project.applicants],  # ✅ Convert Applicants
-    }
-
-    return formatted_project  # ✅ Now it matches `ProjectOut` schema
-
-
+        tags=[{"id": tag.id, "name": tag.name} for tag in project.tags],
+        skills=[{"id": skill.id, "name": skill.name} for skill in project.skills],
+        members=[{"id": user.id, "username": user.username} for user in project.members],
+        applicants=[{"id": user.id, "username": user.username} for user in project.applicants],
+        comments_count=len(project.comments),
+        vote_count=vote_count
+    )
 
 # 🔹 Обновить проект
 @router.put("/{project_id}", response_model=ProjectOut, summary="Обновить проект")
@@ -363,3 +392,111 @@ def remove_user_from_project(
     db.commit()
 
     return {"detail": "Пользователь удален из проекта"}
+
+# ✅ Upvote/Downvote Project
+@router.post("/{project_id}/vote")
+def vote_project(
+    project_id: int,
+    vote_data: VoteRequest,  # Use the Pydantic model instead of a plain parameter
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Check if project exists
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    existing_vote = db.query(ProjectVote).filter_by(user_id=current_user.id, project_id=project_id).first()
+
+    if existing_vote:
+        if existing_vote.is_upvote == vote_data.is_upvote:
+            db.delete(existing_vote)
+            db.commit()
+            return {"detail": "Vote removed"}
+        else:
+            existing_vote.is_upvote = vote_data.is_upvote
+            db.commit()
+            return {"detail": "Vote changed"}
+
+    new_vote = ProjectVote(user_id=current_user.id, project_id=project_id, is_upvote=vote_data.is_upvote)
+    db.add(new_vote)
+    db.commit()
+    return {"detail": "Vote added"}
+
+# New endpoint to check vote status
+@router.get("/{project_id}/vote_status", response_model=VoteStatusResponse)
+def get_vote_status(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Check if the current user has voted on a project and whether it's an upvote or downvote.
+    """
+    vote = db.query(ProjectVote).filter_by(user_id=current_user.id, project_id=project_id).first()
+    if vote:
+        return {"has_voted": True, "is_upvote": vote.is_upvote}
+    return {"has_voted": False, "is_upvote": None}
+
+# ✅ Comment on Project
+@router.post("/{project_id}/comment", response_model=CommentOut)
+def comment_project(
+    project_id: int,
+    comment_data: CommentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Verify project exists
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # Create new comment
+    new_comment = ProjectComment(
+        content=comment_data.content,
+        user_id=current_user.id,
+        project_id=project_id
+    )
+    db.add(new_comment)
+    db.commit()
+    db.refresh(new_comment)
+
+    # Construct response matching CommentOut
+    return CommentOut(
+        id=new_comment.id,
+        content=new_comment.content,
+        user_id=new_comment.user_id,
+        created_at=new_comment.created_at,  # Ensure this field exists in ProjectComment
+        user={
+            "username": current_user.username,
+            "avatar_url": current_user.avatar_url
+        }
+    )
+
+@router.get("/{project_id}/comments", response_model=List[CommentOut])
+def get_project_comments(
+    project_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Retrieve all comments for a specific project.
+    """
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    comments = db.query(ProjectComment).filter(ProjectComment.project_id == project_id).all()
+
+    return [
+        CommentOut(
+            id=comment.id,
+            content=comment.content,
+            user_id=comment.user_id,
+            created_at=comment.created_at,
+            user={
+                "username": comment.user.username if comment.user else "Unknown",
+                "avatar_url": comment.user.avatar_url if comment.user else None
+            }
+        )
+        for comment in comments
+    ]

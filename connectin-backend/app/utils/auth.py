@@ -8,6 +8,8 @@ from passlib.context import CryptContext
 from authlib.integrations.starlette_client import OAuth
 from fastapi import Request
 from app.core.config import settings
+from starlette.responses import RedirectResponse  # Ensure this is imported
+
 
 # 🔹 Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -32,19 +34,26 @@ except Exception as e:
     logger.error(f"❌ Ошибка настройки Google OAuth: {e}")
 
 
-async def generate_google_login_url(request: Request) -> str:
+async def generate_google_login_url(request: Request) -> RedirectResponse:
     """
     📌 Генерирует URL для входа через Google OAuth.
+    📌 Generates Google OAuth login URL and returns a RedirectResponse.
     """
     try:
         login_url = await oauth.google.authorize_redirect(request, settings.GOOGLE_REDIRECT_URI)
         redirect_url = login_url.headers["location"]  # ✅ Получаем реальный URL из заголовков
         logger.info(f"🔹 Google Login URL: {redirect_url}")
         return redirect_url
-    except Exception as e:
-        logger.error(f"❌ Ошибка генерации Google Login URL: {e}")
-        return None
+        logger.info("🔹 Creating Google OAuth Login RedirectResponse...")
 
+        # Directly return the response (not a URL string)
+        response = await oauth.google.authorize_redirect(request, settings.GOOGLE_REDIRECT_URI)
+
+        logger.info("✅ Successfully created Google Login RedirectResponse")
+        return response  # Returning the response directly
+    except Exception as e:
+        logger.error(f"❌ Error generating Google Login URL: {e}")
+        return RedirectResponse(url="/error")  # Redirect to an error page
 
 
 async def handle_google_callback(request: Request) -> dict:

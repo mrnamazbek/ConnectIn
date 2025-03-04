@@ -168,15 +168,15 @@ def send_message(
         current_user: User = Depends(get_current_user)
 ) -> MessageOut:
     """Оптимизированная проверка прав через EXISTS"""
-    exists = db.query(
-        Conversation.id
-        .filter_by(id=message_data.conversation_id)
-        .join(conversation_participants)
-        .filter_by(user_id=current_user.id)
-        .exists()
-    ).scalar()
+    exists = db.query(Conversation).filter(
+        Conversation.id == message_data.conversation_id
+    ).join(
+        conversation_participants
+    ).filter(
+        conversation_participants.c.user_id == current_user.id
+    ).exists()
 
-    if not exists:
+    if not db.query(exists).scalar():
         raise HTTPException(status_code=403, detail="Нет доступа к беседе")
 
     message = Message(

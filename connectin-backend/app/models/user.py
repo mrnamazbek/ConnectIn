@@ -29,10 +29,11 @@ class User(Base):
     skills = relationship("Skill", secondary=user_skills_association, back_populates="users")
     education = relationship("Education", back_populates="user", cascade="all, delete-orphan")
     experience = relationship("Experience", back_populates="user", cascade="all, delete-orphan")
-    conversations = relationship("Conversation", secondary="conversation_participants", back_populates="participants")
-    messages = relationship("Message", back_populates="sender")
     conversations = relationship("Conversation", secondary=conversation_participants, back_populates="participants")
     messages = relationship("Message", back_populates="sender")
+    
+    comments = relationship("PostComment", back_populates="user", cascade="all, delete")
+    project_comments = relationship("ProjectComment", back_populates="user", cascade="all, delete")
 
     def __repr__(self):
         return f"<User id={self.id} username={self.username} email={self.email}>"

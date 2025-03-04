@@ -1,15 +1,14 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import UserProfile from "./pages/UserProfile";
-import ProjectProfile from "./pages/ProjectProfile";
 import NotFoundPage from "./pages/NotFoundPage";
+import SearchPage from "./pages/SearchPage";
 import FeedPage from "./pages/FeedPage";
+import ChatPage from "./pages/ChatPage";
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
-import SearchPage from "./pages/SearchPage";
-import { useLocation } from "react-router";
-import ChatPage from "./pages/ChatPage";
+import ProjectCard from "./components/Project/ProjectCard";
 
 function App() {
     return (
@@ -19,11 +18,10 @@ function App() {
                 <div className="flex-grow grid grid-cols-8">
                     <div className="col-start-2 col-span-6">
                         <Routes>
-                            <Route path="/*" element={<FeedPage />} />
                             <Route path="/login" element={<LoginPage />} />
                             <Route path="/register" element={<RegisterPage />} />
                             <Route path="/profile/*" element={<UserProfile />} />
-                            <Route path="/project/:projectId" element={<ProjectProfile />} />
+                            <Route path="/*" element={<FeedPage />} /> {/* All feed-related routes */}
                             <Route path="/search" element={<SearchPage />} />
                             <Route path="/chats" element={<ChatPage />} />
                             <Route path="*" element={<NotFoundPage />} />

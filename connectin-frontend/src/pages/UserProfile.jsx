@@ -218,7 +218,8 @@ const UserProfile = () => {
         <div className="grid grid-cols-8 gap-4 my-4">
             <div className="col-span-6 bg-white p-5 shadow-sm rounded-md border border-green-700 flex flex-col self-start hover:shadow-green-700 transition">
                 <div className="flex space-x-5">
-                    <img src={user?.avatar_url || "https://media.tenor.com/HmFcGkSu58QAAAAM/silly.gif"} alt="Profile Picture" className="rounded-full w-32 h-32 object-cover border border-black" />
+                    <img src="https://media.tenor.com/HmFcGkSu58QAAAAM/silly.gif" alt="Profile" className="rounded-full w-32 h-32 object-cover border border-black" />
+
                     {loading ? (
                         <p className="text-gray-600">Loading profile...</p>
                     ) : user ? (

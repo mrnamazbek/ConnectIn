@@ -1,27 +1,28 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from app.database.connection import get_db
 from app.models.post import Post
 from app.models.user import User
-#from app.models.project import Project
 from app.models.team import Team
 from app.models.tag import Tag
+from app.models.like import PostLike
+from app.models.save import SavedPost
+from app.models.comment import PostComment
 from app.schemas.post import PostCreate, PostOut
-from app.api.v1.auth_router import get_current_user
+from app.schemas.comment import CommentCreate, CommentOut
+from app.api.auth import get_current_user
 
 router = APIRouter()
 
-# 🔹 Create a Post (With Tag Selection)
+# Create a Post
 @router.post("/", response_model=PostOut)
 def create_post(
     post_data: PostCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Creates a new post. Users can assign tags (for news & project posts).
-    """
     if post_data.post_type not in ["news", "project", "team"]:
         raise HTTPException(status_code=400, detail="Invalid post type.")
 
@@ -38,12 +39,11 @@ def create_post(
             raise HTTPException(status_code=404, detail="Team not found.")
         new_post.team_id = team.id
 
-    # ✅ Assign Tags (Fix)
     if post_data.tag_ids:
         selected_tags = db.query(Tag).filter(Tag.id.in_(post_data.tag_ids)).all()
         if not selected_tags:
             raise HTTPException(status_code=400, detail="Invalid tags selected.")
-        new_post.tags = selected_tags  # ✅ Assign the retrieved tags
+        new_post.tags = selected_tags
 
     db.add(new_post)
     db.commit()
@@ -52,40 +52,65 @@ def create_post(
     return PostOut.model_validate(new_post)  # ✅ Ensure tag names are returned
 
 
-# Get All Posts
+# Get All Posts with Counts
 @router.get("/", response_model=List[PostOut])
-def get_all_posts(db: Session = Depends(get_db)):
-    """
-    Retrieves all posts including author details.
-    """
-    posts = db.query(Post).all()
+def get_all_posts(
+    post_type: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    # Subqueries for counts
+    likes_count_subquery = db.query(PostLike.post_id, func.count(PostLike.id).label('likes_count')).group_by(PostLike.post_id).subquery()
+    comments_count_subquery = db.query(PostComment.post_id, func.count(PostComment.id).label('comments_count')).group_by(PostComment.post_id).subquery()
+    saves_count_subquery = db.query(SavedPost.post_id, func.count(SavedPost.id).label('saves_count')).group_by(SavedPost.post_id).subquery()
 
-    formatted_posts = []
-    for post in posts:
-        formatted_posts.append({
-            "id": post.id,
-            "title": post.title,
-            "content": post.content,
-            "post_type": post.post_type,
-            "author_id": post.author_id,
-            "project_id": post.project_id,
-            "team_id": post.team_id,
-            "tags": [tag.name for tag in post.tags],  
-            "author": {
+    # Main query with optional post_type filter
+    query = db.query(Post)
+    if post_type:
+        query = query.filter(Post.post_type == post_type)
+
+    # Join with counts subqueries
+    query = query.outerjoin(likes_count_subquery, Post.id == likes_count_subquery.c.post_id)\
+                 .outerjoin(comments_count_subquery, Post.id == comments_count_subquery.c.post_id)\
+                 .outerjoin(saves_count_subquery, Post.id == saves_count_subquery.c.post_id)
+
+    # Select with coalesced counts
+    posts = query.with_entities(
+        Post,
+        func.coalesce(likes_count_subquery.c.likes_count, 0).label('likes_count'),
+        func.coalesce(comments_count_subquery.c.comments_count, 0).label('comments_count'),
+        func.coalesce(saves_count_subquery.c.saves_count, 0).label('saves_count')
+    ).all()
+
+    return [
+        PostOut(
+            id=post.id,
+            title=post.title,
+            content=post.content,
+            post_type=post.post_type,
+            author_id=post.author_id,
+            project_id=post.project_id,
+            team_id=post.team_id,
+            tags=[tag.name for tag in post.tags],
+            # date=post.date.isoformat() if post.date else None,
+            author={
                 "username": post.author.username if post.author else "Unknown",
-                "avatar_url": post.author.avatar_url if post.author and post.author.avatar_url else None
-            }
-        })
+                "avatar_url": post.author.avatar_url if post.author else None
+            },
+            likes_count=likes_count,
+            comments_count=comments_count,
+            saves_count=saves_count
+        )
+        for post, likes_count, comments_count, saves_count in posts
+    ]
 
-    return formatted_posts
-
+# Get Single Post with Counts
 @router.get("/{post_id}", response_model=PostOut)
 def get_single_post(post_id: int, db: Session = Depends(get_db)):
-    """
-    Retrieves a single post by ID, including author details and tags.
-    """
-    post = db.query(Post).filter(Post.id == post_id).first()
+    likes_count = db.query(PostLike).filter(PostLike.post_id == post_id).count()
+    comments_count = db.query(PostComment).filter(PostComment.post_id == post_id).count()
+    saves_count = db.query(SavedPost).filter(SavedPost.post_id == post_id).count()
 
+    post = db.query(Post).filter(Post.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
 
@@ -97,11 +122,15 @@ def get_single_post(post_id: int, db: Session = Depends(get_db)):
         author_id=post.author_id,
         project_id=post.project_id,
         team_id=post.team_id,
-        tags=[tag.name for tag in post.tags],  # Extract tag names
+        tags=[tag.name for tag in post.tags],
+        # date=post.date.isoformat() if post.date else None,
         author={
             "username": post.author.username if post.author else "Unknown",
-            "avatar_url": post.author.avatar_url if post.author and post.author.avatar_url else None
+            "avatar_url": post.author.avatar_url if post.author else None
         },
+        likes_count=likes_count,
+        comments_count=comments_count,
+        saves_count=saves_count
     )
 
 @router.get("/my", response_model=List[PostOut])
@@ -172,4 +201,119 @@ def search_posts(
         (Post.tags.any(Tag.name.ilike(f"%{query}%")))  # ✅ Search in tags
     ).all()
 
-    return [PostOut.model_validate(post) for post in posts]
+    return [PostOut.from_orm(post) for post in posts]
+
+# ✅ Like Post
+@router.post("/{post_id}/like")
+def like_post(post_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    existing_like = db.query(PostLike).filter_by(user_id=current_user.id, post_id=post_id).first()
+    if existing_like:
+        db.delete(existing_like)
+        db.commit()
+        return {"detail": "Like removed"}
+    
+    new_like = PostLike(user_id=current_user.id, post_id=post_id)
+    db.add(new_like)
+    db.commit()
+    return {"detail": "Post liked"}
+
+@router.get("/{post_id}/likes")
+def get_likes(post_id: int, db: Session = Depends(get_db)):
+    like_count = db.query(PostLike).filter_by(post_id=post_id).count()
+    return {"likes": like_count}
+
+@router.get("/{post_id}/is_liked")
+def is_post_liked(post_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    existing_like = db.query(PostLike).filter_by(user_id=current_user.id, post_id=post_id).first()
+    return {"is_liked": existing_like is not None}
+
+# ✅ Save Post
+@router.post("/{post_id}/save")
+def save_post(post_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    existing_save = db.query(SavedPost).filter_by(user_id=current_user.id, post_id=post_id).first()
+    if existing_save:
+        db.delete(existing_save)
+        db.commit()
+        return {"detail": "Post unsaved"}
+
+    new_save = SavedPost(user_id=current_user.id, post_id=post_id)
+    db.add(new_save)
+    db.commit()
+    return {"detail": "Post saved"}
+
+@router.get("/{post_id}/is_saved")
+def is_post_saved(post_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    existing_save = db.query(SavedPost).filter_by(user_id=current_user.id, post_id=post_id).first()
+    return {"is_saved": existing_save is not None}
+
+# Get comments
+@router.get("/{post_id}/comments", response_model=List[CommentOut])
+def get_post_comments(post_id: int, db: Session = Depends(get_db)):
+    """
+    Retrieves all comments for a specific post.
+    """
+    post = db.query(Post).filter(Post.id == post_id).first()
+
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    comments = db.query(PostComment).filter(PostComment.post_id == post_id).all()
+
+    return [
+        CommentOut(
+            id=comment.id,
+            content=comment.content,
+            user_id=comment.user_id,  # ✅ Ensure `user_id` is directly returned
+            created_at=comment.created_at
+        )
+        for comment in comments
+    ]
+
+@router.post("/{post_id}/comment", response_model=CommentOut)
+def comment_post(
+    post_id: int,
+    comment_data: CommentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Check if the post exists
+    post = db.query(Post).filter(Post.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    # Create the new comment
+    new_comment = PostComment(
+        content=comment_data.content,
+        user_id=current_user.id,
+        post_id=post_id
+    )
+    db.add(new_comment)
+    db.commit()
+    db.refresh(new_comment)
+
+    # Construct the response matching CommentOut
+    return CommentOut(
+        id=new_comment.id,
+        content=new_comment.content,
+        user_id=new_comment.user_id,
+        created_at=new_comment.created_at,
+        user={
+            "username": new_comment.user.username if new_comment.user else "Unknown",
+            "avatar_url": new_comment.user.avatar_url if new_comment.user and new_comment.user.avatar_url else None
+        }
+    )
+
+# Get likes for a post
+@router.get("/{post_id}/likes", response_model=List[int])
+def get_post_likes(post_id: int, db: Session = Depends(get_db)):
+    """
+    Retrieves all user IDs who liked a specific post.
+    """
+    post = db.query(Post).filter(Post.id == post_id).first()
+
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    likes = db.query(PostLike).filter(PostLike.post_id == post_id).all()
+
+    return [like.user_id for like in likes]  # ✅ Return user IDs who liked the post

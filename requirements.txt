@@ -46,3 +46,10 @@ slowapi~=0.1.9
 itsdangerous==2.2.0
 email-validator>=2.0.0
 python-multipart==0.0.20
+
+wsproto==1.2.0
+priority==2.0.0
+hyperframe==6.1.0
+hpack==4.1.0
+h2==4.2.0
+Hypercorn==0.17.3

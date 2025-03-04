@@ -4,11 +4,11 @@ from typing import List
 from app.database.connection import get_db
 from app.models.post import Post
 from app.models.user import User
-from app.models.project import Project
+#from app.models.project import Project
 from app.models.team import Team
 from app.models.tag import Tag
 from app.schemas.post import PostCreate, PostOut
-from app.api.auth import get_current_user
+from app.api.v1.auth_router import get_current_user
 
 router = APIRouter()
 

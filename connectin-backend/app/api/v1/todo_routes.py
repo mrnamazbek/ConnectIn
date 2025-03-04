@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app import schemas, models
+from app import models
 from app.schemas.todo import TodoInDB, TodoCreate, TodoUpdate
 from app.database.connection import get_db
-from app.api.auth import get_current_user  # Функция для получения текущего пользователя
+from app.api.v1.auth_router import get_current_user  # Функция для получения текущего пользователя
 
 router = APIRouter(
     prefix="/todos",
@@ -30,7 +30,7 @@ def update_todo(todo_id: int, todo: TodoUpdate, db: Session = Depends(get_db), c
     db_todo = db.query(models.Todo).filter(models.Todo.id == todo_id, models.Todo.user_id == current_user.id).first()
     if not db_todo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
-    for key, value in todo.dict(exclude_unset=True).items():
+    for key, value in todo.model_dump(exclude_unset=True).items():
         setattr(db_todo, key, value)
     db.commit()
     db.refresh(db_todo)

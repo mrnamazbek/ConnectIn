@@ -13,7 +13,7 @@ from .review import Review
 from .recommendation import Recommendation
 
 # Import Many-to-Many association tables separately to avoid circular dependencies
-from .associations import (
+from relations.associations import (
     user_teams_association,
     user_skills_association,
     project_skills_association,
@@ -36,7 +36,7 @@ __all__ = [
     "Review",
     "Recommendation",
     "Conversation", 
-    "ConversationParticipant", 
+    #ConversationParticipant",
     "Message",
     "user_teams_association",
     "user_skills_association",

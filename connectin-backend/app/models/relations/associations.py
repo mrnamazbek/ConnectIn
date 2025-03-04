@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, ForeignKey, Table
-from .base import Base  # Make sure this is imported first
+from app.models.base import Base  # Make sure this is imported first
 
 # ✅ Many-to-Many: Project ↔ Skills
 project_skills_association = Table(

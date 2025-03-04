@@ -4,15 +4,16 @@
 Добавлена система заявок: пользователи могут подавать заявки, а владельцы проектов их одобрять/отклонять.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException #,status
 from sqlalchemy.orm import Session
 from typing import List
 
 from app.database.connection import get_db
 from app.models.project import Project
 from app.models.user import User
-from app.schemas.project import ProjectCreate, ProjectOut, ProjectUpdate
-from app.api.auth import get_current_user
+from app.schemas import UserOut
+from app.schemas.project import ProjectCreate, ProjectOut, ProjectUpdate, ApplicationOut
+from app.api.v1.auth_router import get_current_user
 from app.models.project import project_applications, project_members_association, project_tags_association, project_skills_association
 from app.schemas.project import ApplicationDecisionRequest, ApplicationStatus
 
@@ -221,59 +222,58 @@ def apply_to_project(
 
 
 # 🔹 Получить список участников проекта
-@router.get("/{project_id}/members", summary="Список участников проекта")
+from sqlalchemy import select
+
+
+@router.get("/{project_id}/members", response_model=list[UserOut])
 def get_project_members(
-    project_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+        project_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user)
 ):
-    """
-    Получить список всех участников проекта.
-    """
-    project = db.query(Project).filter(Project.id == project_id).first()
+    """Получить участников проекта с проверкой доступа"""
+    project = db.get(Project, project_id)
     if not project:
-        raise HTTPException(status_code=404, detail="Проект не найден")
+        raise HTTPException(404, "Проект не найден")
 
-    # Получаем список участников через промежуточную таблицу
-    members = db.execute(
-        project_members_association.select().where(
-            project_members_association.c.project_id == project_id
-        )
-    ).fetchall()
+    # Проверка, что пользователь имеет доступ
+    if not project.is_visible_to(current_user):
+        raise HTTPException(403, "Нет прав доступа")
 
-    if not members:
-        return {"detail": "В проекте пока нет участников"}
+    # Оптимизированный запрос через JOIN
+    stmt = (
+        select(User)
+        .join(project_members_association, User.id == project_members_association.c.user_id)
+        .where(project_members_association.c.project_id == project_id)
+    )
 
-    # Получаем информацию о пользователях
-    member_ids = [member.user_id for member in members]
-    users = db.query(User).filter(User.id.in_(member_ids)).all()
-
-    return [{"id": user.id, "username": user.username, "email": user.email} for user in users]
-
-
+    members = db.execute(stmt).scalars().all()
+    return members
 
 # 🔹 Получить список заявок в проект
-@router.get("/{project_id}/applications", summary="Список заявок на проект")
+@router.get("/{project_id}/applications", response_model=list[ApplicationOut])
 def get_project_applications(
-    project_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+        project_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user)
 ):
-    """
-    Владелец проекта может просмотреть список заявок от пользователей.
-    """
-    project = db.query(Project).filter(Project.id == project_id).first()
+    """Получить заявки с проверкой прав владельца"""
+    project = db.get(Project, project_id)
     if not project:
-        raise HTTPException(status_code=404, detail="Проект не найден")
+        raise HTTPException(404, "Проект не найден")
 
     if project.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Вы не владелец проекта")
+        raise HTTPException(403, "Только владелец может просматривать заявки")
 
-    applicants = db.execute(
-        project_applications.select().where(project_applications.c.project_id == project_id)
-    ).fetchall()
+    # Запрос с явным указанием колонок
+    stmt = select(
+        project_applications.c.user_id,
+        User.username,
+        User.email
+    ).join(User, User.id == project_applications.c.user_id)
 
-    return [{"user_id": app.user_id} for app in applicants]
+    applications = db.execute(stmt).all()
+    return [{"user_id": app["user_id"], "username": app["username"]} for app in applications]
 
 
 # 🔹 Одобрить/Отклонить заявку

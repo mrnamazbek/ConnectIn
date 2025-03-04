@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from typing import Generator
 
-from app.core.config import settings
+from app.core.settings.config import settings
 
 # Создаём движок SQLAlchemy, используя настройки из config
 engine = create_engine(

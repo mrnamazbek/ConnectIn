@@ -5,8 +5,8 @@ from sqlalchemy.sql import func
 from app.database import get_db
 from app.models import User, Conversation, Message
 from app.schemas.chat import MessageCreate, MessageOut, ConversationCreate, ConversationOut
-from app.api.auth import get_current_user
-from app.models.associations import conversation_participants
+from app.api.v1.auth_router import get_current_user
+from app.models.relations.associations import conversation_participants
 
 router = APIRouter()
 

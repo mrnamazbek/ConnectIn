@@ -5,16 +5,15 @@
 - Удаление своей учетной записи.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import HttpUrl
 from sqlalchemy.orm import Session
 from typing import List
 
 from app.database.connection import get_db
 from app.models.user import User, Education, Experience
-from app.models.skill import Skill
 from app.schemas.user import UserOut, UserUpdate, EducationCreate, ExperienceCreate, EducationUpdate, ExperienceUpdate, EducationOut, ExperienceOut
-from app.api.auth import get_current_user
+from app.api.v1.auth_router import get_current_user
 
 router = APIRouter()
 

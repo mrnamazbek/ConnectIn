@@ -36,7 +36,7 @@ from app.utils.auth import (
 )
 from app.utils.logger import get_logger  # Для логирования
 from app.database.connection import get_db
-from app.core.config import settings
+from app.core.settings.config import settings
 
 # Инициализация роутера и OAuth2 схемы
 router = APIRouter()

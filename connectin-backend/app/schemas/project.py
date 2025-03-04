@@ -15,6 +15,15 @@ from .skill import SkillOut
 class ApplicationDecisionRequest(BaseModel):
     decision: ApplicationStatus
 
+class ApplicationDecisionResponse(BaseModel):
+    decision: ApplicationStatus
+
+class ApplicationOut(BaseModel):
+    """Schema for outputting application details"""
+    user_id: int
+    username: str
+
+
 class ProjectBase(BaseModel):
     name: str = Field(..., max_length=200)
     description: Optional[str] = None

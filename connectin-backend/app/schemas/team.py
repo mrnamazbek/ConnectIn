@@ -38,7 +38,8 @@ class TeamOut(TeamBase):
     Список участников можно добавить, если нужно.
     """
     id: int
+    leader: UserOut  # НОВОЕ ПОЛЕ
     members: List[UserOut] = Field(default_factory=list)
 
     class Config:
-        orm_mode = True
+        from_attributes = True

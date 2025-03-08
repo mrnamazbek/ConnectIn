@@ -21,7 +21,7 @@ def move_file(src: Path, dest: Path):
 
 def main():
     # Adjust these names/paths to your desired final layout
-    app_dir = Path("app")  # Root for all your app code
+    app_dir = Path("../app")  # Root for all your app code
 
     # Proposed structure
     core_dir = app_dir / "core"
@@ -46,7 +46,7 @@ def main():
     connection_file = old_db_folder / "connection.py"
     move_file(connection_file, db_dir / "connection.py")
 
-    # If you have a base.py or migrations, do something similar:
+    # If you have a base.py or alembic, do something similar:
     # base_file = old_db_folder / "base.py"
     # move_file(base_file, db_dir / "base.py")
     # ... etc.

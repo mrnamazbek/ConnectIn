@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from .base import Base
-from relations.associations import project_skills_association, project_tags_association, project_members_association, project_applications
+from .relations.associations import project_skills_association, project_tags_association, project_members_association, project_applications
 
 class Project(Base):
     __tablename__ = "projects"

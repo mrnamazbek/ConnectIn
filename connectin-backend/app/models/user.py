@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from .base import Base
-from relations.associations import user_teams_association, project_members_association, project_applications, user_skills_association, conversation_participants
+from .relations.associations import user_teams_association, project_members_association, project_applications, user_skills_association, conversation_participants
 
 class User(Base):
     __tablename__ = "users"

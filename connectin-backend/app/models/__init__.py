@@ -17,7 +17,7 @@ from .save import SavedPost
 from .vote import ProjectVote
 
 # Import Many-to-Many association tables separately to avoid circular dependencies
-from relations.associations import (
+from .relations.associations import (
     user_teams_association,
     user_skills_association,
     project_skills_association,

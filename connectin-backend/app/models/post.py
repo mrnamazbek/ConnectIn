@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from .base import Base
-from relations.associations import post_tags_association
+from .relations.associations import post_tags_association
 
 class Post(Base):
     __tablename__ = "posts"

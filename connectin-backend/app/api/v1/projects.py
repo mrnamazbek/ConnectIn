@@ -3,6 +3,7 @@
 Пользователи могут создавать, просматривать, редактировать и удалять свои проекты.
 Добавлена система заявок: пользователи могут подавать заявки, а владельцы проектов их одобрять/отклонять.
 """
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -226,6 +227,7 @@ def apply_to_project(
     project_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
+
 ):
     """
     Пользователь подает заявку на участие в проекте.
@@ -241,6 +243,8 @@ def apply_to_project(
         raise HTTPException(status_code=400, detail="Вы уже подали заявку")
 
     db.execute(project_applications.insert().values(user_id=current_user.id, project_id=project_id))
+    current_user.last_active = datetime.now()
+    db.commit()
     db.commit()
     return {"detail": "Заявка подана"}
 

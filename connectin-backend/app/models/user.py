@@ -2,6 +2,9 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from .base import Base
 from .associations import user_teams_association, project_members_association, project_applications, user_skills_association, conversation_participants
+from sqlalchemy import Column, DateTime
+from datetime import datetime
+
 
 class User(Base):
     __tablename__ = "users"
@@ -20,6 +23,8 @@ class User(Base):
     avatar_url = Column(String, nullable=True) 
     google_id = Column(String(255), unique=True)
     google_refresh_token = Column(String(255))
+    #last active
+    last_active = Column(DateTime, default=datetime.now(), onupdate=datetime.now(), nullable=True)
     
     teams = relationship("Team", secondary=user_teams_association, back_populates="members")
     owned_projects = relationship("Project", back_populates="owner")

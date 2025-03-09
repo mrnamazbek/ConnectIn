@@ -4,6 +4,8 @@ logger.py:
 Может выводить логи в консоль, в файл, или куда захотите (Logstash, Graylog).
 """
 
+
+
 import logging
 from logging import Logger
 

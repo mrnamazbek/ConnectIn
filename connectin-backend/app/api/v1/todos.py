@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app import schemas, models
+from app import models
 from app.schemas.todo import TodoInDB, TodoCreate, TodoUpdate
 from app.database.connection import get_db
-from app.api.auth import get_current_user  # Функция для получения текущего пользователя
+from app.api.v1.auth import get_current_user  # Функция для получения текущего пользователя
 
 router = APIRouter(
     prefix="/todos",

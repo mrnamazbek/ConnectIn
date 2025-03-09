@@ -12,7 +12,7 @@ from app.models.save import SavedPost
 from app.models.comment import PostComment
 from app.schemas.post import PostCreate, PostOut
 from app.schemas.comment import CommentCreate, CommentOut
-from app.api.auth import get_current_user
+from app.api.v1.auth import get_current_user
 
 router = APIRouter()
 

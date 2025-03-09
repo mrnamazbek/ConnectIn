@@ -4,14 +4,14 @@
 - Добавление новых тегов
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import List
 
 from app.database.connection import get_db
 from app.models.skill import Skill
 from app.schemas.skill import SkillCreate, SkillOut
-from app.api.auth import get_current_user
+from app.api.v1.auth import get_current_user
 
 router = APIRouter()
 

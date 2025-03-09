@@ -12,7 +12,7 @@ from app.database.connection import get_db
 from app.models.team import Team
 from app.models.user import User
 from app.schemas.team import TeamCreate, TeamOut, TeamUpdate
-from app.api.auth import get_current_user
+from app.api.v1.auth import get_current_user
 
 router = APIRouter()
 

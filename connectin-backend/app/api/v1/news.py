@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.models.like import PostLike #NewsLike
@@ -6,7 +6,7 @@ from app.models.comment import PostComment #NewsComment
 from app.models.save import SavedPost #SavedNews
 from app.models.user import User
 from app.schemas.comment import CommentCreate, CommentOut
-from app.api.auth import get_current_user
+from app.api.v1.auth import get_current_user
 
 router = APIRouter()
 

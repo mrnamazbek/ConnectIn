@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import auth, projects, teams, users, posts, tags, todos, skills, chats, chat_ws
+from app.api.v1 import todos, auth, chat_ws, projects, skills, teams, posts, users, tags, chats
 from app.core import settings
 from slowapi import Limiter
 from slowapi.util import get_remote_address

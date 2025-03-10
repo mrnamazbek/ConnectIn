@@ -3,23 +3,21 @@
 1. Регистрацию пользователей (эндпоинт /register).
 2. Авторизацию и получение JWT (эндпоинт /login).
 3. Получение данных текущего пользователя (эндпоинты, зависящие от токена).
-4. Вход через Google и GitHub OAuth с автоматическим редиректом на фронтенд.
+4. Вход через Google и GitHub OAuth с установкой токена в куки.
 
 Изменения и улучшения:
 - Устранены дублирующие импорты.
 - Добавлены подробные комментарии для каждой функции.
 - Улучшена обработка ошибок для Google и GitHub OAuth.
-- Оптимизирован возврат RedirectResponse с использованием корректного URL.
+- Установлен JWT-токен в куки после успешной аутентификации через Google и GitHub.
 - Используется единая настройка (из settings) для JWT и OAuth.
-- Добавлена логика для обработки существующих пользователей и генерации уникальных username.
-- Реализован редирект на фронтенд с токеном в куки.
 """
 
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Cookie
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import JWTError, jwt
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
@@ -69,7 +67,7 @@ def set_token_and_redirect(token: str, redirect_url: str = FRONTEND_URL):
         key="access_token",
         value=token,
         httponly=True,  # Защита от доступа через JavaScript
-        secure=True,    # Только HTTPS (в продакшене)
+        secure=False,   # False для локального теста, в продакшене True
         samesite="lax", # Защита от CSRF
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60  # Время жизни куки в секундах
     )
@@ -86,6 +84,33 @@ def generate_unique_username(base_username: str, db: Session) -> str:
         username = f"{base_username}_{counter}"
         counter += 1
     return username
+
+# Получение текущего пользователя из куки
+def get_current_user(
+    access_token: str = Cookie(None),
+    db: Session = Depends(get_db)
+) -> User:
+    """
+    Извлекает текущего пользователя из JWT-токена в куки.
+    """
+    if not access_token:
+        logger.info("No token found in cookies")
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if not email:
+            logger.info("Invalid token: no sub claim")
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except JWTError as e:
+        logger.info(f"Invalid token: {e}")
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        logger.info(f"User not found with email {email}")
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
 
 # ---------------------- Регистрация и Логин ----------------------
 
@@ -125,7 +150,7 @@ def login_user(
     db: Session = Depends(get_db)
 ):
     """
-    Аутентификация через логин и пароль. Возвращает JWT-токен.
+    Аутентификация через логин и пароль. Устанавливает токен в куки.
     """
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
@@ -137,43 +162,11 @@ def login_user(
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
         "sub": user.email,
-        "exp": datetime.utcnow() + access_token_expires
+        "exp": datetime.now() + access_token_expires
     }
     access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     logger.info(f"JWT-токен сгенерирован для пользователя: {user.email}")
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": UserOut.from_orm(user)
-    }
-
-def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
-) -> User:
-    """
-    Извлекает текущего пользователя из JWT-токена.
-    """
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Неверные учетные данные или токен истёк",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if not email:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден"
-        )
-    return user
+    return set_token_and_redirect(access_token)
 
 @router.get("/me", response_model=UserOut, summary="Текущий пользователь")
 def read_current_user(current_user: User = Depends(get_current_user)):
@@ -198,7 +191,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     Обрабатывает ответ от Google OAuth:
     - Получает информацию о пользователе.
     - Если пользователь не существует, создает нового с уникальным username.
-    - Генерирует JWT-токен и устанавливает его в куки, перенаправляя на фронтенд.
+    - Устанавливает JWT-токен в куки и перенаправляет на фронтенд.
     """
     user_info = await handle_google_callback(request)
     if not user_info:
@@ -245,7 +238,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
         "sub": user.email,
-        "exp": datetime.utcnow() + access_token_expires,
+        "exp": datetime.now() + access_token_expires
     }
     access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     logger.info(f"JWT-токен сгенерирован для пользователя: {user.email}")
@@ -274,7 +267,7 @@ async def github_callback(request: Request, db: Session = Depends(get_db)):
     Обрабатывает ответ от GitHub OAuth:
     - Получает информацию о пользователе.
     - Если пользователь не существует, создает нового с уникальным username.
-    - Генерирует JWT-токен и устанавливает его в куки, перенаправляя на фронтенд.
+    - Устанавливает JWT-токен в куки и перенаправляет на фронтенд.
     """
     try:
         token = await oauth.github.authorize_access_token(request)
@@ -321,7 +314,7 @@ async def github_callback(request: Request, db: Session = Depends(get_db)):
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
         "sub": user.email,
-        "exp": datetime.now() + access_token_expires,
+        "exp": datetime.now() + access_token_expires
     }
     access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     logger.info(f"JWT-токен сгенерирован для пользователя: {user.email}")

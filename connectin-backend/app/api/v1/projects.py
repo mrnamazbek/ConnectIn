@@ -110,10 +110,10 @@ def get_my_projects(
             name=project.name,
             description=project.description,
             owner=UserOut.model_validate(project.owner) if project.owner else None,
-            tags=[TagOut.model_validate(tag) for tag in project.tags],
-            skills=[SkillOut.model_validate(skill) for skill in project.skills],
-            members=[UserOut.model_validate(user) for user in project.members],
-            applicants=[UserOut.model_validate(user) for user in project.applicants],
+            tags=[TagOut.model_validate(tag, from_attributes=True) for tag in project.tags],
+            skills=[SkillOut.model_validate(skill, from_attributes=True) for skill in project.skills],
+            members=[UserOut.model_validate(user, from_attributes=True) for user in project.members],
+            applicants=[UserOut.model_validate(user, from_attributes=True) for user in project.applicants],
             comments_count=len(project.comments),
             vote_count=db.query(
                 func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
@@ -163,17 +163,19 @@ def read_project(project_id: int, db: Session = Depends(get_db)):
     ).filter(ProjectVote.project_id == project_id).scalar() or 0
 
     return ProjectOut(
-        id=project.id,
-        name=project.name,
-        description=project.description,
-        owner=[UserOut.model_validate(project.owner) if project.owner else None],
-        tags=[TagOut.model_validate(tag) for tag in project.tags],
-        skills=[SkillOut.model_validate(skill) for skill in project.skills],
-        members=[UserOut.model_validate(user) for user in project.members],
-        applicants=[UserOut.model_validate(user) for user in project.applicants],
-        comments_count=len(project.comments),
-        vote_count=vote_count
-    )
+            id=project.id,
+            name=project.name,
+            description=project.description,
+            owner=UserOut.model_validate(project.owner) if project.owner else None,
+            tags=[TagOut.model_validate(tag, from_attributes=True) for tag in project.tags],
+            skills=[SkillOut.model_validate(skill, from_attributes=True) for skill in project.skills],
+            members=[UserOut.model_validate(user, from_attributes=True) for user in project.members],
+            applicants=[UserOut.model_validate(user, from_attributes=True) for user in project.applicants],
+            comments_count=len(project.comments),
+            vote_count=db.query(
+                func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
+            ).filter(ProjectVote.project_id == project.id).scalar() or 0
+        )
 
 # 🔹 Обновить проект
 @router.put("/{project_id}", response_model=ProjectOut, summary="Обновить проект")
@@ -455,7 +457,10 @@ def comment_project(
         content=new_comment.content,
         user_id=new_comment.user_id,
         created_at=new_comment.created_at,
-        user=UserOut.model_validate(current_user)
+        user={
+            "username": current_user.username,
+            "avatar_url": current_user.avatar_url
+        }
     )
 
 # 🔹 Получить комментарии проекта
@@ -478,7 +483,6 @@ def get_project_comments(
             content=comment.content,
             user_id=comment.user_id,
             created_at=comment.created_at,
-            user=UserOut.model_validate(comment.user) if comment.user else None
-        )
+            user={"username": comment.user.username if comment.user else "Unknown", "avatar_url": comment.user.avatar_url if comment.user else None}        )
         for comment in comments
     ]

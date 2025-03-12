@@ -20,15 +20,19 @@ class ProjectBase(BaseModel):
     description: Optional[str] = None
     
 class TagOut(BaseModel):
-    """ Schema for tags """
     id: int
     name: str
 
+    class Config:
+        from_attributes = True
+
 class UserOut(BaseModel):
-    """ Schema to represent project owner. """
     id: int
     username: str
     avatar_url: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 class ProjectCreate(ProjectBase):
     """
@@ -53,12 +57,12 @@ class ProjectOut(BaseModel):
     name: str
     description: str
     owner: UserOut
-    members: List[Dict] = []
-    applicants: List[Dict] = []
+    members: List[UserOut] = []
+    applicants: List[UserOut] = []
     tags: List[TagOut] = []
     skills: List[SkillOut] = []
-    comments_count: int = 0 
-    vote_count: int = 0  
+    comments_count: int = 0
+    vote_count: int = 0
 
     class Config:
         from_attributes = True

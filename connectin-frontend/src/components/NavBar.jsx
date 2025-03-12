@@ -15,22 +15,21 @@ const NavBar = () => {
 
     useEffect(() => {
         if (isDark) {
-            document.documentElement.classList.add("dark"); // ✅ Add "dark" class to <html>
+            document.documentElement.classList.add("dark");
             localStorage.setItem("theme", "dark");
         } else {
-            document.documentElement.classList.remove("dark"); // ✅ Remove "dark" class
+            document.documentElement.classList.remove("dark");
             localStorage.setItem("theme", "light");
         }
     }, [isDark]);
 
     return (
-        <nav className={`grid grid-cols-8 bg-white text-sm border-b border-green-700 shadow-md ${isSticky ? "sticky top-0" : ""}`}>
+        <nav className={`grid grid-cols-8 bg-white dark:bg-zinc-800 text-sm border-b border-green-700 shadow-md ${isSticky ? "sticky top-0" : ""}`}>
             <div className="col-start-2 col-span-6">
                 <div className="flex justify-between items-center py-3">
                     <NavLink to="/" className="font-semibold text-green-700">
-                        ConnectIn
+                        <img src=".Logo.png" alt="" /> ConnectIn
                     </NavLink>
-
                     <div className="space-x-5 font-semibold flex items-center">
                         {/* Theme Toggle */}
                         <button onClick={() => setIsDark(!isDark)}>

@@ -13,7 +13,7 @@ import ProjectCard from "./components/Project/ProjectCard";
 function App() {
     return (
         <Router>
-            <div className="flex flex-col min-h-screen">
+            <div className="flex flex-col min-h-screen dark:bg-black dark:text-white">
                 <NavBar />
                 <div className="flex-grow grid grid-cols-8">
                     <div className="col-start-2 col-span-6">

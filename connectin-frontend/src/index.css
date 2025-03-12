@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @font-face {
     font-family: "Comfortaa";
     src: url(./assets/fonts/Comfortaa-Regular.ttf), format("truetype");

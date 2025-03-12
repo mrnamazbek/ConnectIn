@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router";
 import axios from "axios";
-import { PostCard, LoadingMessage, ErrorMessage, NoDataMessage } from "../components/Post/PostCard";
+import { LoadingMessage, ErrorMessage, NoDataMessage } from "../components/Post/PostCard";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHeart as faHeartSolid, faBookmark as faBookmarkSolid } from "@fortawesome/free-solid-svg-icons";
+import { faHeart, faComment, faBookmark } from "@fortawesome/free-regular-svg-icons";
 
 export default function PostPage() {
     const { postId } = useParams();
@@ -9,6 +12,7 @@ export default function PostPage() {
     const [post, setPost] = useState(location.state?.post || null);
     const [comments, setComments] = useState([]);
     const [isLiked, setIsLiked] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
     const [loading, setLoading] = useState(!post);
     const [error, setError] = useState(null);
     const [commentContent, setCommentContent] = useState("");
@@ -18,6 +22,7 @@ export default function PostPage() {
         if (!post) fetchPost();
         fetchComments();
         fetchLikeStatus();
+        fetchSaveStatus();
     }, [postId, post]);
 
     const fetchPost = async () => {
@@ -55,6 +60,19 @@ export default function PostPage() {
         }
     };
 
+    const fetchSaveStatus = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+            const response = await axios.get(`http://127.0.0.1:8000/posts/${postId}/is_saved`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setIsSaved(response.data.is_saved);
+        } catch (error) {
+            console.error("Error fetching save status:", error);
+        }
+    };
+
     const handleLike = async () => {
         try {
             const token = localStorage.getItem("token");
@@ -68,6 +86,25 @@ export default function PostPage() {
             }));
         } catch (error) {
             console.error("Error liking post:", error);
+        }
+    };
+
+    const handleSave = async () => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            console.error("User not authenticated");
+            return;
+        }
+
+        try {
+            const response = await axios.post(`http://127.0.0.1:8000/posts/${postId}/save`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            setIsSaved(!isSaved);
+            setPost((prev) => ({
+                ...prev,
+                saves_count: prev.saves_count + (isSaved ? -1 : 1),
+            }));
+        } catch (error) {
+            console.error("Error saving post:", error);
         }
     };
 
@@ -112,7 +149,42 @@ export default function PostPage() {
                     <NoDataMessage message="Post not found." />
                 ) : (
                     <div className="flex flex-col space-y-5">
-                        <PostCard post={post} showReadButton={false} onLike={handleLike} isLiked={isLiked} />
+                        <div className="bg-white dark:bg-zinc-800 border border-green-700 rounded-md shadow-md p-5">
+                            <div className="flex items-center mb-4">
+                                <img src={post.author.avatar_url || "default-avatar.png"} alt={post.author.username || "User"} className="w-8 h-8 rounded-full border mr-2" />
+                                <p className="text-sm font-semibold ml-2">{post.author.username || "Unknown"}</p>
+                            </div>
+
+                            {post.tags.length > 0 && (
+                                <div className="my-3">
+                                    {post.tags.map((tag, index) => (
+                                        <span key={index} className="text-xs text-gray-500 whitespace-nowrap">
+                                            {tag}
+                                            {index < post.tags.length - 1 ? " • " : ""}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            <h2 className="font-semibold mb-2">{post.title}</h2>
+                            <div className="text-sm mb-3" dangerouslySetInnerHTML={{ __html: post.content }} />
+
+                            <p className="text-xs text-gray-500">{post.date ? `Posted on: ${new Date(post.date).toLocaleDateString()}` : "Date not available"}</p>
+
+                            <div className="flex justify-between items-center mt-3">
+                                <div className="space-x-5 flex items-center">
+                                    <button onClick={handleLike} className="text-gray-500 hover:text-red-700 transition cursor-pointer">
+                                        <FontAwesomeIcon icon={isLiked ? faHeartSolid : faHeart} style={isLiked ? { color: "#ff0000" } : {}} /> <span>{post.likes_count || ""}</span>
+                                    </button>
+                                    <button className="text-gray-500 hover:text-gray-700 transition cursor-pointer">
+                                        <FontAwesomeIcon icon={faComment} /> <span>{post.comments_count || ""}</span>
+                                    </button>
+                                    <button onClick={handleSave} className="text-gray-500 hover:text-yellow-400 transition cursor-pointer">
+                                        <FontAwesomeIcon icon={isSaved ? faBookmarkSolid : faBookmark} style={isSaved ? { color: "#facc15" } : {}} /> <span>{post.saves_count || ""}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>

@@ -8,7 +8,7 @@ export const PostCard = ({ post, showReadButton = true, onLike, onSave, isLiked 
     const { id, title, content, author, tags, date, likes_count, comments_count, saves_count } = post;
 
     return (
-        <div className="bg-white border border-green-700 rounded-md shadow-md p-5">
+        <div className="bg-white dark:bg-zinc-800 border border-green-700 rounded-md shadow-md p-5">
             <div className="flex items-center mb-4">
                 <img src={author.avatar_url || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} alt={author.username || "User"} className="w-8 h-8 rounded-full border" />
                 <p className="text-sm font-semibold ml-2">{author.username || "Unknown"}</p>
@@ -26,7 +26,7 @@ export const PostCard = ({ post, showReadButton = true, onLike, onSave, isLiked 
             )}
 
             <p className="font-semibold mb-2">{title}</p>
-            <p className="text-gray-700 mb-3" dangerouslySetInnerHTML={{ __html: content }} />
+            <p className="text-sm mb-3 line-clamp-6" dangerouslySetInnerHTML={{ __html: content }} />
             <p className="text-xs text-gray-500">{date ? `Posted on: ${new Date(date).toLocaleDateString()}` : "Date not available"}</p>
 
             <div className="flex justify-between items-center mt-3">

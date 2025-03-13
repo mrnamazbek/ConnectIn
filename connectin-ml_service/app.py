@@ -4,6 +4,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from typing import List, Dict
 import os
+from dotenv import load_dotenv
 
 app = FastAPI()
 
@@ -11,8 +12,16 @@ app = FastAPI()
 def read_root():
     return {"message": "Welcome to ConnectIn ML Service! Use /docs for API documentation."}
 
-DATABASE_URL = os.getenv("DATABASE_URL",
-                         "postgresql://postgres:connectinamazon123@connectin-core-eu-db.cx4gaywwm3rk.eu-north-1.rds.amazonaws.com:5432/connectin")
+# Загружаем переменные из .env файла
+load_dotenv()
+
+# Получаем DATABASE_URL из переменной окружения
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+# Если DATABASE_URL не найден (например, в тестовой среде), можно указать значение по умолчанию
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL not found in environment variables")
+
 engine = create_engine(DATABASE_URL, pool_size=20, max_overflow=30, pool_timeout=60)
 
 TECH_STACKS = {

@@ -18,14 +18,14 @@ const ProjectProfile = () => {
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
     const [voteStatus, setVoteStatus] = useState({ has_voted: false, is_upvote: null });
-    const [currentUser, setCurrentUser] = useState(null); // State to hold the fetched user
+    const [currentUser, setCurrentUser] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                setLoading(true); // Ensure loading starts fresh
-                await fetchCurrentUser(); // Fetch the current user first
-                await fetchProjectProfile(); // Then fetch the project profile
+                setLoading(true);
+                await fetchCurrentUser();
+                await fetchProjectProfile();
             } catch (error) {
                 console.error("Failed to fetch data:", error);
             } finally {
@@ -59,6 +59,8 @@ const ProjectProfile = () => {
             setApplications(data.applications || []);
             setComments(data.comments);
             setIsOwner(currentUser && data.project.owner.id === currentUser.id);
+            console.log(isOwner);
+            console.log(isMember);
             setIsMember(data.members.some((member) => member.id === (currentUser?.id || -1)) || (currentUser && data.project.owner.id === currentUser.id));
         } catch (error) {
             console.error("Failed to fetch project profile:", error);
@@ -77,13 +79,12 @@ const ProjectProfile = () => {
         }
     };
 
-    // Other functions remain largely unchanged
     const handleApply = async () => {
         try {
             const token = localStorage.getItem("token");
             await axios.post(`http://127.0.0.1:8000/projects/${projectId}/apply`, {}, { headers: { Authorization: `Bearer ${token}` } });
             alert("Application submitted!");
-            fetchProjectProfile(); // Refresh data
+            fetchProjectProfile();
         } catch (error) {
             console.error("Failed to apply:", error);
             alert(error.response?.data?.detail || "Failed to apply");
@@ -95,7 +96,7 @@ const ProjectProfile = () => {
             const token = localStorage.getItem("token");
             await axios.post(`http://127.0.0.1:8000/projects/${projectId}/applications/${applicantId}/decision`, { decision: "accepted" }, { headers: { Authorization: `Bearer ${token}` } });
             alert("User approved!");
-            fetchProjectProfile(); // Refresh data
+            fetchProjectProfile();
         } catch (error) {
             console.error("Failed to approve application:", error);
         }
@@ -106,7 +107,7 @@ const ProjectProfile = () => {
             const token = localStorage.getItem("token");
             await axios.post(`http://127.0.0.1:8000/projects/${projectId}/applications/${applicantId}/decision`, { decision: "rejected" }, { headers: { Authorization: `Bearer ${token}` } });
             alert("Application rejected!");
-            fetchProjectProfile(); // Refresh data
+            fetchProjectProfile();
         } catch (error) {
             console.error("Failed to reject application:", error);
         }
@@ -120,7 +121,7 @@ const ProjectProfile = () => {
                 headers: { Authorization: `Bearer ${token}` },
             });
             alert("Member removed!");
-            fetchProjectProfile(); // Refresh data
+            fetchProjectProfile();
         } catch (error) {
             console.error("Failed to remove member:", error);
         }
@@ -139,7 +140,7 @@ const ProjectProfile = () => {
     }
 
     return (
-        <div className="max-w-5xl mx-auto my-6 p-6 bg-white shadow-sm rounded-md border border-green-700">
+        <div className="max-w-7xl mx-auto my-6 p-6 bg-white shadow-sm rounded-md border border-green-700">
             <div className="flex justify-between items-start mb-6">
                 <div>
                     <h1 className="text-2xl font-bold">{projectDetails.name}</h1>
@@ -152,8 +153,21 @@ const ProjectProfile = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+            <div className="flex flex-col md:flex-row gap-6">
+                {/* Main Content - Tasks */}
+                <div className="flex-1">
+                    {(isMember || isOwner) && (
+                        <div className="mb-6">
+                            <h3 className="font-semibold border-b pb-2 mb-3 flex items-center">
+                                <FontAwesomeIcon icon={faClipboardList} className="mr-2" /> Project Tasks
+                            </h3>
+                            <p className="text-gray-500 text-sm">Tasks are currently disabled.</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Sidebar - Other Information */}
+                <div className="w-full md:w-1/3">
                     <div className="mb-6">
                         <h3 className="font-semibold border-b pb-2 mb-3">Tags & Skills</h3>
                         <div className="flex flex-wrap gap-2">
@@ -169,6 +183,7 @@ const ProjectProfile = () => {
                             ))}
                         </div>
                     </div>
+
                     <div className="mb-6">
                         <h3 className="font-semibold border-b pb-2 mb-3">Project Members</h3>
                         {members.length > 0 ? (
@@ -188,6 +203,7 @@ const ProjectProfile = () => {
                             <p className="text-gray-500 text-sm">No members have joined yet.</p>
                         )}
                     </div>
+
                     {isOwner && (
                         <div className="mb-6">
                             <h3 className="font-semibold border-b pb-2 mb-3">Pending Applications</h3>
@@ -212,16 +228,7 @@ const ProjectProfile = () => {
                             )}
                         </div>
                     )}
-                </div>
-                <div>
-                    {(isMember || isOwner) && (
-                        <div className="mb-6">
-                            <h3 className="font-semibold border-b pb-2 mb-3 flex items-center">
-                                <FontAwesomeIcon icon={faClipboardList} className="mr-2" /> Project Tasks
-                            </h3>
-                            <p className="text-gray-500 text-sm">Tasks are currently disabled.</p>
-                        </div>
-                    )}
+
                     <div>
                         <h3 className="font-semibold border-b pb-2 mb-3">Comments ({comments.length})</h3>
                         {comments.length > 0 ? (

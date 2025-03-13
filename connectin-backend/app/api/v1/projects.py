@@ -14,7 +14,7 @@ from typing import List
 from app.database.connection import get_db
 from app.models.project import Project
 from app.models.user import User
-from app.schemas.project import ProjectCreate, ProjectOut, ProjectUpdate
+from app.schemas.project import ProjectCreate, ProjectOut, ProjectProfileOut, ProjectUpdate
 from app.schemas.user import UserOut
 from app.schemas.tag import TagOut
 from app.schemas.skill import SkillOut
@@ -170,7 +170,6 @@ def read_project(project_id: int, db: Session = Depends(get_db)):
             tags=[TagOut.model_validate(tag, from_attributes=True) for tag in project.tags],
             skills=[SkillOut.model_validate(skill, from_attributes=True) for skill in project.skills],
             members=[UserOut.model_validate(user, from_attributes=True) for user in project.members],
-            applicants=[UserOut.model_validate(user, from_attributes=True) for user in project.applicants],
             comments_count=len(project.comments),
             vote_count=db.query(
                 func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
@@ -222,6 +221,75 @@ def delete_project(
     db.delete(project)
     db.commit()
     return {"detail": "Проект успешно удалён"}
+
+@router.get("/{project_id}/profile", response_model=ProjectProfileOut)
+def get_project_profile(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Получить полную информацию о проекте для страницы профиля.
+    Включает данные о проекте, участниках, заявках (для владельца), статусе голосования и комментариях.
+    """
+    # Fetch project
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Проект не найден")
+
+    # Calculate vote count
+    vote_count = db.query(
+        func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
+    ).filter(ProjectVote.project_id == project_id).scalar() or 0
+
+    # Project details
+    project_out = ProjectOut(
+        id=project.id,
+        name=project.name,
+        description=project.description,
+        owner=UserOut.model_validate(project.owner) if project.owner else None,
+        tags=[TagOut.model_validate(tag, from_attributes=True) for tag in project.tags],
+        skills=[SkillOut.model_validate(skill, from_attributes=True) for skill in project.skills],
+        members=[UserOut.model_validate(user, from_attributes=True) for user in project.members],
+        comments_count=len(project.comments),
+        vote_count=vote_count
+    )
+
+    # Members (redundant with project_out.members, but included for consistency)
+    members = [UserOut.model_validate(user) for user in project.members]
+
+    # Applications (only for owner)
+    applications = None
+    if project.owner_id == current_user.id:
+        applicants = db.execute(
+            project_applications.select().where(project_applications.c.project_id == project_id)
+        ).mappings().fetchall()  # Add .mappings() here
+        applicant_ids = [app["user_id"] for app in applicants]
+        users = db.query(User).filter(User.id.in_(applicant_ids)).all()
+        applications = [UserOut.model_validate(user) for user in users]
+
+    # Comments
+    comments = db.query(ProjectComment).filter(ProjectComment.project_id == project_id).all()
+    comments_out = [
+        CommentOut(
+            id=comment.id,
+            content=comment.content,
+            user_id=comment.user_id,
+            created_at=comment.created_at,
+            user={
+                "username": comment.user.username if comment.user else "Unknown",
+                "avatar_url": comment.user.avatar_url if comment.user else None
+            }
+        )
+        for comment in comments
+    ]
+
+    return ProjectProfileOut(
+        project=project_out,
+        members=members,
+        applications=applications,
+        comments=comments_out
+    )
 
 # 🔹 Подать заявку на участие в проекте
 @router.post("/{project_id}/apply", summary="Подать заявку на проект")
@@ -277,7 +345,7 @@ def get_project_members(
     return [UserOut.model_validate(user) for user in users]
 
 # 🔹 Получить список заявок в проект
-@router.get("/{project_id}/applications", summary="Список заявок на проект")
+@router.get("/{project_id}/applications", response_model=list[UserOut], summary="Список заявок на проект")
 def get_project_applications(
     project_id: int,
     db: Session = Depends(get_db),
@@ -286,20 +354,18 @@ def get_project_applications(
     """
     Владелец проекта может просмотреть список заявок от пользователей.
     """
+    # Fetch the project by ID
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Проект не найден")
 
+    # Check if the current user is the project owner
     if project.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Вы не владелец проекта")
 
-    applicants = db.execute(
-        project_applications.select().where(project_applications.c.project_id == project_id)
-    ).fetchall()
-
-    applicant_ids = [app["user_id"] for app in applicants]
-    users = db.query(User).filter(User.id.in_(applicant_ids)).all()
-    return [UserOut.model_validate(user) for user in users]
+    # Access applicants directly through the relationship
+    applicants = project.applicants
+    return [UserOut.model_validate(user) for user in applicants]
 
 # 🔹 Одобрить/Отклонить заявку
 @router.post("/{project_id}/applications/{user_id}/decision", summary="Принять или отклонить заявку")

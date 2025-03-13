@@ -8,7 +8,7 @@ import FeedPage from "./pages/FeedPage";
 import ChatPage from "./pages/ChatPage";
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
-import ProjectCard from "./components/Project/ProjectCard";
+import ProjectProfile from "./pages/ProjectProfile";
 
 function App() {
     return (
@@ -21,10 +21,11 @@ function App() {
                             <Route path="/login" element={<LoginPage />} />
                             <Route path="/register" element={<RegisterPage />} />
                             <Route path="/profile/*" element={<UserProfile />} />
-                            <Route path="/*" element={<FeedPage />} /> {/* All feed-related routes */}
+                            <Route path="/*" element={<FeedPage />} />
                             <Route path="/search" element={<SearchPage />} />
                             <Route path="/chats" element={<ChatPage />} />
                             <Route path="*" element={<NotFoundPage />} />
+                            <Route path="project/:projectId/profile" element={<ProjectProfile />} />
                         </Routes>
                     </div>
                 </div>

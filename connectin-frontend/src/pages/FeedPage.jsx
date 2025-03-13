@@ -9,6 +9,7 @@ import PublishPage from "./PublishPage";
 import PopularNews from "../components/PopularNews";
 import PostPage from "./PostPage";
 import ProjectPage from "./ProjectPage";
+import ProjectProfile from "./ProjectProfile";
 
 const Feed = () => {
     return (

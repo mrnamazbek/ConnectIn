@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List, Dict
 from app.enums import ApplicationStatus
 from .skill import SkillOut
+from .comment import CommentOut
 
 class ApplicationDecisionRequest(BaseModel):
     decision: ApplicationStatus
@@ -58,7 +59,6 @@ class ProjectOut(BaseModel):
     description: str
     owner: UserOut
     members: List[UserOut] = []
-    applicants: List[UserOut] = []
     tags: List[TagOut] = []
     skills: List[SkillOut] = []
     comments_count: int = 0
@@ -66,3 +66,10 @@ class ProjectOut(BaseModel):
 
     class Config:
         from_attributes = True
+        
+
+class ProjectProfileOut(BaseModel):
+    project: ProjectOut
+    members: List[UserOut]
+    applications: Optional[List[UserOut]] = None
+    comments: List[CommentOut]

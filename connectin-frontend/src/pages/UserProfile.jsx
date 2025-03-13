@@ -85,10 +85,7 @@ const UserProfile = () => {
             await axios.delete(`http://127.0.0.1:8000/posts/${postId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-
-            // ✅ Remove post from state after successful deletion
             setUserPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
-
             alert("Post deleted successfully!");
         } catch (error) {
             console.error("Failed to delete post:", error);
@@ -125,7 +122,6 @@ const UserProfile = () => {
     // 🔹 Delete Education
     const handleDeleteEducation = async (eduId) => {
         try {
-            console.log("Deleting Education ID:", eduId); // ✅ Check if ID is valid before calling delete
             const token = localStorage.getItem("token");
             await axios.delete(`http://127.0.0.1:8000/users/me/education/${eduId}`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -168,18 +164,15 @@ const UserProfile = () => {
     const handleDeleteExperience = async (expId) => {
         try {
             const token = localStorage.getItem("token");
-            console.log("Deleting Experience ID:", expId); // ✅ Check if ID is valid before calling delete
             await axios.delete(`http://127.0.0.1:8000/users/me/experience/${expId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-
             setExperience(experience.filter((exp) => exp.id !== expId));
         } catch (error) {
             console.error("Failed to delete experience:", error);
         }
     };
 
-    // ✅ Handle form input changes
     const handleChange = (e) => {
         setUpdatedUser({ ...updatedUser, [e.target.name]: e.target.value });
     };
@@ -298,8 +291,6 @@ const UserProfile = () => {
             <div className="col-span-6 bg-white border border-green-700 rounded-md shadow-sm p-5 w-full hover:shadow-green-700 transition">
                 <h4 className="font-semibold">Education</h4>
                 {education.map((edu, index) => {
-                    console.log("Education Entry:", edu); // ✅ Debug: Ensure data is correct
-
                     return (
                         <div key={edu.id || index} className="flex justify-between items-center p-2 border-b border-gray-300 last:border-0">
                             <p>
@@ -309,7 +300,6 @@ const UserProfile = () => {
                                 icon={faTrashAlt}
                                 className="text-red-500 cursor-pointer hover:text-red-700"
                                 onClick={() => {
-                                    console.log("Deleting Education ID:", edu.id); // ✅ Check if ID is valid before calling delete
                                     handleDeleteEducation(edu.id);
                                 }}
                             />

@@ -19,25 +19,20 @@ export const fetchConversations = async () => {
 export const fetchMessages = async (conversationId) => {
     try {
         const token = localStorage.getItem("token");
-        const response = await axios.get(`${API_URL}/${conversationId}`, {  // Removed /messages
+        const response = await axios.get(`${API_URL}/${conversationId}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
-        return response.data.messages;  // Access messages from conversation object
+        return response.data.messages;
     } catch (error) {
         console.error("Error fetching messages:", error);
         return [];
     }
 };
 
-
 export const sendMessage = async (conversationId, content) => {
     try {
         const token = localStorage.getItem("token");
-        const response = await axios.post(
-            `${API_URL}/message`,
-            { conversation_id: conversationId, content },
-            { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const response = await axios.post(`${API_URL}/message`, { conversation_id: conversationId, content }, { headers: { Authorization: `Bearer ${token}` } });
         console.log("Message sent successfully:", response.data);
         return response.data;
     } catch (error) {

@@ -1,32 +1,62 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import qs from "qs";
 import { PostCard, LoadingMessage, ErrorMessage, NoDataMessage } from "../components/Post/PostCard";
 
 export default function NewsPage() {
     const [news, setNews] = useState([]);
+    const [allTags, setAllTags] = useState([]);
+    const [selectedTags, setSelectedTags] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [filterLoading, setFilterLoading] = useState(false);
     const [error, setError] = useState(null);
     const [likedPosts, setLikedPosts] = useState({});
     const [savedPosts, setSavedPosts] = useState({});
 
     useEffect(() => {
-        fetchNews();
+        fetchAllData();
     }, []);
 
-    const fetchNews = async () => {
+    const fetchAllData = async () => {
         try {
-            const response = await axios.get("http://127.0.0.1:8000/posts/?post_type=news");
-            setNews(response.data);
-            await Promise.all([
-                fetchLikeStatuses(response.data),
-                fetchSaveStatuses(response.data), // Fetch save statuses
+            const [newsRes, tagsRes] = await Promise.all([
+                axios.get("http://127.0.0.1:8000/posts/?post_type=news"),
+                axios.get("http://127.0.0.1:8000/tags/"), // Assumes a tags endpoint exists
             ]);
+            setNews(newsRes.data);
+            setAllTags(tagsRes.data); // Expecting { id, name } for each tag
+            await Promise.all([fetchLikeStatuses(newsRes.data), fetchSaveStatuses(newsRes.data)]);
         } catch (error) {
-            console.error("Error fetching news:", error);
-            setError("Failed to load news. Please try again.");
+            console.error("Error fetching data:", error);
+            setError("Failed to load news or tags. Please try again.");
         } finally {
             setLoading(false);
         }
+    };
+
+    const fetchNewsByTags = async (tagIds) => {
+        setFilterLoading(true);
+        try {
+            const response = await axios.get("http://127.0.0.1:8000/posts/filter_by_tags", {
+                params: { tag_ids: tagIds, post_type: "news" },
+                paramsSerializer: (params) => qs.stringify(params, { arrayFormat: "repeat" }),
+            });
+            setNews(response.data);
+            await Promise.all([fetchLikeStatuses(response.data), fetchSaveStatuses(response.data)]);
+        } catch (error) {
+            console.error("Error filtering news:", error);
+            setError("Failed to filter news. Please try again.");
+        } finally {
+            setFilterLoading(false);
+        }
+    };
+
+    const handleTagSelect = (tagId) => {
+        setSelectedTags((prev) => {
+            const newSelected = prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId];
+            fetchNewsByTags(newSelected);
+            return newSelected;
+        });
     };
 
     const fetchLikeStatuses = async (posts) => {
@@ -103,7 +133,7 @@ export default function NewsPage() {
 
         try {
             const isCurrentlySaved = savedPosts[postId] || false;
-            const response = await axios.post(`http://127.0.0.1:8000/posts/${postId}/save`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.post(`http://127.0.0.1:8000/posts/${postId}/save`, {}, { headers: { Authorization: `Bearer ${token}` } });
             setSavedPosts((prev) => ({ ...prev, [postId]: !isCurrentlySaved }));
             setNews((prevNews) => prevNews.map((post) => (post.id === postId ? { ...post, saves_count: post.saves_count + (isCurrentlySaved ? -1 : 1) } : post)));
         } catch (error) {
@@ -114,8 +144,24 @@ export default function NewsPage() {
     return (
         <div className="flex flex-col">
             <div className="flex-grow container mx-auto">
+                {/* Tag Filtering UI */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {allTags.map((tag) => (
+                        <button key={tag.id} className={`px-3 py-1 rounded-md shadow-sm border-gray-200 cursor-pointer text-sm ${selectedTags.includes(tag.id) ? "bg-green-700 text-white" : "bg-white hover:bg-gray-300"}`} onClick={() => handleTagSelect(tag.id)}>
+                            {tag.name}
+                        </button>
+                    ))}
+                </div>
+
+                {/* News Display */}
                 {loading ? (
                     <LoadingMessage />
+                ) : filterLoading ? (
+                    <div className="flex justify-center items-center my-8">
+                        <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full border-t-transparent border-green-700" role="status">
+                            <span className="sr-only">Loading...</span>
+                        </div>
+                    </div>
                 ) : error ? (
                     <ErrorMessage message={error} />
                 ) : news.length === 0 ? (
@@ -123,14 +169,7 @@ export default function NewsPage() {
                 ) : (
                     <div className="flex flex-col space-y-5">
                         {news.map((article) => (
-                            <PostCard
-                                key={article.id}
-                                post={article}
-                                onLike={() => handleLike(article.id)}
-                                onSave={() => handleSave(article.id)} 
-                                isLiked={likedPosts[article.id] || false}
-                                isSaved={savedPosts[article.id] || false} 
-                            />
+                            <PostCard key={article.id} post={article} onLike={() => handleLike(article.id)} onSave={() => handleSave(article.id)} isLiked={likedPosts[article.id] || false} isSaved={savedPosts[article.id] || false} />
                         ))}
                     </div>
                 )}

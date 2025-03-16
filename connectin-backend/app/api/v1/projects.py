@@ -5,7 +5,7 @@
 """
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import case, func
@@ -130,6 +130,37 @@ def read_projects(db: Session = Depends(get_db)):
     """
     projects = db.query(Project).all()
 
+    return [
+        ProjectOut(
+            id=project.id,
+            name=project.name,
+            description=project.description,
+            owner=UserOut.model_validate(project.owner) if project.owner else None,
+            tags=[TagOut.model_validate(tag, from_attributes=True) for tag in project.tags],
+            skills=[SkillOut.model_validate(skill, from_attributes=True) for skill in project.skills],
+            members=[UserOut.model_validate(user, from_attributes=True) for user in project.members],
+            applicants=[UserOut.model_validate(user, from_attributes=True) for user in project.applicants],
+            comments_count=len(project.comments),
+            vote_count=db.query(
+                func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
+            ).filter(ProjectVote.project_id == project.id).scalar() or 0
+        )
+        for project in projects
+    ]
+    
+@router.get("/filter_by_tags")
+def filter_projects_by_tags(tag_ids: List[int] = Query([]), db: Session = Depends(get_db)):
+    if not tag_ids:
+        projects = db.query(Project).all()
+    else:
+        subquery = db.query(
+            project_tags_association.c.project_id
+        ).filter(
+            project_tags_association.c.tag_id.in_(tag_ids)
+        ).subquery()
+        projects = db.query(Project).filter(
+            Project.id.in_(subquery)
+        ).all()
     return [
         ProjectOut(
             id=project.id,

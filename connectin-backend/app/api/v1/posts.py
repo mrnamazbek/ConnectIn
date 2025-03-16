@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -10,6 +10,7 @@ from app.models.tag import Tag
 from app.models.like import PostLike
 from app.models.save import SavedPost
 from app.models.comment import PostComment
+from app.models.relations.associations import post_tags_association
 from app.schemas.post import PostCreate, PostOut
 from app.schemas.comment import CommentCreate, CommentOut
 from app.api.v1.auth import get_current_user
@@ -103,6 +104,64 @@ def get_all_posts(
         for post, likes_count, comments_count, saves_count in posts
     ]
 
+@router.get("/filter_by_tags", response_model=List[PostOut])
+def filter_posts_by_tags(
+    tag_ids: List[int] = Query([]),  # List of tag IDs for filtering
+    post_type: Optional[str] = "news",  # Default to "news"
+    db: Session = Depends(get_db)
+):
+    # Subqueries for counts
+    likes_count_subquery = db.query(PostLike.post_id, func.count(PostLike.id).label('likes_count')).group_by(PostLike.post_id).subquery()
+    comments_count_subquery = db.query(PostComment.post_id, func.count(PostComment.id).label('comments_count')).group_by(PostComment.post_id).subquery()
+    saves_count_subquery = db.query(SavedPost.post_id, func.count(SavedPost.id).label('saves_count')).group_by(SavedPost.post_id).subquery()
+
+    # Main query
+    query = db.query(Post)
+
+    # Filter by post_type
+    if post_type:
+        query = query.filter(Post.post_type == post_type)
+
+    # Filter by tags if tag_ids are provided
+    if tag_ids:
+        subquery = db.query(post_tags_association.c.post_id).filter(post_tags_association.c.tag_id.in_(tag_ids)).subquery()
+        query = query.filter(Post.id.in_(subquery))
+
+    # Join with counts subqueries
+    query = query.outerjoin(likes_count_subquery, Post.id == likes_count_subquery.c.post_id)\
+                 .outerjoin(comments_count_subquery, Post.id == comments_count_subquery.c.post_id)\
+                 .outerjoin(saves_count_subquery, Post.id == saves_count_subquery.c.post_id)
+
+    # Select with coalesced counts
+    posts = query.with_entities(
+        Post,
+        func.coalesce(likes_count_subquery.c.likes_count, 0).label('likes_count'),
+        func.coalesce(comments_count_subquery.c.comments_count, 0).label('comments_count'),
+        func.coalesce(saves_count_subquery.c.saves_count, 0).label('saves_count')
+    ).all()
+
+    # Format response
+    return [
+        PostOut(
+            id=post.id,
+            title=post.title,
+            content=post.content,
+            post_type=post.post_type,
+            author_id=post.author_id,
+            project_id=post.project_id,
+            team_id=post.team_id,
+            tags=[tag.name for tag in post.tags],
+            author={
+                "username": post.author.username if post.author else "Unknown",
+                "avatar_url": post.author.avatar_url if post.author else None
+            },
+            likes_count=likes_count,
+            comments_count=comments_count,
+            saves_count=saves_count
+        )
+        for post, likes_count, comments_count, saves_count in posts
+    ]
+    
 # Get Single Post with Counts
 @router.get("/{post_id}", response_model=PostOut)
 def get_single_post(post_id: int, db: Session = Depends(get_db)):

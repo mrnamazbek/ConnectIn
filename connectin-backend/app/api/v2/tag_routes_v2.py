@@ -10,7 +10,7 @@ from typing import List
 from app.database.connection import get_db
 from app.services.tag_service import TagService
 from app.schemas.tag import TagCreate, TagOut
-from app.api.v1.auth_router import get_current_user
+from app.api.v1.auth import get_current_user
 
 router = APIRouter()
 

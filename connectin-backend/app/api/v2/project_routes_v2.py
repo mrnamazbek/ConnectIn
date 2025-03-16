@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from typing import List
 from app.database.connection import get_db
-from app.api.v1.auth_router import get_current_user
+from app.api.v1.auth import get_current_user
 from app.schemas.project import ProjectCreate, ProjectOut, ProjectUpdate
 from app.services.project_service import ProjectService
 

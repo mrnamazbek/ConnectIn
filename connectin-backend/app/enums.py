@@ -5,3 +5,13 @@ class ApplicationStatus(str, Enum):
     REJECTED = "rejected"
     PENDING = "pending"
 
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    MEMBER = "member"
+
+
+class ConversationRole(str, Enum):
+    GROUP = "group"
+    DIRECT = "direct"
+
+

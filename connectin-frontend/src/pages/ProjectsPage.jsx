@@ -30,7 +30,7 @@ const ProjectsPage = () => {
 
     const fetchCurrentUser = async () => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             if (!token) return null;
 
             const response = await axios.get("http://127.0.0.1:8000/users/me", {
@@ -71,7 +71,7 @@ const ProjectsPage = () => {
 
     const handleApply = async (projectId) => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             if (!token) {
                 alert("Please log in to apply for a project.");
                 return;
@@ -93,7 +93,7 @@ const ProjectsPage = () => {
 
     const handleUpvote = async (projectId) => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             if (!token) {
                 alert("Please log in to vote.");
                 return;
@@ -125,7 +125,7 @@ const ProjectsPage = () => {
 
     const handleDownvote = async (projectId) => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             if (!token) {
                 alert("Please log in to vote.");
                 return;

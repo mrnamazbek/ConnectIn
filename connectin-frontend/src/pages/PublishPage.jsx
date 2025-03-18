@@ -56,7 +56,7 @@ const PublishPage = () => {
     const handleSubmit = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
 
             if (!content.trim()) {
                 alert("Content cannot be empty!");

@@ -60,7 +60,7 @@ export default function NewsPage() {
     };
 
     const fetchLikeStatuses = async (posts) => {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("access_token");
         if (!token) return;
 
         try {
@@ -84,7 +84,7 @@ export default function NewsPage() {
     };
 
     const fetchSaveStatuses = async (posts) => {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("access_token");
         if (!token) return;
 
         try {
@@ -108,7 +108,7 @@ export default function NewsPage() {
     };
 
     const handleLike = async (postId) => {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("access_token");
         if (!token) {
             console.error("User not authenticated");
             return;
@@ -125,7 +125,7 @@ export default function NewsPage() {
     };
 
     const handleSave = async (postId) => {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("access_token");
         if (!token) {
             console.error("User not authenticated");
             return;

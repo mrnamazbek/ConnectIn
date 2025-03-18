@@ -15,7 +15,7 @@ const ProjectCard = ({ project, currentUser, handleApply, handleUpvote, handleDo
 
     const fetchVoteStatus = async () => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             if (!token) return;
 
             const response = await axios.get(`http://127.0.0.1:8000/projects/${project.id}/vote_status`, { headers: { Authorization: `Bearer ${token}` } });

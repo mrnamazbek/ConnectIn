@@ -12,8 +12,8 @@ const SkillsSection = ({ skills, setSkills, loading }) => {
     useEffect(() => {
         const fetchAvailableSkills = async () => {
             try {
-                const token = localStorage.getItem("token");
-                const response = await axios.get("http://127.0.0.1:8000/skills", {
+                const token = localStorage.getItem("access_token");
+                const response = await axios.get("http://127.0.0.1:8000/skills/", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -33,7 +33,7 @@ const SkillsSection = ({ skills, setSkills, loading }) => {
 
     const handleSaveSkills = async () => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
 
             for (const skill of selectedSkills) {
                 await axios.post(`http://127.0.0.1:8000/users/me/skills?skill_id=${skill.id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
@@ -52,7 +52,7 @@ const SkillsSection = ({ skills, setSkills, loading }) => {
         if (!window.confirm("Are you sure you want to remove this skill?")) return;
 
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
 
             await axios.delete(`http://127.0.0.1:8000/users/me/skills/${skillId}`, {
                 headers: { Authorization: `Bearer ${token}` },

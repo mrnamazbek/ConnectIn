@@ -5,6 +5,7 @@ import { faSun, faMoon, faMagnifyingGlass, faS } from "@fortawesome/free-solid-s
 import { faUser } from "@fortawesome/free-regular-svg-icons";
 import { faNewspaper } from "@fortawesome/free-solid-svg-icons";
 import { faPen } from "@fortawesome/free-solid-svg-icons";
+import Logo from "../assets/images/connectin-logo-png.png";
 
 const NavBar = () => {
     const location = useLocation();
@@ -27,8 +28,9 @@ const NavBar = () => {
         <nav className={`grid grid-cols-8 bg-white dark:bg-zinc-800 text-sm border-b border-green-700 shadow-md ${isSticky ? "sticky top-0" : ""}`}>
             <div className="col-start-2 col-span-6">
                 <div className="flex justify-between items-center py-3">
-                    <NavLink to="/" className="font-semibold text-green-700">
-                        <img src=".Logo.png" alt="" /> ConnectIn
+                    <NavLink to="/" className="flex items-center space-x-2 font-semibold text-green-700">
+                        <img src={Logo} alt="Logo" width={24} height={24} />
+                        <p>ConnectIn</p>
                     </NavLink>
                     <div className="space-x-5 font-semibold flex items-center">
                         {/* Theme Toggle */}

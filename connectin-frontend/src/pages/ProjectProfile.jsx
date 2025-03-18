@@ -24,8 +24,12 @@ const ProjectProfile = () => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                await fetchCurrentUser();
-                await fetchProjectProfile();
+                const user = await fetchCurrentUser();
+                if (user) {
+                    await fetchProjectProfile(user);
+                } else {
+                    console.log("User not authenticated.");
+                }
             } catch (error) {
                 console.error("Failed to fetch data:", error);
             } finally {
@@ -37,19 +41,21 @@ const ProjectProfile = () => {
 
     const fetchCurrentUser = async () => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             const response = await axios.get("http://127.0.0.1:8000/users/me", {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setCurrentUser(response.data);
+            return response.data;
         } catch (error) {
             console.error("Failed to fetch current user:", error);
+            return null;
         }
     };
 
-    const fetchProjectProfile = async () => {
+    const fetchProjectProfile = async (user) => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             const response = await axios.get(`http://127.0.0.1:8000/projects/${projectId}/profile`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -58,10 +64,9 @@ const ProjectProfile = () => {
             setMembers(data.members);
             setApplications(data.applications || []);
             setComments(data.comments);
-            setIsOwner(currentUser && data.project.owner.id === currentUser.id);
-            console.log(isOwner);
-            console.log(isMember);
-            setIsMember(data.members.some((member) => member.id === (currentUser?.id || -1)) || (currentUser && data.project.owner.id === currentUser.id));
+            setIsOwner(user && data.project.owner?.id === user.id);
+            console.log(user?.id, " ", data.project.owner?.id);
+            setIsMember(data.members.some((member) => member.id === user?.id) || (user && data.project.owner?.id === user.id));
         } catch (error) {
             console.error("Failed to fetch project profile:", error);
         }
@@ -69,7 +74,7 @@ const ProjectProfile = () => {
 
     const fetchVoteStatus = async () => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             const response = await axios.get(`http://127.0.0.1:8000/projects/${projectId}/vote_status`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -81,10 +86,10 @@ const ProjectProfile = () => {
 
     const handleApply = async () => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             await axios.post(`http://127.0.0.1:8000/projects/${projectId}/apply`, {}, { headers: { Authorization: `Bearer ${token}` } });
             alert("Application submitted!");
-            fetchProjectProfile();
+            await fetchProjectProfile(currentUser); // Pass currentUser
         } catch (error) {
             console.error("Failed to apply:", error);
             alert(error.response?.data?.detail || "Failed to apply");
@@ -93,10 +98,10 @@ const ProjectProfile = () => {
 
     const handleApprove = async (applicantId) => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             await axios.post(`http://127.0.0.1:8000/projects/${projectId}/applications/${applicantId}/decision`, { decision: "accepted" }, { headers: { Authorization: `Bearer ${token}` } });
             alert("User approved!");
-            fetchProjectProfile();
+            await fetchProjectProfile(currentUser); // Pass currentUser
         } catch (error) {
             console.error("Failed to approve application:", error);
         }
@@ -104,10 +109,10 @@ const ProjectProfile = () => {
 
     const handleReject = async (applicantId) => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             await axios.post(`http://127.0.0.1:8000/projects/${projectId}/applications/${applicantId}/decision`, { decision: "rejected" }, { headers: { Authorization: `Bearer ${token}` } });
             alert("Application rejected!");
-            fetchProjectProfile();
+            await fetchProjectProfile(currentUser); // Pass currentUser
         } catch (error) {
             console.error("Failed to reject application:", error);
         }
@@ -116,12 +121,12 @@ const ProjectProfile = () => {
     const handleRemoveMember = async (memberId) => {
         if (!window.confirm("Are you sure you want to remove this member?")) return;
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             await axios.delete(`http://127.0.0.1:8000/projects/${projectId}/members/${memberId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             alert("Member removed!");
-            fetchProjectProfile();
+            await fetchProjectProfile(currentUser); // Pass currentUser
         } catch (error) {
             console.error("Failed to remove member:", error);
         }

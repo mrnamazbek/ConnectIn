@@ -42,7 +42,7 @@ const UserProfile = () => {
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                const token = localStorage.getItem("token");
+                const token = localStorage.getItem("access_token");
                 const response = await axios.get("http://127.0.0.1:8000/users/me", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
@@ -62,7 +62,7 @@ const UserProfile = () => {
 
         const fetchUserPosts = async () => {
             try {
-                const token = localStorage.getItem("token");
+                const token = localStorage.getItem("access_token");
                 const response = await axios.get("http://127.0.0.1:8000/posts/my", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
@@ -81,7 +81,7 @@ const UserProfile = () => {
         if (!window.confirm("Are you sure you want to delete this post?")) return;
 
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             await axios.delete(`http://127.0.0.1:8000/posts/${postId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -100,7 +100,7 @@ const UserProfile = () => {
         }
 
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             const response = await axios.post(
                 "http://127.0.0.1:8000/users/me/education",
                 {
@@ -122,7 +122,7 @@ const UserProfile = () => {
     // 🔹 Delete Education
     const handleDeleteEducation = async (eduId) => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             await axios.delete(`http://127.0.0.1:8000/users/me/education/${eduId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -141,7 +141,7 @@ const UserProfile = () => {
         }
 
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             const response = await axios.post(
                 "http://127.0.0.1:8000/users/me/experience",
                 {
@@ -163,7 +163,7 @@ const UserProfile = () => {
     // 🔹 Delete Experience
     const handleDeleteExperience = async (expId) => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             await axios.delete(`http://127.0.0.1:8000/users/me/experience/${expId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -195,7 +195,7 @@ const UserProfile = () => {
         if (!validateForm()) return;
 
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             const response = await axios.put("http://127.0.0.1:8000/users/me", updatedUser, {
                 headers: { Authorization: `Bearer ${token}` },
             });

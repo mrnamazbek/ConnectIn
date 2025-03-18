@@ -25,7 +25,7 @@ const ChatPage = () => {
 
     const fetchUsers = async () => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             const response = await axios.get("http://127.0.0.1:8000/users/", {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -40,7 +40,7 @@ const ChatPage = () => {
         setIsSearching(true);
 
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             const response = await axios.get(`http://127.0.0.1:8000/users/search?query=${searchQuery}`, { headers: { Authorization: `Bearer ${token}` } });
 
             setSearchedUsers(response.data); // ✅ Store searched users separately
@@ -53,7 +53,7 @@ const ChatPage = () => {
 
     const fetchCurrentUser = async () => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             if (!token) {
                 navigate("/login");
                 return;
@@ -67,7 +67,7 @@ const ChatPage = () => {
             console.error("Failed to fetch current user", error);
 
             if (error.response && error.response.status === 401) {
-                localStorage.removeItem("token");
+                localStorage.removeItem("access_token");
                 navigate("/login");
             }
         }
@@ -75,7 +75,7 @@ const ChatPage = () => {
 
     const fetchConversations = async () => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             const response = await axios.get("http://127.0.0.1:8000/chats/", {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -87,7 +87,7 @@ const ChatPage = () => {
 
     const startConversation = async (user) => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
 
             if (!currentUser) {
                 console.warn("Current user not loaded yet, trying again...");

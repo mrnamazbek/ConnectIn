@@ -16,10 +16,10 @@
 """
 
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Body
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-from jose import JWTError, jwt
 from fastapi.responses import RedirectResponse
+from jose import JWTError, jwt
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
@@ -49,6 +49,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30  # JWT действует 30 минут
+REFRESH_TOKEN_EXPIRE_DAYS = 30    # Refresh токен действует 30 дней
 
 # URL фронтенда (замени на свой реальный URL)
 FRONTEND_URL = "http://127.0.0.1:8000/docs"  # Например, главная страница фронтенда
@@ -59,19 +60,38 @@ logger = get_logger(__name__)
 # Лимитер для ограничения запросов
 limiter = Limiter(key_func=get_remote_address)
 
-# Функция для установки токена в куки и редиректа
-def set_token_and_redirect(token: str, redirect_url: str = FRONTEND_URL):
+# Функции для создания токенов
+def create_access_token(user: User, expire_delta: timedelta):
+    expire = datetime.utcnow() + expire_delta
+    payload = {"sub": user.email, "exp": expire}
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+def create_refresh_token(user: User):
+    expire_delta = timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    expire = datetime.utcnow() + expire_delta
+    return jwt.encode({"sub": user.email, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
+
+# Функция для установки токенов в куки и редиректа
+def set_tokens_and_redirect(access_token: str, refresh_token: str, redirect_url: str = FRONTEND_URL):
     """
-    Устанавливает JWT-токен в куки и возвращает RedirectResponse на указанный URL.
+    Устанавливает JWT-токены в куки и возвращает RedirectResponse на указанный URL.
     """
     response = RedirectResponse(url=redirect_url)
     response.set_cookie(
         key="access_token",
-        value=token,
-        httponly=True,  # Защита от доступа через JavaScript
-        secure=True,    # Только HTTPS (в продакшене)
-        samesite="lax", # Защита от CSRF
-        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60  # Время жизни куки в секундах
+        value=access_token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
     )
     return response
 
@@ -125,7 +145,7 @@ def login_user(
     db: Session = Depends(get_db)
 ):
     """
-    Аутентификация через логин и пароль. Возвращает JWT-токен.
+    Аутентификация через логин и пароль. Возвращает JWT-токены.
     """
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
@@ -134,23 +154,17 @@ def login_user(
             detail="Неверный логин или пароль."
         )
 
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {
-        "sub": user.email,
-        "exp": datetime.utcnow() + access_token_expires
-    }
-    access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-    logger.info(f"JWT-токен сгенерирован для пользователя: {user.email}")
+    access_token = create_access_token(user, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    refresh_token = create_refresh_token(user)
+    logger.info(f"JWT-токены сгенерированы для пользователя: {user.email}")
     return {
         "access_token": access_token,
+        "refresh_token": refresh_token,
         "token_type": "bearer",
         "user": UserOut.from_orm(user)
     }
 
-def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
-) -> User:
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     """
     Извлекает текущего пользователя из JWT-токена.
     """
@@ -181,6 +195,27 @@ def read_current_user(current_user: User = Depends(get_current_user)):
     Возвращает данные текущего пользователя.
     """
     return current_user
+
+@router.post("/refresh_token")
+def refresh_token(refresh_token: str = Body(...), db: Session = Depends(get_db)):
+    """
+    Обновляет access token с использованием refresh token.
+    """
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("sub")
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    access_token = create_access_token(user, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    logger.info(f"Новый access token сгенерирован для пользователя: {user.email}")
+    return {"access_token": access_token, "token_type": "bearer"}
 
 # ---------------------- Google OAuth ----------------------
 

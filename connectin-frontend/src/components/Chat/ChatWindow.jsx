@@ -9,23 +9,80 @@ const ChatWindow = ({ conversationId }) => {
     const [socket, setSocket] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const messagesEndRef = useRef(null); // Ref for auto-scrolling to the bottom
+    const [isConnecting, setIsConnecting] = useState(false); // Track WebSocket connection state
+    const [connectionError, setConnectionError] = useState(null); // Store WebSocket errors
+    const messagesEndRef = useRef(null);
+    const socketRef = useRef(null); // Ref to manage a single WebSocket instance
 
     useEffect(() => {
         if (!conversationId) {
-            console.warn("ChatWindow: No conversationId provided. Skipping WebSocket connection.");
+            console.warn("ChatWindow: No conversationId provided.");
+            setConnectionError("Invalid conversation ID.");
             return;
         }
 
-        loadCurrentUser();
-        loadMessages();
-        const chatSocket = connectToChat(conversationId, handleNewMessage);
-        setSocket(chatSocket);
+        // Validate conversation exists before connecting
+        const validateConversation = async () => {
+            try {
+                const token = localStorage.getItem("access_token");
+                await axios.get(`http://127.0.0.1:8000/chats/${conversationId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+            } catch (error) {
+                console.error("Conversation validation failed:", error);
+                setConnectionError("Conversation not found or inaccessible.");
+                return false;
+            }
+            return true;
+        };
 
-        return () => chatSocket && chatSocket.close();
+        const setupWebSocket = async () => {
+            setIsConnecting(true);
+            setConnectionError(null);
+
+            // Cleanup previous socket if it exists
+            if (socketRef.current) {
+                socketRef.current.close();
+            }
+
+            const isValid = await validateConversation();
+            if (!isValid) return;
+
+            loadCurrentUser();
+            loadMessages();
+            const chatSocket = connectToChat(conversationId, handleNewMessage);
+            socketRef.current = chatSocket;
+            setSocket(chatSocket);
+
+            chatSocket.onopen = () => {
+                console.log("Connected to chat WebSocket");
+                setIsConnecting(false);
+            };
+
+            chatSocket.onerror = (error) => {
+                console.error("WebSocket Error:", error);
+                setConnectionError("Failed to connect to WebSocket.");
+                setIsConnecting(false);
+            };
+
+            chatSocket.onclose = () => {
+                console.log("WebSocket Disconnected");
+                setIsConnecting(false);
+                // Attempt to reconnect after a delay
+                setTimeout(() => setupWebSocket(), 2000); // Reconnect after 2 seconds
+            };
+        };
+
+        setupWebSocket();
+
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.close();
+                socketRef.current = null;
+            }
+        };
     }, [conversationId]);
 
-    // Fetch the current user
     const loadCurrentUser = async () => {
         try {
             const token = localStorage.getItem("access_token");
@@ -38,13 +95,13 @@ const ChatWindow = ({ conversationId }) => {
         }
     };
 
-    // Load messages from API and set state
     const loadMessages = async () => {
         if (!conversationId) return;
         setIsLoading(true);
         try {
             const data = await fetchMessages(conversationId);
-            setMessages(data);
+            const uniqueMessages = Array.from(new Map(data.map((msg) => [msg.id, msg])).values());
+            setMessages(uniqueMessages);
         } catch (error) {
             console.error("Failed to load messages", error);
         } finally {
@@ -52,46 +109,50 @@ const ChatWindow = ({ conversationId }) => {
         }
     };
 
-    // Handle new messages via WebSocket
     const handleNewMessage = (message) => {
         try {
             const parsedMessage = JSON.parse(message);
-            setMessages((prev) => [...prev, parsedMessage]);
+            if (currentUser && parsedMessage.sender_id !== currentUser.id) {
+                setMessages((prev) => {
+                    const updatedMessages = [...prev, parsedMessage];
+                    return Array.from(new Map(updatedMessages.map((msg) => [msg.id, msg])).values());
+                });
+            }
         } catch (error) {
             console.error("Failed to parse incoming message", error);
         }
     };
 
-    // Send message and update UI
     const handleSend = async () => {
         if (newMessage.trim()) {
             try {
                 const sentMessage = await sendMessage(conversationId, newMessage);
                 setNewMessage("");
-                setMessages((prev) => [...prev, sentMessage]);
+                setMessages((prev) => {
+                    const updatedMessages = [...prev, sentMessage];
+                    return Array.from(new Map(updatedMessages.map((msg) => [msg.id, msg])).values());
+                });
 
-                // Send message via WebSocket
-                if (socket) socket.send(JSON.stringify(sentMessage));
+                if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+                    socketRef.current.send(JSON.stringify(sentMessage));
+                }
             } catch (error) {
                 console.error("Failed to send message", error);
             }
         }
     };
 
-    // Handle Enter key for sending messages
     const handleKeyPress = (e) => {
         if (e.key === "Enter") {
             handleSend();
         }
     };
 
-    // Format timestamp to a user-friendly format
     const formatTimestamp = (timestamp) => {
         const date = new Date(timestamp);
-        return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); // Example: "14:30"
+        return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     };
 
-    // Auto-scroll to the bottom when messages change
     useEffect(() => {
         if (messagesEndRef.current) {
             messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -100,11 +161,14 @@ const ChatWindow = ({ conversationId }) => {
 
     return (
         <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
-            {/* Messages Container */}
             <div className="flex-1 p-4 overflow-y-auto">
-                {isLoading ? (
+                {isLoading || isConnecting ? (
                     <div className="flex justify-center items-center h-full">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700"></div>
+                    </div>
+                ) : connectionError ? (
+                    <div className="flex justify-center items-center h-full">
+                        <p className="text-red-500">{connectionError}</p>
                     </div>
                 ) : messages.length === 0 ? (
                     <div className="flex justify-center items-center h-full">
@@ -119,22 +183,27 @@ const ChatWindow = ({ conversationId }) => {
                                     <p className="text-sm break-words">{msg.content}</p>
                                     <div className="flex items-center justify-end mt-1">
                                         <p className="text-xs text-gray-500">{formatTimestamp(msg.timestamp)}</p>
-                                        {/* {isCurrentUser && <span className="text-xs text-gray-500">{msg.status === "seen" ? "Seen" : "Delivered"}</span>} */}
                                     </div>
                                 </div>
                             </div>
                         );
                     })
                 )}
-                {/* Empty div for auto-scrolling to the bottom */}
                 <div ref={messagesEndRef}></div>
             </div>
 
-            {/* Message Input Container */}
             <div className="p-4 border-t">
                 <div className="flex">
-                    <input type="text" className="flex-1 p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Type a message..." value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyPress={handleKeyPress} />
-                    <button className="px-4 bg-green-700 text-white rounded-r-lg hover:bg-green-800 transition-colors" onClick={handleSend}>
+                    <input
+                        type="text"
+                        className="flex-1 p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        placeholder="Type a message..."
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        disabled={isConnecting || connectionError}
+                    />
+                    <button className="px-4 bg-green-700 text-white rounded-r-lg hover:bg-green-800 transition-colors" onClick={handleSend} disabled={isConnecting || connectionError || !newMessage.trim()}>
                         Send
                     </button>
                 </div>

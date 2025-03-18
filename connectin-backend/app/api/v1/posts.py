@@ -162,6 +162,33 @@ def filter_posts_by_tags(
         for post, likes_count, comments_count, saves_count in posts
     ]
     
+@router.get("/my", response_model=List[PostOut])
+def get_user_posts(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retrieves posts created by the currently authenticated user.
+    """
+    user_posts = db.query(Post).filter(Post.author_id == current_user.id).all()
+
+    # ✅ Format posts correctly
+    formatted_posts = [
+        {
+            "id": post.id,
+            "title": post.title,
+            "content": post.content,
+            "post_type": post.post_type,
+            "author_id": post.author_id,
+            "project_id": post.project_id,
+            "team_id": post.team_id,
+            "tags": [tag.name for tag in post.tags],
+        }
+        for post in user_posts
+    ]
+
+    return formatted_posts
+    
 # Get Single Post with Counts
 @router.get("/{post_id}", response_model=PostOut)
 def get_single_post(post_id: int, db: Session = Depends(get_db)):
@@ -191,33 +218,6 @@ def get_single_post(post_id: int, db: Session = Depends(get_db)):
         comments_count=comments_count,
         saves_count=saves_count
     )
-
-@router.get("/my", response_model=List[PostOut])
-def get_user_posts(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Retrieves posts created by the currently authenticated user.
-    """
-    user_posts = db.query(Post).filter(Post.author_id == current_user.id).all()
-
-    # ✅ Format posts correctly
-    formatted_posts = [
-        {
-            "id": post.id,
-            "title": post.title,
-            "content": post.content,
-            "post_type": post.post_type,
-            "author_id": post.author_id,
-            "project_id": post.project_id,
-            "team_id": post.team_id,
-            "tags": [tag.name for tag in post.tags],
-        }
-        for post in user_posts
-    ]
-
-    return formatted_posts
 
 @router.delete("/{post_id}", status_code=204)
 def delete_post(

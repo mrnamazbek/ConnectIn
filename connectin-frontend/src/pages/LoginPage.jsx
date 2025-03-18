@@ -73,7 +73,6 @@ const LoginPage = () => {
                 );
                 localStorage.setItem("access_token", response.data.access_token);
                 localStorage.setItem("refresh_token", response.data.refresh_token);
-                console.log("Login successful:", response.data);
                 navigate("/");
             } catch (error) {
                 console.error("Login failed:", error.response?.data || error.message);
@@ -178,7 +177,7 @@ const LoginPage = () => {
                 </div>
 
                 {/* Right Side: Welcome Banner */}
-                <div className="bg-green-700 rounded-r-md flex-1 flex justify-center items-center px-6 hidden md:flex">
+                <div className="bg-green-700 rounded-r-md flex-1 flex justify-center items-center px-6 md:flex">
                     <p className="text-white text-center font-semibold text-xl leading-tight">
                         ConnectIn: <br /> Build Projects. <br /> Grow Skills. <br /> Find Your Team.
                     </p>

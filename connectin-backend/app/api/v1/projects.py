@@ -12,6 +12,7 @@ from sqlalchemy import case, func
 from typing import List
 
 from app.database.connection import get_db
+from app.models import Tag
 from app.models.project import Project
 from app.models.user import User
 from app.schemas.project import ProjectCreate, ProjectOut, ProjectProfileOut, ProjectUpdate
@@ -24,6 +25,7 @@ from app.schemas.project import ApplicationDecisionRequest, ApplicationStatus
 from app.models.vote import ProjectVote
 from app.models.comment import ProjectComment
 from app.schemas.comment import CommentOut, CommentCreate
+from app.utils import get_logger
 
 router = APIRouter()
 
@@ -583,3 +585,27 @@ def get_project_comments(
             user={"username": comment.user.username if comment.user else "Unknown", "avatar_url": comment.user.avatar_url if comment.user else None}        )
         for comment in comments
     ]
+
+#  added search request
+@router.get("/projects/search", response_model=List[ProjectOut])
+def search_projects(
+    query: str = Query(..., min_length=1),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    logger = get_logger()
+    logger.info(f"Поиск проектов: query='{query}', page={page}, page_size={page_size}")
+
+    projects_query = db.query(Project).filter(
+        (Project.name.ilike(f"%{query}%")) |
+        (Project.description.ilike(f"%{query}%")) |
+        (Project.tags.any(Tag.name.ilike(f"%{query}%")))
+    )
+
+    total = projects_query.count()
+    projects = projects_query.offset((page - 1) * page_size).limit(page_size).all()
+
+    logger.info(f"Найдено проектов: {total} для query='{query}', возвращаем страницу {page} с {len(projects)} проектами")
+
+    return [ProjectOut.model_validate(project) for project in projects]

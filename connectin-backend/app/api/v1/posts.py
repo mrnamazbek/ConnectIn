@@ -14,6 +14,7 @@ from app.models.relations.associations import post_tags_association
 from app.schemas.post import PostCreate, PostOut
 from app.schemas.comment import CommentCreate, CommentOut
 from app.api.v1.auth import get_current_user
+from app.utils.logger import get_logger
 
 router = APIRouter()
 
@@ -244,23 +245,33 @@ def delete_post(
 
 @router.get("/search", response_model=List[PostOut])
 def search_posts(
-    query: str,
+    query: str = Query(..., min_length=1),  # Обязательный параметр с минимальной длиной
+    page: int = Query(1, ge=1),             # Номер страницы
+    page_size: int = Query(10, ge=1, le=100),  # Размер страницы
     db: Session = Depends(get_db)
 ):
     """
-    Searches posts by title, content, or associated tags.
+    Поиск постов по заголовку, содержимому или связанным тегам с пагинацией.
     """
-    if not query:
-        return []  # ✅ Return empty list if no query is provided
+    logger = get_logger()
+    logger.info(f"Получен поисковый запрос: query='{query}', page={page}, page_size={page_size}")
 
-    # 🔹 Search in title, content, or tags
-    posts = db.query(Post).filter(
+    # Выполняем поиск
+    posts_query = db.query(Post).filter(
         (Post.title.ilike(f"%{query}%")) |
         (Post.content.ilike(f"%{query}%")) |
-        (Post.tags.any(Tag.name.ilike(f"%{query}%")))  # ✅ Search in tags
-    ).all()
+        (Post.tags.any(Tag.name.ilike(f"%{query}%")))
+    )
 
-    return [PostOut.model_validate(post) for post in posts]
+    # Пагинация
+    total = posts_query.count()
+    posts = posts_query.offset((page - 1) * page_size).limit(page_size).all()
+
+    logger.info(f"Найдено постов: {total} для query='{query}', возвращаем страницу {page} с {len(posts)} постами")
+
+    # Форматируем результат
+    result = [PostOut.model_validate(post) for post in posts]
+    return result
 
 # ✅ Like Post
 @router.post("/{post_id}/like")

@@ -260,7 +260,7 @@ def search_posts(
         (Post.tags.any(Tag.name.ilike(f"%{query}%")))  # ✅ Search in tags
     ).all()
 
-    return [PostOut.from_orm(post) for post in posts]
+    return [PostOut.model_validate(post) for post in posts]
 
 # ✅ Like Post
 @router.post("/{post_id}/like")

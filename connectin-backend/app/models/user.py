@@ -23,6 +23,8 @@ class User(Base):
     avatar_url = Column(String, nullable=True) 
     google_id = Column(String(255), unique=True)
     google_refresh_token = Column(String(255))
+
+    status = Column(String, default="in progress")
     #last active
     last_active = Column(DateTime, default=datetime.now(), onupdate=datetime.now(), nullable=True)
     

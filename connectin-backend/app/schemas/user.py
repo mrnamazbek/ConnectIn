@@ -119,6 +119,8 @@ class UserOut(BaseModel):
     education: List[EducationOut] = []
     experience: List[ExperienceOut] = []
 
+    status: str  # project status
+
     @classmethod
     def from_orm(cls, user):
         return cls(

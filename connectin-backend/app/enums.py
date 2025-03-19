@@ -13,5 +13,6 @@ class UserRole(str, Enum):
 class ConversationRole(str, Enum):
     GROUP = "group"
     DIRECT = "direct"
+    TEAM = "team"
 
 

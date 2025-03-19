@@ -10,7 +10,7 @@ const ActionsSection = ({ userPosts, loading, setUserPosts }) => {
         if (!window.confirm("Are you sure you want to delete this post?")) return;
 
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             await axios.delete(`http://127.0.0.1:8000/posts/${postId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });

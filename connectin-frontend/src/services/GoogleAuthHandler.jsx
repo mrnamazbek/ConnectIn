@@ -6,10 +6,10 @@ const GoogleAuthHandler = () => {
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-        const token = params.get("token");
+        const token = params.get("access_token");
 
         if (token) {
-            localStorage.setItem("token", token); // ✅ Store token in localStorage
+            localStorage.setItem("access_token", token); // ✅ Store token in localStorage
             navigate("/news"); // ✅ Redirect to news page
         } else {
             console.error("No token found");

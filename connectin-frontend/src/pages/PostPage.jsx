@@ -48,7 +48,7 @@ export default function PostPage() {
 
     const fetchLikeStatus = async () => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             if (!token) return;
 
             const response = await axios.get(`http://127.0.0.1:8000/posts/${postId}/is_liked`, {
@@ -62,7 +62,7 @@ export default function PostPage() {
 
     const fetchSaveStatus = async () => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             if (!token) return;
             const response = await axios.get(`http://127.0.0.1:8000/posts/${postId}/is_saved`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -75,7 +75,7 @@ export default function PostPage() {
 
     const handleLike = async () => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             if (!token) return;
 
             await axios.post(`http://127.0.0.1:8000/posts/${postId}/like`, {}, { headers: { Authorization: `Bearer ${token}` } });
@@ -90,7 +90,7 @@ export default function PostPage() {
     };
 
     const handleSave = async () => {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("access_token");
         if (!token) {
             console.error("User not authenticated");
             return;
@@ -116,7 +116,7 @@ export default function PostPage() {
         }
 
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             if (!token) {
                 setCommentError("You must be logged in to comment.");
                 return;

@@ -12,7 +12,9 @@ from typing import List
 
 from app.database.connection import get_db
 from app.models.user import User, Education, Experience
+from app.models.skill import Skill
 from app.schemas.user import UserOut, UserUpdate, EducationCreate, ExperienceCreate, EducationUpdate, ExperienceUpdate, EducationOut, ExperienceOut
+from app.schemas.skill import SkillOut
 from app.api.v1.auth import get_current_user
 
 router = APIRouter()
@@ -187,6 +189,70 @@ def delete_experience(
     db.delete(experience)
     db.commit()
     return {"detail": "Опыт работы удален"}
+
+@router.post("/me/skills", response_model=SkillOut, status_code=status.HTTP_201_CREATED, summary="Добавить навык пользователю")
+def add_skill_to_user(
+    skill_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Добавляет навык текущему пользователю по ID навыка.
+    """
+    # Проверяем существование навыка
+    skill = db.query(Skill).get(skill_id)
+    if not skill:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Навык не найден"
+        )
+    
+    # Проверяем, что навык еще не добавлен
+    if skill in current_user.skills:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Навык уже добавлен"
+        )
+    
+    # Добавляем связь
+    current_user.skills.append(skill)
+    db.commit()
+    
+    return skill
+
+@router.delete("/me/skills/{skill_id}", summary="Удалить навык у пользователя")
+def remove_skill_from_user(
+    skill_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Удаляет навык у текущего пользователя по ID навыка.
+    """
+    # Ищем навык среди добавленных у пользователя
+    skill = next((s for s in current_user.skills if s.id == skill_id), None)
+    
+    if not skill:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Навык не найден у пользователя"
+        )
+    
+    # Удаляем связь
+    current_user.skills.remove(skill)
+    db.commit()
+    
+    return {"message": "Навык успешно удален"}
+
+@router.get("/me/skills", response_model=List[SkillOut], summary="Получить навыки пользователя")
+def get_user_skills(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Возвращает список всех навыков текущего пользователя.
+    """
+    return current_user.skills
 
 @router.delete("/me", summary="Удалить свою учётную запись")
 def delete_own_profile(

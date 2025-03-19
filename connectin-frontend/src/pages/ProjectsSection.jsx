@@ -13,7 +13,7 @@ const ProjectsSection = ({ user }) => {
     const fetchProjects = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             const response = await axios.get("http://127.0.0.1:8000/projects/my", {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -33,7 +33,7 @@ const ProjectsSection = ({ user }) => {
         if (!window.confirm("Are you sure you want to delete this project?")) return;
 
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             await axios.delete(`http://127.0.0.1:8000/projects/${projectId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });

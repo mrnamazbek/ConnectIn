@@ -9,6 +9,7 @@ import ChatPage from "./pages/ChatPage";
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import ProjectProfile from "./pages/ProjectProfile";
+import AboutUs from "./pages/AboutUs";
 
 function App() {
     return (
@@ -26,6 +27,7 @@ function App() {
                             <Route path="/chats" element={<ChatPage />} />
                             <Route path="*" element={<NotFoundPage />} />
                             <Route path="project/:projectId/profile" element={<ProjectProfile />} />
+                            <Route path="/about" element={<AboutUs />} />
                         </Routes>
                     </div>
                 </div>

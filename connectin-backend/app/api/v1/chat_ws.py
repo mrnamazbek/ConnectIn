@@ -18,14 +18,14 @@ class WebSocketManager:
         logger.info(f"Новое подключение к чату {conversation_id}")
 
     @staticmethod
-    async def broadcast(message: str, conversation_id: int):
-        """Рассылка сообщений всем участникам чата"""
+    async def broadcast(message: str, conversation_id: int, sender_websocket: WebSocket = None):
         for connection in active_connections.get(conversation_id, []):
-            try:
-                await connection.send_text(message)
-            except Exception as e:
-                logger.error(f"Ошибка отправки сообщения: {e}")
-                await WebSocketManager.disconnect(connection, conversation_id)
+            if connection != sender_websocket:
+                try:
+                    await connection.send_text(message)
+                except Exception as e:
+                    logger.error(f"Ошибка отправки сообщения: {e}")
+                    await WebSocketManager.disconnect(connection, conversation_id)
 
     @staticmethod
     async def disconnect(websocket: WebSocket, conversation_id: int):

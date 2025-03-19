@@ -11,11 +11,11 @@ const RegisterPage = () => {
     const navigate = useNavigate();
 
     const handleGoogleLogin = () => {
-        window.location.href = "http://127.0.0.1:8000/auth/google/login"; // Redirect to Google OAuth
+        window.location.href = `${import.meta.env.VITE_API_URL}/auth/google/login`; // Redirect to Google OAuth
     };
 
     const handleGitHubLogin = () => {
-        window.location.href = "http://127.0.0.1:8000/auth/github/login"; // Redirect to GitHub OAuth
+        window.location.href = `${import.meta.env.VITE_API_URL}/auth/github/login`; // Redirect to GitHub OAuth
     };
 
     const validationSchema = Yup.object({
@@ -39,7 +39,7 @@ const RegisterPage = () => {
         validateOnChange: true,
         onSubmit: async (values, { setSubmitting, setFieldError }) => {
             try {
-                const response = await axios.post("http://127.0.0.1:8000/auth/register", {
+                const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, {
                     username: values.username,
                     email: values.email,
                     password: values.password,

@@ -19,7 +19,7 @@ axios.interceptors.response.use(
                 const refreshToken = localStorage.getItem("refresh_token");
                 if (!refreshToken) throw new Error("No refresh token");
                 const response = await axios.post(
-                    "http://127.0.0.1:8000/refresh_token",
+                    `${import.meta.env.VITE_API_URL}/refresh_token`,
                     { refresh_token: refreshToken },
                     {
                         headers: { "Content-Type": "application/json" },
@@ -62,7 +62,7 @@ const LoginPage = () => {
             setLoading(true);
             try {
                 const response = await axios.post(
-                    "http://127.0.0.1:8000/auth/login",
+                    `${import.meta.env.VITE_API_URL}/auth/login`,
                     {
                         username: values.username,
                         password: values.password,
@@ -98,7 +98,7 @@ const LoginPage = () => {
     }, [navigate]);
 
     const handleOAuthLogin = (provider) => {
-        window.location.href = `http://127.0.0.1:8000/auth/${provider}/login`;
+        window.location.href = `http://${import.meta.env.VITE_API_URL}/auth/${provider}/login`;
     };
 
     return (
@@ -143,7 +143,11 @@ const LoginPage = () => {
 
                         {/* Submit Button */}
                         <div className="mt-6">
-                            <button type="submit" disabled={formik.isSubmitting || loading} className="w-full font-semibold cursor-pointer shadow-md bg-green-700 text-white py-2 rounded-md hover:bg-green-600 transition disabled:bg-green-600 disabled:cursor-not-allowed flex items-center justify-center">
+                            <button
+                                type="submit"
+                                disabled={formik.isSubmitting || loading}
+                                className="w-full font-semibold cursor-pointer shadow-md bg-green-700 text-white py-2 rounded-md hover:bg-green-600 transition disabled:bg-green-600 disabled:cursor-not-allowed flex items-center justify-center"
+                            >
                                 {loading ? (
                                     <>
                                         <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />

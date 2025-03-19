@@ -44,7 +44,7 @@ const AccessTokenManager = () => {
             if (!refreshToken) throw new Error("No refresh token");
 
             const response = await axios.post(
-                "http://127.0.0.1:8000/refresh_token",
+                `${import.meta.env.VITE_API_URL}/refresh_token`,
                 { refresh_token: refreshToken },
                 {
                     headers: { "Content-Type": "application/json" },

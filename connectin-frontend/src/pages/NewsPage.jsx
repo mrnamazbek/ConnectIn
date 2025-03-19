@@ -20,8 +20,8 @@ export default function NewsPage() {
     const fetchAllData = async () => {
         try {
             const [newsRes, tagsRes] = await Promise.all([
-                axios.get("http://127.0.0.1:8000/posts/?post_type=news"),
-                axios.get("http://127.0.0.1:8000/tags/"), // Assumes a tags endpoint exists
+                axios.get(`${import.meta.env.VITE_API_URL}/posts/?post_type=news`),
+                axios.get(`${import.meta.env.VITE_API_URL}/tags/`), // Assumes a tags endpoint exists
             ]);
             setNews(newsRes.data);
             setAllTags(tagsRes.data); // Expecting { id, name } for each tag
@@ -37,7 +37,7 @@ export default function NewsPage() {
     const fetchNewsByTags = async (tagIds) => {
         setFilterLoading(true);
         try {
-            const response = await axios.get("http://127.0.0.1:8000/posts/filter_by_tags", {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts/filter_by_tags`, {
                 params: { tag_ids: tagIds, post_type: "news" },
                 paramsSerializer: (params) => qs.stringify(params, { arrayFormat: "repeat" }),
             });
@@ -66,7 +66,7 @@ export default function NewsPage() {
         try {
             const likePromises = posts.map((post) =>
                 axios
-                    .get(`http://127.0.0.1:8000/posts/${post.id}/is_liked`, {
+                    .get(`${import.meta.env.VITE_API_URL}/posts/${post.id}/is_liked`, {
                         headers: { Authorization: `Bearer ${token}` },
                     })
                     .then((response) => ({ postId: post.id, isLiked: response.data.is_liked }))
@@ -90,7 +90,7 @@ export default function NewsPage() {
         try {
             const savePromises = posts.map((post) =>
                 axios
-                    .get(`http://127.0.0.1:8000/posts/${post.id}/is_saved`, {
+                    .get(`${import.meta.env.VITE_API_URL}/posts/${post.id}/is_saved`, {
                         headers: { Authorization: `Bearer ${token}` },
                     })
                     .then((response) => ({ postId: post.id, isSaved: response.data.is_saved }))
@@ -116,7 +116,7 @@ export default function NewsPage() {
 
         try {
             const isCurrentlyLiked = likedPosts[postId] || false;
-            await axios.post(`http://127.0.0.1:8000/posts/${postId}/like`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.post(`${import.meta.env.VITE_API_URL}/posts/${postId}/like`, {}, { headers: { Authorization: `Bearer ${token}` } });
             setLikedPosts((prev) => ({ ...prev, [postId]: !isCurrentlyLiked }));
             setNews((prevNews) => prevNews.map((post) => (post.id === postId ? { ...post, likes_count: post.likes_count + (isCurrentlyLiked ? -1 : 1) } : post)));
         } catch (error) {
@@ -133,7 +133,7 @@ export default function NewsPage() {
 
         try {
             const isCurrentlySaved = savedPosts[postId] || false;
-            await axios.post(`http://127.0.0.1:8000/posts/${postId}/save`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.post(`${import.meta.env.VITE_API_URL}/posts/${postId}/save`, {}, { headers: { Authorization: `Bearer ${token}` } });
             setSavedPosts((prev) => ({ ...prev, [postId]: !isCurrentlySaved }));
             setNews((prevNews) => prevNews.map((post) => (post.id === postId ? { ...post, saves_count: post.saves_count + (isCurrentlySaved ? -1 : 1) } : post)));
         } catch (error) {

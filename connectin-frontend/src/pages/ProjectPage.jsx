@@ -34,7 +34,7 @@ const ProjectPage = () => {
 
     const fetchProject = async () => {
         try {
-            const response = await axios.get(`http://127.0.0.1:8000/projects/${projectId}`);
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/${projectId}`);
             setProject({
                 ...response.data,
                 vote_count: response.data.vote_count || 0, // Backend now provides this
@@ -53,7 +53,7 @@ const ProjectPage = () => {
             const token = localStorage.getItem("access_token");
             if (!token) return;
 
-            const response = await axios.get("http://127.0.0.1:8000/users/me", {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setCurrentUser(response.data);
@@ -65,7 +65,7 @@ const ProjectPage = () => {
     const fetchComments = async () => {
         setCommentLoading(true);
         try {
-            const response = await axios.get(`http://127.0.0.1:8000/projects/${projectId}/comments`);
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/${projectId}/comments`);
             setComments(response.data);
         } catch (err) {
             console.error("Failed to fetch comments:", err);
@@ -83,7 +83,7 @@ const ProjectPage = () => {
                 return;
             }
 
-            await axios.post(`http://127.0.0.1:8000/projects/${projectId}/apply`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.post(`${import.meta.env.VITE_API_URL}/projects/${projectId}/apply`, {}, { headers: { Authorization: `Bearer ${token}` } });
             alert("Application submitted!");
         } catch (err) {
             console.error("Failed to apply:", err);
@@ -99,7 +99,7 @@ const ProjectPage = () => {
                 return;
             }
 
-            const response = await axios.post(`http://127.0.0.1:8000/projects/${projectId}/vote`, { is_upvote: true }, { headers: { Authorization: `Bearer ${token}` } });
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/projects/${projectId}/vote`, { is_upvote: true }, { headers: { Authorization: `Bearer ${token}` } });
             setProject((prev) => ({
                 ...prev,
                 vote_count: response.data.detail === "Vote removed" ? prev.vote_count - 1 : prev.vote_count + 1,
@@ -118,7 +118,7 @@ const ProjectPage = () => {
                 return;
             }
 
-            const response = await axios.post(`http://127.0.0.1:8000/projects/${projectId}/vote`, { is_upvote: false }, { headers: { Authorization: `Bearer ${token}` } });
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/projects/${projectId}/vote`, { is_upvote: false }, { headers: { Authorization: `Bearer ${token}` } });
             setProject((prev) => ({
                 ...prev,
                 vote_count: response.data.detail === "Vote removed" ? prev.vote_count + 1 : prev.vote_count - 1,
@@ -139,7 +139,7 @@ const ProjectPage = () => {
                 return;
             }
 
-            const response = await axios.post(`http://127.0.0.1:8000/projects/${projectId}/comment`, { content: newComment }, { headers: { Authorization: `Bearer ${token}` } });
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/projects/${projectId}/comment`, { content: newComment }, { headers: { Authorization: `Bearer ${token}` } });
 
             setNewComment("");
             setComments((prev) => [...prev, response.data]);

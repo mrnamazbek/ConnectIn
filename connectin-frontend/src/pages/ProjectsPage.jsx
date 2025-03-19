@@ -17,7 +17,7 @@ const ProjectsPage = () => {
 
     const fetchAllData = async () => {
         try {
-            const [projectsRes, tagsRes, userRes] = await Promise.all([axios.get("http://127.0.0.1:8000/projects/"), axios.get("http://127.0.0.1:8000/tags/"), fetchCurrentUser()]);
+            const [projectsRes, tagsRes, userRes] = await Promise.all([axios.get(`${import.meta.env.VITE_API_URL}/projects/`), axios.get(`${import.meta.env.VITE_API_URL}/tags/`), fetchCurrentUser()]);
             setProjects(projectsRes.data);
             setAllTags(tagsRes.data);
             setCurrentUser(userRes.data);
@@ -33,7 +33,7 @@ const ProjectsPage = () => {
             const token = localStorage.getItem("access_token");
             if (!token) return null;
 
-            const response = await axios.get("http://127.0.0.1:8000/users/me", {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return response.data;
@@ -54,7 +54,7 @@ const ProjectsPage = () => {
     const filterProjectsByTags = async (tags) => {
         setFilterLoading(true); // Start the loading spinner
         try {
-            const response = await axios.get("http://127.0.0.1:8000/projects/filter_by_tags", {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/filter_by_tags`, {
                 params: { tag_ids: tags },
                 paramsSerializer: (params) => {
                     return qs.stringify(params, { arrayFormat: "repeat" });
@@ -78,7 +78,7 @@ const ProjectsPage = () => {
             }
 
             await axios.post(
-                `http://127.0.0.1:8000/projects/${projectId}/apply`,
+                `${import.meta.env.VITE_API_URL}/projects/${projectId}/apply`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -100,7 +100,7 @@ const ProjectsPage = () => {
             }
 
             const response = await axios.post(
-                `http://127.0.0.1:8000/projects/${projectId}/vote`,
+                `${import.meta.env.VITE_API_URL}/projects/${projectId}/vote`,
                 { is_upvote: true },
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -132,7 +132,7 @@ const ProjectsPage = () => {
             }
 
             const response = await axios.post(
-                `http://127.0.0.1:8000/projects/${projectId}/vote`,
+                `${import.meta.env.VITE_API_URL}/projects/${projectId}/vote`,
                 { is_upvote: false },
                 {
                     headers: { Authorization: `Bearer ${token}` },

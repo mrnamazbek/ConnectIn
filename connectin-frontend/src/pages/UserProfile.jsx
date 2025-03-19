@@ -50,7 +50,7 @@ const UserProfile = () => {
                     navigate("/login");
                     return;
                 }
-                const response = await axios.get("http://127.0.0.1:8000/users/me", {
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -82,7 +82,7 @@ const UserProfile = () => {
                     navigate("/login");
                     return;
                 }
-                const response = await axios.get("http://127.0.0.1:8000/posts/my", {
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts/my`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -110,7 +110,7 @@ const UserProfile = () => {
 
         try {
             const token = localStorage.getItem("access_token");
-            await axios.delete(`http://127.0.0.1:8000/posts/${postId}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/posts/${postId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setUserPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
@@ -130,7 +130,7 @@ const UserProfile = () => {
         try {
             const token = localStorage.getItem("access_token");
             const response = await axios.post(
-                "http://127.0.0.1:8000/users/me/education",
+                `${import.meta.env.VITE_API_URL}/users/me/education`,
                 {
                     ...newEducation,
                     start_year: parseInt(newEducation.start_year, 10),
@@ -151,7 +151,7 @@ const UserProfile = () => {
     const handleDeleteEducation = async (eduId) => {
         try {
             const token = localStorage.getItem("access_token");
-            await axios.delete(`http://127.0.0.1:8000/users/me/education/${eduId}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/users/me/education/${eduId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -171,7 +171,7 @@ const UserProfile = () => {
         try {
             const token = localStorage.getItem("access_token");
             const response = await axios.post(
-                "http://127.0.0.1:8000/users/me/experience",
+                `${import.meta.env.VITE_API_URL}/users/me/experience`,
                 {
                     ...newExperience,
                     start_year: parseInt(newExperience.start_year, 10),
@@ -192,7 +192,7 @@ const UserProfile = () => {
     const handleDeleteExperience = async (expId) => {
         try {
             const token = localStorage.getItem("access_token");
-            await axios.delete(`http://127.0.0.1:8000/users/me/experience/${expId}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/users/me/experience/${expId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setExperience(experience.filter((exp) => exp.id !== expId));
@@ -223,7 +223,7 @@ const UserProfile = () => {
 
         try {
             const token = localStorage.getItem("access_token");
-            const response = await axios.put("http://127.0.0.1:8000/users/me", updatedUser, {
+            const response = await axios.put(`${import.meta.env.VITE_API_URL}/users/me`, updatedUser, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 

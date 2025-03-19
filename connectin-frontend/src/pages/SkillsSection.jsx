@@ -13,7 +13,7 @@ const SkillsSection = ({ skills, setSkills, loading }) => {
         const fetchAvailableSkills = async () => {
             try {
                 const token = localStorage.getItem("access_token");
-                const response = await axios.get("http://127.0.0.1:8000/skills/", {
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/skills/`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -36,7 +36,7 @@ const SkillsSection = ({ skills, setSkills, loading }) => {
             const token = localStorage.getItem("access_token");
 
             for (const skill of selectedSkills) {
-                await axios.post(`http://127.0.0.1:8000/users/me/skills?skill_id=${skill.id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+                await axios.post(`${import.meta.env.VITE_API_URL}/users/me/skills?skill_id=${skill.id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
             }
 
             setSkills([...skills, ...selectedSkills]); // Update user skills in UI
@@ -54,7 +54,7 @@ const SkillsSection = ({ skills, setSkills, loading }) => {
         try {
             const token = localStorage.getItem("access_token");
 
-            await axios.delete(`http://127.0.0.1:8000/users/me/skills/${skillId}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/users/me/skills/${skillId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -85,9 +85,7 @@ const SkillsSection = ({ skills, setSkills, loading }) => {
                                     <FontAwesomeIcon icon={faTrashAlt} size="sm" />
                                 </button>
                             )}
-                            
                         </span>
-                        
                     ))
                 ) : (
                     <p className="text-gray-700">No skills added yet.</p>

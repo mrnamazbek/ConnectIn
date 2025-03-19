@@ -27,7 +27,7 @@ export default function PostPage() {
 
     const fetchPost = async () => {
         try {
-            const response = await axios.get(`http://127.0.0.1:8000/posts/${postId}`);
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts/${postId}`);
             setPost(response.data);
         } catch (error) {
             console.error("Error fetching post:", error);
@@ -39,7 +39,7 @@ export default function PostPage() {
 
     const fetchComments = async () => {
         try {
-            const response = await axios.get(`http://127.0.0.1:8000/posts/${postId}/comments`);
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts/${postId}/comments`);
             setComments(response.data);
         } catch (error) {
             console.error("Error fetching comments:", error);
@@ -51,7 +51,7 @@ export default function PostPage() {
             const token = localStorage.getItem("access_token");
             if (!token) return;
 
-            const response = await axios.get(`http://127.0.0.1:8000/posts/${postId}/is_liked`, {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts/${postId}/is_liked`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setIsLiked(response.data.is_liked);
@@ -64,7 +64,7 @@ export default function PostPage() {
         try {
             const token = localStorage.getItem("access_token");
             if (!token) return;
-            const response = await axios.get(`http://127.0.0.1:8000/posts/${postId}/is_saved`, {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts/${postId}/is_saved`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setIsSaved(response.data.is_saved);
@@ -78,7 +78,7 @@ export default function PostPage() {
             const token = localStorage.getItem("access_token");
             if (!token) return;
 
-            await axios.post(`http://127.0.0.1:8000/posts/${postId}/like`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.post(`${import.meta.env.VITE_API_URL}/posts/${postId}/like`, {}, { headers: { Authorization: `Bearer ${token}` } });
             setIsLiked(!isLiked);
             setPost((prev) => ({
                 ...prev,
@@ -97,7 +97,7 @@ export default function PostPage() {
         }
 
         try {
-            const response = await axios.post(`http://127.0.0.1:8000/posts/${postId}/save`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/posts/${postId}/save`, {}, { headers: { Authorization: `Bearer ${token}` } });
             setIsSaved(!isSaved);
             setPost((prev) => ({
                 ...prev,
@@ -122,7 +122,7 @@ export default function PostPage() {
                 return;
             }
 
-            const response = await axios.post(`http://127.0.0.1:8000/posts/${postId}/comment`, { content: commentContent }, { headers: { Authorization: `Bearer ${token}` } });
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/posts/${postId}/comment`, { content: commentContent }, { headers: { Authorization: `Bearer ${token}` } });
 
             // Add the new comment to the list
             setComments((prev) => [...prev, response.data]);

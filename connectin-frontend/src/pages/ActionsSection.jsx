@@ -11,7 +11,7 @@ const ActionsSection = ({ userPosts, loading, setUserPosts }) => {
 
         try {
             const token = localStorage.getItem("access_token");
-            await axios.delete(`http://127.0.0.1:8000/posts/${postId}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/posts/${postId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 

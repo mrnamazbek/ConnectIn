@@ -161,7 +161,7 @@ def login_user(
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
-        "user": UserOut.model_validate(user)
+        "user": UserOut.from_orm(user)
     }
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:

@@ -25,7 +25,7 @@ const ChatWindow = ({ conversationId }) => {
         const validateConversation = async () => {
             try {
                 const token = localStorage.getItem("access_token");
-                await axios.get(`http://127.0.0.1:8000/chats/${conversationId}`, {
+                await axios.get(`${import.meta.env.VITE_API_URL}/chats/${conversationId}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
             } catch (error) {
@@ -86,7 +86,7 @@ const ChatWindow = ({ conversationId }) => {
     const loadCurrentUser = async () => {
         try {
             const token = localStorage.getItem("access_token");
-            const response = await axios.get("http://127.0.0.1:8000/users/me", {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/chats/users/me`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setCurrentUser(response.data);

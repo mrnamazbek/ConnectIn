@@ -42,7 +42,7 @@ const ProjectProfile = () => {
     const fetchCurrentUser = async () => {
         try {
             const token = localStorage.getItem("access_token");
-            const response = await axios.get("http://127.0.0.1:8000/users/me", {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setCurrentUser(response.data);
@@ -56,7 +56,7 @@ const ProjectProfile = () => {
     const fetchProjectProfile = async (user) => {
         try {
             const token = localStorage.getItem("access_token");
-            const response = await axios.get(`http://127.0.0.1:8000/projects/${projectId}/profile`, {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/${projectId}/profile`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const data = response.data;
@@ -75,7 +75,7 @@ const ProjectProfile = () => {
     const fetchVoteStatus = async () => {
         try {
             const token = localStorage.getItem("access_token");
-            const response = await axios.get(`http://127.0.0.1:8000/projects/${projectId}/vote_status`, {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/${projectId}/vote_status`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setVoteStatus(response.data);
@@ -87,7 +87,7 @@ const ProjectProfile = () => {
     const handleApply = async () => {
         try {
             const token = localStorage.getItem("access_token");
-            await axios.post(`http://127.0.0.1:8000/projects/${projectId}/apply`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.post(`${import.meta.env.VITE_API_URL}/projects/${projectId}/apply`, {}, { headers: { Authorization: `Bearer ${token}` } });
             alert("Application submitted!");
             await fetchProjectProfile(currentUser); // Pass currentUser
         } catch (error) {
@@ -99,7 +99,7 @@ const ProjectProfile = () => {
     const handleApprove = async (applicantId) => {
         try {
             const token = localStorage.getItem("access_token");
-            await axios.post(`http://127.0.0.1:8000/projects/${projectId}/applications/${applicantId}/decision`, { decision: "accepted" }, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.post(`${import.meta.env.VITE_API_URL}/projects/${projectId}/applications/${applicantId}/decision`, { decision: "accepted" }, { headers: { Authorization: `Bearer ${token}` } });
             alert("User approved!");
             await fetchProjectProfile(currentUser); // Pass currentUser
         } catch (error) {
@@ -110,7 +110,7 @@ const ProjectProfile = () => {
     const handleReject = async (applicantId) => {
         try {
             const token = localStorage.getItem("access_token");
-            await axios.post(`http://127.0.0.1:8000/projects/${projectId}/applications/${applicantId}/decision`, { decision: "rejected" }, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.post(`${import.meta.env.VITE_API_URL}/projects/${projectId}/applications/${applicantId}/decision`, { decision: "rejected" }, { headers: { Authorization: `Bearer ${token}` } });
             alert("Application rejected!");
             await fetchProjectProfile(currentUser); // Pass currentUser
         } catch (error) {
@@ -122,7 +122,7 @@ const ProjectProfile = () => {
         if (!window.confirm("Are you sure you want to remove this member?")) return;
         try {
             const token = localStorage.getItem("access_token");
-            await axios.delete(`http://127.0.0.1:8000/projects/${projectId}/members/${memberId}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/projects/${projectId}/members/${memberId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             alert("Member removed!");

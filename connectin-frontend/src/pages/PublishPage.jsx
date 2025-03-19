@@ -22,11 +22,11 @@ const PublishPage = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const tagRes = await axios.get("http://127.0.0.1:8000/tags/");
+                const tagRes = await axios.get(`${import.meta.env.VITE_API_URL}/tags/`);
                 setTags(tagRes.data);
 
                 if (postType === "project") {
-                    const skillRes = await axios.get("http://127.0.0.1:8000/skills/");
+                    const skillRes = await axios.get(`${import.meta.env.VITE_API_URL}/skills/`);
                     setSkills(skillRes.data);
                 }
             } catch (error) {
@@ -45,11 +45,9 @@ const PublishPage = () => {
         setSelectedTags((prevTags) => (prevTags.includes(tagId) ? prevTags.filter((id) => id !== tagId) : [...prevTags, tagId]));
     };
 
-      // 🔹 Handle Skill Selection
-      const handleSkillSelection = (skillId) => {
-        setSelectedSkills((prevSkills) =>
-            prevSkills.includes(skillId) ? prevSkills.filter((id) => id !== skillId) : [...prevSkills, skillId]
-        );
+    // 🔹 Handle Skill Selection
+    const handleSkillSelection = (skillId) => {
+        setSelectedSkills((prevSkills) => (prevSkills.includes(skillId) ? prevSkills.filter((id) => id !== skillId) : [...prevSkills, skillId]));
     };
 
     // 🔹 Submit Post
@@ -73,7 +71,7 @@ const PublishPage = () => {
                 tag_ids: selectedTags, // ✅ Send tag IDs properly
             };
 
-            await axios.post("http://127.0.0.1:8000/posts", payload, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.post(`${import.meta.env.VITE_API_URL}/posts`, payload, { headers: { Authorization: `Bearer ${token}` } });
             alert("Post created successfully!");
             setTitle("");
             setContent("");
@@ -236,14 +234,13 @@ const PublishPage = () => {
                 </div>
             )}
 
-             {/* 🔹 Skill Selection (Only for Project Posts) */}
-             {postType === "project" && (
+            {/* 🔹 Skill Selection (Only for Project Posts) */}
+            {postType === "project" && (
                 <div className="flex flex-wrap items-center gap-2">
                     <p className="font-semibold text-sm">Select Required Skills:</p>
                     {skills.length > 0 ? (
                         skills.map((skill) => (
-                            <button key={skill.id} onClick={() => handleSkillSelection(skill.id)}
-                                className={`px-2 py-1 shadow-sm rounded-md text-sm cursor-pointer transition ${selectedSkills.includes(skill.id) ? "bg-green-700 text-white" : ""}`}>
+                            <button key={skill.id} onClick={() => handleSkillSelection(skill.id)} className={`px-2 py-1 shadow-sm rounded-md text-sm cursor-pointer transition ${selectedSkills.includes(skill.id) ? "bg-green-700 text-white" : ""}`}>
                                 {skill.name}
                             </button>
                         ))

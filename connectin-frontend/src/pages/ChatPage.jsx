@@ -46,7 +46,7 @@ const ChatPage = () => {
         setLoadingUsers(true);
         try {
             const token = localStorage.getItem("access_token");
-            const response = await axios.get("http://127.0.0.1:8000/users/", {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const newUsers = response.data;
@@ -70,7 +70,7 @@ const ChatPage = () => {
             setIsSearching(true);
             try {
                 const token = localStorage.getItem("access_token");
-                const response = await axios.get(`http://127.0.0.1:8000/users/search?query=${searchQuery}`, {
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/search?query=${searchQuery}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setSearchedUsers(response.data);
@@ -93,7 +93,7 @@ const ChatPage = () => {
                 return;
             }
 
-            const response = await axios.get("http://127.0.0.1:8000/users/me", {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setCurrentUser(response.data);
@@ -110,7 +110,7 @@ const ChatPage = () => {
     const fetchConversations = async () => {
         try {
             const token = localStorage.getItem("access_token");
-            const response = await axios.get("http://127.0.0.1:8000/chats/", {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/chats/`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setConversations(response.data);
@@ -136,7 +136,7 @@ const ChatPage = () => {
                 return;
             }
 
-            const response = await axios.get("http://127.0.0.1:8000/chats/", {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/chats`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -146,7 +146,7 @@ const ChatPage = () => {
                 setSelectedConversation(existingConversation.id);
             } else {
                 const newConversation = await axios.post(
-                    "http://127.0.0.1:8000/chats/",
+                    `${import.meta.env.VITE_API_URL}/chats`,
                     {
                         type: "direct",
                         participant_ids: [user.id],

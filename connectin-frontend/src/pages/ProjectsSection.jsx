@@ -14,7 +14,7 @@ const ProjectsSection = ({ user }) => {
         try {
             setLoading(true);
             const token = localStorage.getItem("access_token");
-            const response = await axios.get("http://127.0.0.1:8000/projects/my", {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/my`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setProjects(response.data);
@@ -34,7 +34,7 @@ const ProjectsSection = ({ user }) => {
 
         try {
             const token = localStorage.getItem("access_token");
-            await axios.delete(`http://127.0.0.1:8000/projects/${projectId}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/projects/${projectId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             alert("Project deleted successfully!");

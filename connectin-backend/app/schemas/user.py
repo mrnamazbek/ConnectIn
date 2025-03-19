@@ -118,9 +118,8 @@ class UserOut(BaseModel):
     projects: List[ProjectBase] = []
     education: List[EducationOut] = []
     experience: List[ExperienceOut] = []
-
-    status: str  # project status
-
+    status: Optional[str] = None 
+    
     @classmethod
     def from_orm(cls, user):
         return cls(
@@ -138,7 +137,8 @@ class UserOut(BaseModel):
             skills=[SkillBase.model_validate(skill) for skill in user.skills],
             projects=[ProjectBase.model_validate(project) for project in user.projects],
             education=[EducationOut.model_validate(edu) for edu in user.education],
-            experience=[ExperienceOut.model_validate(exp) for exp in user.experience]
+            experience=[ExperienceOut.model_validate(exp) for exp in user.experience],
+            status=getattr(user, 'status', None) 
         )
 
     class Config:

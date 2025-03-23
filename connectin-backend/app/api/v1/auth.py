@@ -16,6 +16,8 @@
 """
 
 from datetime import datetime, timedelta
+
+from altair.utils import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Body
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from fastapi.responses import RedirectResponse
@@ -62,13 +64,13 @@ limiter = Limiter(key_func=get_remote_address)
 
 # Функции для создания токенов
 def create_access_token(user: User, expire_delta: timedelta):
-    expire = datetime.utcnow() + expire_delta
+    expire = datetime.now() + expire_delta
     payload = {"sub": user.email, "exp": expire}
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 def create_refresh_token(user: User):
     expire_delta = timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    expire = datetime.utcnow() + expire_delta
+    expire = datetime.now() + expire_delta
     return jwt.encode({"sub": user.email, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
 
 # Функция для установки токенов в куки и редиректа
@@ -265,7 +267,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         user = User(
             email=email,
             username=username,
-            hashed_password=None,
+            hashed_password=Optional[str],
             google_id=google_id,
             first_name=user_info.get("given_name"),
             last_name=user_info.get("family_name"),
@@ -280,13 +282,13 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
         "sub": user.email,
-        "exp": datetime.utcnow() + access_token_expires,
+        "exp": datetime.now() + access_token_expires,
     }
     access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     logger.info(f"JWT-токен сгенерирован для пользователя: {user.email}")
 
     # Устанавливаем токен в куки и перенаправляем на фронтенд
-    return set_token_and_redirect(access_token)
+    return set_tokens_and_redirect(access_token)
 
 # ---------------------- GitHub OAuth ----------------------
 
@@ -362,4 +364,4 @@ async def github_callback(request: Request, db: Session = Depends(get_db)):
     logger.info(f"JWT-токен сгенерирован для пользователя: {user.email}")
 
     # Устанавливаем токен в куки и перенаправляем на фронтенд
-    return set_token_and_redirect(access_token)
+    return set_tokens_and_redirect(access_token)

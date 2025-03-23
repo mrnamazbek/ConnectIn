@@ -40,10 +40,18 @@ const PublishPage = () => {
         return () => setIsLayoutReady(false);
     }, [postType]);
 
-    // 🔹 Handle Tag Selection
-    const handleTagSelection = (tagId) => {
-        setSelectedTags((prevTags) => (prevTags.includes(tagId) ? prevTags.filter((id) => id !== tagId) : [...prevTags, tagId]));
-    };
+    // 🔹 Handle Tag Selection (Limit max 10 tags)
+const handleTagSelection = (tagId) => {
+    setSelectedTags((prevTags) => {
+        if (prevTags.includes(tagId)) {
+            return prevTags.filter((id) => id !== tagId); // Deselect tag
+        } else if (prevTags.length < 10) {
+            return [...prevTags, tagId]; // Select tag if limit not reached
+        }
+        return prevTags; // Do nothing if limit reached
+    });
+};
+
 
     // 🔹 Handle Skill Selection
     const handleSkillSelection = (skillId) => {
@@ -218,23 +226,16 @@ const PublishPage = () => {
             {/* 🔹 Tag Selection (Only for Project Posts or News) */}
 {(postType === "project" || postType === "news") && (
     <div className="flex flex-wrap items-center gap-2">
-        <p className="font-semibold text-sm">Select Tags (Max 10):</p>
+        <p className="font-semibold text-sm">Select Tags (max 10):</p>
         {tags.length > 0 ? (
-            tags.map((tag) => {
-                // Определяем, выбран ли тег
+            // Отображаем только первые 20 тегов
+            tags.slice(0, 20).map((tag) => {
                 const isSelected = selectedTags.includes(tag.id);
-                // Если тег ещё не выбран, но лимит 10 достигнут, отключаем кнопку
-                const isDisabled = !isSelected && selectedTags.length >= 10;
-
                 return (
                     <button
                         key={tag.id}
                         onClick={() => handleTagSelection(tag.id)}
-                        disabled={isDisabled}
-                        className={`px-2 py-1 shadow-sm rounded-md text-sm cursor-pointer transition
-                            ${isSelected ? "bg-green-700 text-white" : ""}
-                            ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
-                        `}
+                        className={`px-2 py-1 shadow-sm rounded-md text-sm cursor-pointer transition ${isSelected ? "bg-green-700 text-white" : ""}`}
                     >
                         {tag.name}
                     </button>
@@ -245,6 +246,7 @@ const PublishPage = () => {
         )}
     </div>
 )}
+
 
 
             {/* 🔹 Skill Selection (Only for Project Posts) */}

@@ -215,24 +215,37 @@ const PublishPage = () => {
                 <option value="team">Team</option>
             </select>
 
-            {/* 🔹 Post Title Input */}
-            <input className="w-full text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none" placeholder="Enter your post title..." value={title} onChange={(e) => setTitle(e.target.value)} />
+            {/* 🔹 Tag Selection (Only for Project Posts or News) */}
+{(postType === "project" || postType === "news") && (
+    <div className="flex flex-wrap items-center gap-2">
+        <p className="font-semibold text-sm">Select Tags (Max 10):</p>
+        {tags.length > 0 ? (
+            tags.map((tag) => {
+                // Определяем, выбран ли тег
+                const isSelected = selectedTags.includes(tag.id);
+                // Если тег ещё не выбран, но лимит 10 достигнут, отключаем кнопку
+                const isDisabled = !isSelected && selectedTags.length >= 10;
 
-            {/* 🔹 Tag Selection (Only for Project Posts) */}
-            {(postType === "project" || postType === "news") && (
-                <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-sm">Select Tags:</p>
-                    {tags.length > 0 ? (
-                        tags.map((tag) => (
-                            <button key={tag.id} onClick={() => handleTagSelection(tag.id)} className={`px-2 py-1 shadow-sm rounded-md text-sm cursor-pointer transition ${selectedTags.includes(tag.id) ? "bg-green-700 text-white" : ""}`}>
-                                {tag.name}
-                            </button>
-                        ))
-                    ) : (
-                        <p className="text-gray-500 text-sm">No tags available.</p>
-                    )}
-                </div>
-            )}
+                return (
+                    <button
+                        key={tag.id}
+                        onClick={() => handleTagSelection(tag.id)}
+                        disabled={isDisabled}
+                        className={`px-2 py-1 shadow-sm rounded-md text-sm cursor-pointer transition
+                            ${isSelected ? "bg-green-700 text-white" : ""}
+                            ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+                        `}
+                    >
+                        {tag.name}
+                    </button>
+                );
+            })
+        ) : (
+            <p className="text-gray-500 text-sm">No tags available.</p>
+        )}
+    </div>
+)}
+
 
             {/* 🔹 Skill Selection (Only for Project Posts) */}
             {postType === "project" && (

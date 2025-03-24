@@ -26,6 +26,7 @@ from sqlalchemy.orm import Session
 
 # Импортируем схемы и модели
 from app.schemas.user import UserCreate, UserOut
+from app.models.blacklisted_token import BlacklistedToken
 from app.models.user import User
 # Импортируем утилиты: хэширование, проверку пароля, OAuth функции и логирование
 from app.utils.auth import (
@@ -163,30 +164,30 @@ def login_user(
         "token_type": "bearer",
         "user": UserOut.from_orm(user)
     }
+    
+def is_token_blacklisted(token: str, db: Session):
+    return db.query(BlacklistedToken).filter(BlacklistedToken.token == token).first() is not None
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
-    """
-    Извлекает текущего пользователя из JWT-токена.
-    """
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Неверные учетные данные или токен истёк",
+        status_code=401,
+        detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
-        if not email:
+        if email is None:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
 
+    if is_token_blacklisted(token, db):
+        raise HTTPException(status_code=401, detail="Token has been revoked")
+
     user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден"
-        )
+    if user is None:
+        raise credentials_exception
     return user
 
 @router.get("/me", response_model=UserOut, summary="Текущий пользователь")
@@ -216,6 +217,13 @@ def refresh_token(refresh_token: str = Body(...), db: Session = Depends(get_db))
     access_token = create_access_token(user, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     logger.info(f"Новый access token сгенерирован для пользователя: {user.email}")
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/logout")
+def logout(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    new_blacklisted = BlacklistedToken(token=token)
+    db.add(new_blacklisted)
+    db.commit()
+    return {"message": "Logged out successfully"}
 
 # ---------------------- Google OAuth ----------------------
 

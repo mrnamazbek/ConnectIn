@@ -11,7 +11,7 @@ axios.interceptors.response.use(
                 if (!refreshToken) throw new Error("No refresh token");
 
                 const response = await axios.post(
-                    `${import.meta.env.VITE_API_URL}/refresh_token`,
+                    `${import.meta.env.VITE_API_URL}/auth/refresh_token`,
                     { refresh_token: refreshToken },
                     {
                         headers: { "Content-Type": "application/json" },

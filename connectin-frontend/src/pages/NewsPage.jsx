@@ -12,6 +12,8 @@ export default function NewsPage() {
     const [error, setError] = useState(null);
     const [likedPosts, setLikedPosts] = useState({});
     const [savedPosts, setSavedPosts] = useState({});
+    const [showAllTags, setShowAllTags] = useState(false); 
+    const initialTagLimit = 10; 
 
     useEffect(() => {
         fetchAllData();
@@ -19,12 +21,9 @@ export default function NewsPage() {
 
     const fetchAllData = async () => {
         try {
-            const [newsRes, tagsRes] = await Promise.all([
-                axios.get(`${import.meta.env.VITE_API_URL}/posts/?post_type=news`),
-                axios.get(`${import.meta.env.VITE_API_URL}/tags/`), // Assumes a tags endpoint exists
-            ]);
+            const [newsRes, tagsRes] = await Promise.all([axios.get(`${import.meta.env.VITE_API_URL}/posts/?post_type=news`), axios.get(`${import.meta.env.VITE_API_URL}/tags/`)]);
             setNews(newsRes.data);
-            setAllTags(tagsRes.data); // Expecting { id, name } for each tag
+            setAllTags(tagsRes.data);
             await Promise.all([fetchLikeStatuses(newsRes.data), fetchSaveStatuses(newsRes.data)]);
         } catch (error) {
             console.error("Error fetching data:", error);
@@ -141,16 +140,25 @@ export default function NewsPage() {
         }
     };
 
+    const visibleTags = showAllTags ? allTags : allTags.slice(0, initialTagLimit);
+
     return (
         <div className="flex flex-col">
             <div className="flex-grow container mx-auto">
                 {/* Tag Filtering UI */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                    {allTags.map((tag) => (
-                        <button key={tag.id} className={`px-3 py-1 rounded-md shadow-sm border-gray-200 cursor-pointer text-sm ${selectedTags.includes(tag.id) ? "bg-green-700 text-white" : "bg-white hover:bg-gray-300"}`} onClick={() => handleTagSelect(tag.id)}>
-                            {tag.name}
+                <div className="mb-4">
+                    <div className="flex flex-wrap gap-2">
+                        {visibleTags.map((tag) => (
+                            <button key={tag.id} className={`px-3 py-1 rounded-md shadow-sm border-gray-200 cursor-pointer text-sm ${selectedTags.includes(tag.id) ? "bg-green-700 text-white" : "bg-white hover:bg-gray-300"}`} onClick={() => handleTagSelect(tag.id)}>
+                                {tag.name}
+                            </button>
+                        ))}
+                    </div>
+                    {allTags.length > initialTagLimit && (
+                        <button onClick={() => setShowAllTags(!showAllTags)} className="mt-2 text-green-700 cursor-pointer hover:underline text-sm" aria-label={showAllTags ? "Show fewer tags" : "Show more tags"}>
+                            {showAllTags ? "Show Less" : `Show More (${allTags.length - initialTagLimit} more)`}
                         </button>
-                    ))}
+                    )}
                 </div>
 
                 {/* News Display */}

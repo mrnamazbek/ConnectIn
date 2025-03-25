@@ -3,6 +3,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import Base
+from .associations import todo_tags_association, todo_watchers_association
 
 
 class Todo(Base):
@@ -16,3 +17,20 @@ class Todo(Base):
 
     # Связь с пользователем
     user = relationship("User", back_populates="todos")
+
+    # Наблюдатели
+    watchers = relationship(
+        "User",
+        secondary=todo_watchers_association,
+        back_populates="watched_todos"
+    )
+
+    # Теги
+    tags = relationship(
+        "Tag",
+        secondary=todo_tags_association,
+        back_populates="todos"
+    )
+
+    # Комментарии
+    comments = relationship("TodoComment", back_populates="todo", cascade="all, delete-orphan")

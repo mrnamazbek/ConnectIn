@@ -72,3 +72,23 @@ conversation_participants = Table(
     Column("conversation_id", Integer, ForeignKey("conversations.id"), primary_key=True),
     extend_existing=True
 )
+
+# models/associations.py
+
+# Many-to-Many: User ↔ Todo (Наблюдатели задач)
+todo_watchers_association = Table(
+    "todo_watchers",
+    Base.metadata,
+    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("todo_id", Integer, ForeignKey("todos.id", ondelete="CASCADE"), primary_key=True),
+    extend_existing=True
+)
+
+# Many-to-Many: Todo ↔ Tags (Теги задач)
+todo_tags_association = Table(
+    "todo_tags",
+    Base.metadata,
+    Column("todo_id", Integer, ForeignKey("todos.id", ondelete="CASCADE"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
+    extend_existing=True
+)

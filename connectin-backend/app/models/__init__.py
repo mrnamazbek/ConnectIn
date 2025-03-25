@@ -28,6 +28,8 @@ from .associations import (
     project_tags_association,
     user_skills_association,
     user_teams_association,
+    todo_tags_association,
+    todo_watchers_association,
 )
 
 __all__ = [
@@ -58,4 +60,6 @@ __all__ = [
     "project_tags_association",
     "user_skills_association",
     "user_teams_association",
+    "todo_watchers_association",
+    "todo_tags_association",
 ]

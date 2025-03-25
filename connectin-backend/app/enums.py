@@ -1,4 +1,6 @@
 from enum import Enum
+# enums.py
+from enum import Enum as PyEnum
 
 class ApplicationStatus(str, Enum):
     ACCEPTED = "accepted"
@@ -15,4 +17,11 @@ class ConversationRole(str, Enum):
     DIRECT = "direct"
     TEAM = "team"
 
+
+class TodoStatus(PyEnum):
+    OPEN = "Open"
+    IN_PROGRESS = "In Progress"
+    COMPLETED = "Completed"
+    BLOCKED = "Blocked"
+    ARCHIVED = "Archived"
 

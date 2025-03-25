@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Table, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import Base
-from .associations import project_tags_association, post_tags_association
+from .associations import project_tags_association, post_tags_association, todo_tags_association
 
 class Tag(Base):
     __tablename__ = "tags"
@@ -20,6 +20,13 @@ class Tag(Base):
     posts = relationship(
         "Post",
         secondary=post_tags_association,
+        back_populates="tags"
+    )
+
+    # Добавляем связь с Todo
+    todos = relationship(
+        "Todo",
+        secondary=todo_tags_association,
         back_populates="tags"
     )
 

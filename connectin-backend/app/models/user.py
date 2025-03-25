@@ -54,7 +54,7 @@ class User(Base):
     )
 
     # Добавляем обратные связи для комментариев
-    todo_comments = relationship("TodoComment", back_populates="author")
+    todo_comments = relationship("TodoComment", back_populates="user")
 
     def __repr__(self):
         return f"<User id={self.id} username={self.username} email={self.email}>"

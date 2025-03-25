@@ -17,6 +17,7 @@ from .like import PostLike
 from .save import SavedPost
 from .vote import ProjectVote
 from .blacklisted_token import BlacklistedToken
+from .todo_comment import TodoComment
 
 
 # Import Many-to-Many association tables separately to avoid circular dependencies

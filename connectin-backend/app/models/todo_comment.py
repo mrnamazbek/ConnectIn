@@ -1,7 +1,5 @@
 import uuid
 from datetime import datetime
-
-from falcon.response import timezone
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from .base import Base
@@ -21,5 +19,6 @@ class TodoComment(Base):
     author_id = Column(Integer, ForeignKey("users.id"))
     todo_id = Column(Integer, ForeignKey("todos.id"))
 
-    author = relationship("User", back_populates="todo_comments")
+    # Обратные связи
     todo = relationship("Todo", back_populates="comments")
+    user = relationship("User", back_populates="todo_comments")

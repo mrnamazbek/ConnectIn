@@ -86,7 +86,7 @@ const ChatWindow = ({ conversationId }) => {
     const loadCurrentUser = async () => {
         try {
             const token = localStorage.getItem("access_token");
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/chats/users/me`, {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setCurrentUser(response.data);

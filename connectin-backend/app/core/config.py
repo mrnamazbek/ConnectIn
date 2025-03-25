@@ -4,6 +4,7 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
+    FRONTEND_URL: str = Field("http://localhost:8000/docs")
     # 🌍 Environment
     ENVIRONMENT: str = Field("development", env="ENVIRONMENT")
 

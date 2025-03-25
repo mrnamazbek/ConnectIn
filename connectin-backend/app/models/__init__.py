@@ -16,6 +16,7 @@ from .comment import PostComment, ProjectComment
 from .like import PostLike
 from .save import SavedPost
 from .vote import ProjectVote
+from .blacklisted_token import BlacklistedToken
 
 
 # Import Many-to-Many association tables separately to avoid circular dependencies
@@ -52,6 +53,7 @@ __all__ = [
     "Tag",
     "Team",
     "User",
+    "BlacklistedToken",
     "conversation_participants",
     "post_tags_association",
     "project_applications",

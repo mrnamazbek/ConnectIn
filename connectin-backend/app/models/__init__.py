@@ -2,6 +2,7 @@
 
 from .base import Base
 from .user import User
+from .todo import Todo  # Импорт до User
 from .team import Team
 from .project import Project
 from .post import Post

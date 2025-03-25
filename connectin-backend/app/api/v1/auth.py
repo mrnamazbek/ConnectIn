@@ -148,7 +148,7 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     logger.info(f"Пользователь зарегистрирован: {new_user.email}")
     return new_user
 
-@router.post("/login", response_model=UserOut, summary="Войти в систему")
+@router.post("/login", response_model=TokenResponse, summary="Войти в систему")
 @limiter.limit("5 per minute")
 def login_user(
     request: Request,

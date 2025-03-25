@@ -2,6 +2,9 @@ import logging
 from collections import defaultdict
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from contextlib import suppress
+from fastapi import WebSocket, Depends
+from app.database.connection import get_db
+from sqlalchemy.orm import Session
 
 router = APIRouter()
 logger = logging.getLogger("chat")

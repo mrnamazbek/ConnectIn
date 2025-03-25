@@ -16,6 +16,7 @@ from .like import PostLike
 from .save import SavedPost
 from .vote import ProjectVote
 
+
 # Import Many-to-Many association tables separately to avoid circular dependencies
 from .associations import (
     conversation_participants,
@@ -30,9 +31,9 @@ from .associations import (
 
 __all__ = [
     "Base",
-    "Chat",
+    #"Chat",
     "Conversation",
-    "ConversationParticipant",
+   #"ConversationParticipant",
     "Message",
     "Post",
     "PostComment",

@@ -39,7 +39,7 @@ def create_app() -> FastAPI:
         return response
 
     # Подключаем маршруты
-    app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+    app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
     app.include_router(projects.router, prefix="/projects", tags=["Projects"])
     app.include_router(teams.router, prefix="/teams", tags=["Teams"])
     app.include_router(users.router, prefix="/users", tags=["Users"])

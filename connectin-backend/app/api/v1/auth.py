@@ -12,6 +12,8 @@ from sqlalchemy.orm import Session
 # Импортируем схемы и модели
 from app.schemas.user import UserCreate, UserOut
 from app.models.user import User
+from app.schemas.auth import TokenResponse  # Импортируем новую модель
+
 # Импортируем утилиты: хэширование, проверку пароля, OAuth функции и логирование
 from app.utils.auth import (
     hash_password,
@@ -27,7 +29,7 @@ from app.database.connection import get_db
 from app.core.config import settings
 
 # Инициализация роутера и OAuth2 схемы
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 # Настройка для JWT
@@ -47,7 +49,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 # Функция для создания JWT-токенов
 def create_jwt_token(subject: str, expire_delta: timedelta):
-    expire = datetime.now() + expire_delta
+    expire = datetime.utcnow() + expire_delta
     payload = {"sub": subject,
                "exp": expire
                }
@@ -139,7 +141,7 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
         )
 
     hashed_pw = hash_password(user_data.password)
-    new_user = User(username=user_data.username, email=Optional[user_data.email], hashed_password=hashed_pw)
+    new_user = User(username=user_data.username, email=user_data.email, hashed_password=hashed_pw)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)

@@ -1,5 +1,8 @@
-from pydantic import BaseModel, EmailStr, Field, HttpUrl
 from typing import Optional, List
+
+from pydantic import BaseModel
+from pydantic import EmailStr, Field, HttpUrl
+
 
 class SkillBase(BaseModel):
     """Схема навыков, возвращаемая в API."""

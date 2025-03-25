@@ -253,7 +253,7 @@ def search_posts(
     """
     Поиск постов по заголовку, содержимому или связанным тегам с пагинацией.
     """
-    logger = get_logger()
+    logger = get_logger(__name__)
     logger.info(f"Получен поисковый запрос: query='{query}', page={page}, page_size={page_size}")
 
     # Выполняем поиск

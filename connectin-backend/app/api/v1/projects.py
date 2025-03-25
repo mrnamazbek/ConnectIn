@@ -10,6 +10,9 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import case, func
 from typing import List
+from sqlalchemy.orm import joinedload
+from fastapi import Query, HTTPException
+from typing import List
 
 from app.database.connection import get_db
 from app.models import Tag
@@ -587,25 +590,50 @@ def get_project_comments(
     ]
 
 #  added search request
-@router.get("/projects/search", response_model=List[ProjectOut])
+@router.get("/search", response_model=List[ProjectOut])
 def search_projects(
-    query: str = Query(..., min_length=1),
-    page: int = Query(1, ge=1),
-    page_size: int = Query(10, ge=1, le=100),
+    query: str = Query(..., min_length=1, example="blockchain"),
+    page: int = Query(1, ge=1, description="Номер страницы начиная с 1"),
+    page_size: int = Query(10, ge=1, le=100, description="Количество элементов (1-100)"),
     db: Session = Depends(get_db)
 ):
-    logger = get_logger()
-    logger.info(f"Поиск проектов: query='{query}', page={page}, page_size={page_size}")
+    """
+    Поиск проектов по названию, описанию или тегам
+    """
+    # Initialize logger with module name for better tracking
+    logger = get_logger(__name__)
 
-    projects_query = db.query(Project).filter(
-        (Project.name.ilike(f"%{query}%")) |
-        (Project.description.ilike(f"%{query}%")) |
-        (Project.tags.any(Tag.name.ilike(f"%{query}%")))
-    )
+    try:
+        # Log the start of the search with parameters
+        logger.info(f"Starting project search: query='{query}', page={page}, page_size={page_size}")
 
-    total = projects_query.count()
-    projects = projects_query.offset((page - 1) * page_size).limit(page_size).all()
+        # Base query with eager loading of related data
+        query_base = db.query(Project).options(
+            joinedload(Project.owner),
+            joinedload(Project.tags),
+            joinedload(Project.skills),
+            joinedload(Project.members)
+        )
 
-    logger.info(f"Найдено проектов: {total} для query='{query}', возвращаем страницу {page} с {len(projects)} проектами")
+        # Apply filters
+        results = query_base.filter(
+            (Project.name.ilike(f"%{query}%")) |
+            (Project.description.ilike(f"%{query}%")) |
+            (Project.tags.any(Tag.name.ilike(f"%{query}%")))
+        ).order_by(Project.created_at.desc())
 
-    return [ProjectOut.model_validate(project) for project in projects]
+        # Get total count for pagination info
+        total = results.count()
+
+        # Apply pagination
+        paginated_results = results.offset((page - 1) * page_size).limit(page_size).all()
+
+        # Log successful completion with result details
+        logger.info(f"Search completed: found {total} projects, returning {len(paginated_results)} on page {page}")
+
+        return paginated_results
+
+    except Exception as e:
+        # Log error with details
+        logger.error(f"Search failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")

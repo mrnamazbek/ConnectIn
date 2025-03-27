@@ -7,6 +7,7 @@ import { Link, useNavigate } from "react-router";
 import { faGoogle, faGithub } from "@fortawesome/free-brands-svg-icons";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import Cookies from "js-cookie";
+import { toast } from "react-toastify";
 
 // Axios interceptor for token refresh
 axios.interceptors.response.use(
@@ -73,10 +74,18 @@ const LoginPage = () => {
                 );
                 localStorage.setItem("access_token", response.data.access_token);
                 localStorage.setItem("refresh_token", response.data.refresh_token);
+                toast.success("Login successful!", {
+                    position: "bottom-left",
+                    autoClose: 5000,
+                });
                 navigate("/");
             } catch (error) {
                 console.error("Login failed:", error.response?.data || error.message);
-                formik.setErrors({ submit: "Invalid username or password. Please try again." });
+                const errorMessage = error.response?.data?.message || "Invalid username or password. Please try again.";
+                toast.error(errorMessage, {
+                    position: "bottom-left",
+                    autoClose: 5000,
+                });
             } finally {
                 setLoading(false);
                 setSubmitting(false);
@@ -93,6 +102,10 @@ const LoginPage = () => {
             localStorage.setItem("refresh_token", refreshTokenCookie);
             Cookies.remove("access_token");
             Cookies.remove("refresh_token");
+            toast.success("Login successful via OAuth!", {
+                position: "bottom-left",
+                autoClose: 5000,
+            });
             navigate("/");
         }
     }, [navigate]);
@@ -157,15 +170,22 @@ const LoginPage = () => {
                                     "Sign in"
                                 )}
                             </button>
-                            {formik.errors.submit && <p className="text-red-500 text-xs mt-2 text-center">{formik.errors.submit}</p>}
                         </div>
 
                         {/* OAuth Buttons */}
                         {/* <div className="flex justify-between space-x-3 mt-4">
-                            <button type="button" className="w-full flex items-center justify-center border border-gray-300 py-2 font-semibold rounded-md shadow-md hover:bg-gray-50 transition cursor-pointer" onClick={() => handleOAuthLogin("google")}>
+                            <button
+                                type="button"
+                                className="w-full flex items-center justify-center border border-gray-300 py-2 font-semibold rounded-md shadow-md hover:bg-gray-50 transition cursor-pointer"
+                                onClick={() => handleOAuthLogin("google")}
+                            >
                                 <FontAwesomeIcon icon={faGoogle} className="mr-2 text-red-500" /> Google
                             </button>
-                            <button type="button" className="w-full flex items-center justify-center border border-gray-300 py-2 font-semibold rounded-md shadow-md hover:bg-gray-50 transition cursor-pointer" onClick={() => handleOAuthLogin("github")}>
+                            <button
+                                type="button"
+                                className="w-full flex items-center justify-center border border-gray-300 py-2 font-semibold rounded-md shadow-md hover:bg-gray-50 transition cursor-pointer"
+                                onClick={() => handleOAuthLogin("github")}
+                            >
                                 <FontAwesomeIcon icon={faGithub} className="mr-2 text-gray-800" /> Github
                             </button>
                         </div> */}

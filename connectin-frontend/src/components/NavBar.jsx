@@ -110,7 +110,7 @@ const NavBar = () => {
                                     <FontAwesomeIcon icon={faUser} />
                                 </div>
                                 {showMenu && (
-                                    <div className="absolute top-6 right-0 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-gray-700 shadow-md p-2">
+                                    <div className="absolute z-10 top-6 right-0 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-gray-700 shadow-md p-2">
                                         <NavLink to="/profile" className="block py-2 px-4 text-sm text-gray-700 dark:text-white hover:underline dark:hover:bg-gray-700" onClick={() => setShowMenu(false)}>
                                             Profile
                                         </NavLink>

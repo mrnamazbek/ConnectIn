@@ -10,6 +10,7 @@ import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import ProjectProfile from "./pages/ProjectProfile";
 import AboutUs from "./pages/AboutUs";
+import { ToastContainer } from "react-toastify";
 
 function App() {
     return (
@@ -30,6 +31,7 @@ function App() {
                             <Route path="/about" element={<AboutUs />} />
                         </Routes>
                     </div>
+                    <ToastContainer autoClose={5000} position="bottom-left"/>
                 </div>
                 <ConditionalFooter />
             </div>

@@ -42,6 +42,8 @@ class User(Base):
     comments = relationship("PostComment", back_populates="user", cascade="all, delete")
     project_comments = relationship("ProjectComment", back_populates="user", cascade="all, delete")
 
+    recommendations = relationship("Recommendation", back_populates="from_user")
+
     def __repr__(self):
         return f"<User id={self.id} username={self.username} email={self.email}>"
     

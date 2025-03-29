@@ -1,6 +1,17 @@
 from sqlalchemy import Column, Integer, ForeignKey, Table
 from .base import Base  # Make sure this is imported first
 
+
+# Таблица для связи многих ко многим между skills и skill_categories
+skill_mappings = Table(
+    "skill_mappings",
+    Base.metadata,
+    Column("skill_id", Integer, ForeignKey("skills.id", ondelete="CASCADE"), primary_key=True),
+    Column("category_id", Integer, ForeignKey("skill_categories.id", ondelete="CASCADE"), primary_key=True),
+    extend_existing=True
+)
+
+
 # ✅ Many-to-Many: Project ↔ Skills
 project_skills_association = Table(
     "project_skills",

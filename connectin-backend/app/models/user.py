@@ -42,7 +42,7 @@ class User(Base):
     conversations = relationship("Conversation", secondary=conversation_participants, back_populates="participants")
     messages = relationship("Message", back_populates="sender")
     
-    comments = relationship("PostComment", back_populates="user", cascade="all, delete")
+    post_comments = relationship("PostComment", back_populates="user", cascade="all, delete")
     project_comments = relationship("ProjectComment", back_populates="user", cascade="all, delete")
 
     #25.03.25:

@@ -15,6 +15,7 @@ from app.schemas.post import PostCreate, PostOut
 from app.schemas.comment import CommentCreate, CommentOut
 from app.api.v1.auth import get_current_user
 from app.utils.logger import get_logger
+from datetime import datetime
 
 router = APIRouter()
 
@@ -333,9 +334,9 @@ def get_post_comments(post_id: int, db: Session = Depends(get_db)):
         CommentOut(
             id=comment.id,
             content=comment.content,
-            user_id=comment.user_id,  # ✅ Ensure `user_id` is directly returned
-            created_at=comment.created_at
-        )
+            user_id=comment.user_id,
+            created_at=comment.created_at,
+            user={"username": comment.user.username if comment.user else "Unknown", "avatar_url": comment.user.avatar_url if comment.user else None}        )
         for comment in comments
     ]
 
@@ -351,7 +352,7 @@ def comment_post(
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
 
-    # Create the new comment
+    # Create the new comment (let the model use its default for created_at)
     new_comment = PostComment(
         content=comment_data.content,
         user_id=current_user.id,

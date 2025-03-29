@@ -9,6 +9,12 @@ class Skill(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False)
 
+    # Связь многие ко многим с категориями через таблицу skill_mappings
+    categories = relationship("SkillCategory", secondary="skill_mappings", back_populates="skills")
+
+    # Связь с пользователями через существующую таблицу user_skills (предполагается, что она уже определена)
+    users = relationship("User", secondary="user_skills", back_populates="skills")
+
     # ✅ Many-to-Many: Users & Skills
     users = relationship("User", secondary=user_skills_association, back_populates="skills")
 

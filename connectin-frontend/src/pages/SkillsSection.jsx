@@ -1,53 +1,50 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrashAlt, faSearch } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
 
-const SkillsSection = ({ setSkills, skills: propSkills, loading, isStatic }) => {
+const SkillsSection = ({ setSkills, skills: propSkills, availableSkills: propAvailableSkills, loading, isStatic }) => {
     const [skills, setLocalSkills] = useState([]);
     const [availableSkills, setAvailableSkills] = useState([]);
     const [showAddSkills, setShowAddSkills] = useState(false);
     const [localLoading, setLocalLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const fetchSkills = useCallback(async () => {
+        try {
+            setLocalLoading(true);
+            const token = localStorage.getItem("access_token");
+            
+            // Only fetch user skills if not static
+            if (!isStatic) {
+                const userSkillsResponse = await axios.get(`${import.meta.env.VITE_API_URL}/users/me/skills`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                if (userSkillsResponse?.data) {
+                    setLocalSkills(userSkillsResponse.data);
+                    if (setSkills) setSkills(userSkillsResponse.data);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to fetch skills:", error.response?.data || error.message);
+            toast.error(error.response?.data?.detail || "Failed to load skills");
+        } finally {
+            setLocalLoading(false);
+        }
+    }, [setSkills, isStatic]);
 
     useEffect(() => {
         if (isStatic && propSkills) {
             setLocalSkills(propSkills);
+            setAvailableSkills(propAvailableSkills || []);
             setLocalLoading(false);
             return;
         }
 
         fetchSkills();
-    }, [isStatic, propSkills]);
-
-    const fetchSkills = async () => {
-        try {
-            setLocalLoading(true);
-            const token = localStorage.getItem("access_token");
-            const [userSkillsResponse, availableSkillsResponse] = await Promise.all([
-                axios.get(`${import.meta.env.VITE_API_URL}/users/me/skills`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                }),
-                axios.get(`${import.meta.env.VITE_API_URL}/skills`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                }),
-            ]);
-
-            if (userSkillsResponse?.data) {
-                setLocalSkills(userSkillsResponse.data);
-                if (setSkills) setSkills(userSkillsResponse.data);
-            }
-            if (availableSkillsResponse?.data) {
-                setAvailableSkills(availableSkillsResponse.data);
-                console.log(availableSkillsResponse.data);
-            }
-        } catch (error) {
-            console.error("Failed to fetch skills:", error);
-            toast.error("Failed to load skills");
-        } finally {
-            setLocalLoading(false);
-        }
-    };
+    }, [isStatic, propSkills, propAvailableSkills, fetchSkills]);
 
     const handleSelectSkill = async (skill) => {
         try {
@@ -81,6 +78,10 @@ const SkillsSection = ({ setSkills, skills: propSkills, loading, isStatic }) => 
         }
     };
 
+    const filteredAvailableSkills = availableSkills.filter(skill => 
+        skill.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     return (
         <div className="space-y-6">
             {loading || localLoading ? (
@@ -108,8 +109,20 @@ const SkillsSection = ({ setSkills, skills: propSkills, loading, isStatic }) => 
                     {showAddSkills && (
                         <div className="mt-6">
                             <h3 className="text-lg font-semibold text-gray-800 mb-4">Available Skills</h3>
+                            <div className="relative mb-4">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Search skills..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                />
+                            </div>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                                {availableSkills
+                                {filteredAvailableSkills
                                     .filter((skill) => !skills.some((userSkill) => userSkill.id === skill.id))
                                     .map((skill) => (
                                         <button key={skill.id} onClick={() => handleSelectSkill(skill)} className="bg-gray-50 border border-gray-200 rounded-lg p-3 hover:bg-gray-100 transition-all text-left flex items-center justify-between">

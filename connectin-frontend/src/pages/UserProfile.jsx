@@ -16,6 +16,7 @@ const UserProfile = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [skills, setSkills] = useState([]);
+    const [availableSkills, setAvailableSkills] = useState([]);
     const [projects, setProjects] = useState([]);
     const [userPosts, setUserPosts] = useState([]);
     const [education, setEducation] = useState([]);
@@ -59,11 +60,14 @@ const UserProfile = () => {
                 }
 
                 // Fetch all data in parallel
-                const [userResponse, postsResponse, savedPostsResponse] = await Promise.all([
+                const [userResponse, postsResponse, skillsResponse, savedPostsResponse] = await Promise.all([
                     axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
                         headers: { Authorization: `Bearer ${token}` },
                     }),
                     axios.get(`${import.meta.env.VITE_API_URL}/posts/my`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                    axios.get(`${import.meta.env.VITE_API_URL}/skills`, {
                         headers: { Authorization: `Bearer ${token}` },
                     }),
                     axios.get(`${import.meta.env.VITE_API_URL}/users/me/saved-posts`, {
@@ -86,6 +90,10 @@ const UserProfile = () => {
 
                 if (savedPostsResponse?.data) {
                     setSavedPosts(savedPostsResponse.data);
+                }
+
+                if (skillsResponse?.data) {
+                    setAvailableSkills(skillsResponse.data);
                 }
 
                 // Fetch projects separately
@@ -113,7 +121,7 @@ const UserProfile = () => {
         };
 
         fetchAllData();
-    }, [navigate]); // Only run once when component mounts
+    }, [navigate]);
 
     const handleAddEducation = async () => {
         if (!newEducation.institution || !newEducation.degree || !newEducation.start_year || !newEducation.end_year) {
@@ -590,7 +598,7 @@ const UserProfile = () => {
                         <Routes>
                             <Route index element={<Navigate to="projects" />} />
                             <Route path="projects" element={<ProjectsSection user={user} projects={projects} loading={loadingUser} isStatic={true} />} />
-                            <Route path="skills" element={<SkillsSection setSkills={setSkills} skills={skills} loading={loadingUser} isStatic={true} />} />
+                            <Route path="skills" element={<SkillsSection setSkills={setSkills} skills={skills} availableSkills={availableSkills} loading={loadingUser} isStatic={true} />} />
                             <Route path="actions" element={<ActionsSection user={user} posts={userPosts} loading={loadingPosts} isStatic={true} />} />
                             <Route path="saved" element={<SavedPostsSection posts={savedPosts} loading={loadingSavedPosts} isStatic={true} />} />
                         </Routes>

@@ -12,6 +12,8 @@ from typing import List, Union
 from app.database.connection import get_db
 from app.models.user import User, Education, Experience
 from app.models.skill import Skill
+from app.models.save import SavedPost
+from app.models.post import Post
 from app.schemas.user import UserOut, UserUpdate, EducationCreate, ExperienceCreate, EducationUpdate, ExperienceUpdate, EducationOut, ExperienceOut, AvatarUpdate, StatusUpdate, BasicInfoUpdate, SocialLinksUpdate, ContactInfoUpdate, UserOutWithToken
 from app.schemas.skill import SkillOut
 from app.api.v1.auth import get_current_user, create_access_token
@@ -538,3 +540,8 @@ def update_contact_info(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при обновлении контактной информации: {str(e)}"
         )
+
+@router.get("/me/saved-posts")
+def get_saved_posts(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    saved_posts = db.query(SavedPost).filter(SavedPost.user_id == current_user.id).join(Post).all()
+    return [saved_post.post for saved_post in saved_posts]

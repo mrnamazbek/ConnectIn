@@ -41,6 +41,7 @@ class User(Base):
     
     post_comments = relationship("PostComment", back_populates="user", cascade="all, delete")
     project_comments = relationship("ProjectComment", back_populates="user", cascade="all, delete")
+    saved_posts = relationship("SavedPost", back_populates="user", cascade="all, delete-orphan")
 
     recommendations = relationship("Recommendation", back_populates="from_user")
 

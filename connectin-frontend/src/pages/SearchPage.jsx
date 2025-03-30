@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 import PopularProjects from "../components/PopularProjects";
 import { fakePopularProjects } from "../data/data";
@@ -113,7 +113,7 @@ export default function SearchPage() {
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-gray-500 text-center">No results found for "{searchQuery}".</p>
+                            <p className="text-gray-500 text-center">No results found for &quot;{searchQuery}&quot;.</p>
                         )
                     ) : (
                         <p className="text-gray-500 text-center">Enter a search query to find posts.</p>

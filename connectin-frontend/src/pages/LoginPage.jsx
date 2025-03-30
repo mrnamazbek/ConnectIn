@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Link, useNavigate } from "react-router";
-import { faGoogle, faGithub } from "@fortawesome/free-brands-svg-icons";
+
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
@@ -110,10 +110,6 @@ const LoginPage = () => {
         }
     }, [navigate]);
 
-    const handleOAuthLogin = (provider) => {
-        window.location.href = `http://${import.meta.env.VITE_API_URL}/auth/${provider}/login`;
-    };
-
     return (
         <div className="flex justify-center items-center min-h-screen -mt-13 px-4">
             <div className="flex flex-wrap md:flex-nowrap border border-green-700 rounded-md bg-white shadow-lg w-full max-w-3xl">
@@ -172,27 +168,9 @@ const LoginPage = () => {
                             </button>
                         </div>
 
-                        {/* OAuth Buttons */}
-                        {/* <div className="flex justify-between space-x-3 mt-4">
-                            <button
-                                type="button"
-                                className="w-full flex items-center justify-center border border-gray-300 py-2 font-semibold rounded-md shadow-md hover:bg-gray-50 transition cursor-pointer"
-                                onClick={() => handleOAuthLogin("google")}
-                            >
-                                <FontAwesomeIcon icon={faGoogle} className="mr-2 text-red-500" /> Google
-                            </button>
-                            <button
-                                type="button"
-                                className="w-full flex items-center justify-center border border-gray-300 py-2 font-semibold rounded-md shadow-md hover:bg-gray-50 transition cursor-pointer"
-                                onClick={() => handleOAuthLogin("github")}
-                            >
-                                <FontAwesomeIcon icon={faGithub} className="mr-2 text-gray-800" /> Github
-                            </button>
-                        </div> */}
-
                         {/* Register Link */}
                         <p className="text-sm text-center mt-6">
-                            <span className="text-gray-500">Don't have an account?</span>
+                            <span className="text-gray-500">Don&apos;t have an account?</span>
                             <Link to="/register" className="font-semibold text-green-700 ml-1 hover:underline">
                                 Sign up here
                             </Link>

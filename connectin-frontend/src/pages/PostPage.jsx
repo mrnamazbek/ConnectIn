@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router";
 import axios from "axios";
 import { LoadingMessage, ErrorMessage, NoDataMessage } from "../components/Post/PostCard";
@@ -97,7 +97,7 @@ export default function PostPage() {
         }
 
         try {
-            const response = await axios.post(`${import.meta.env.VITE_API_URL}/posts/${postId}/save`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.post(`${import.meta.env.VITE_API_URL}/posts/${postId}/save`, {}, { headers: { Authorization: `Bearer ${token}` } });
             setIsSaved(!isSaved);
             setPost((prev) => ({
                 ...prev,

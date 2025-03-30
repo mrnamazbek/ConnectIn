@@ -1,5 +1,4 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUsers } from "@fortawesome/free-solid-svg-icons";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
@@ -39,7 +38,7 @@ const RegisterPage = () => {
         validateOnChange: true,
         onSubmit: async (values, { setSubmitting, setFieldError }) => {
             try {
-                const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, {
+                await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, {
                     username: values.username,
                     email: values.email,
                     password: values.password,

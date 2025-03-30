@@ -4,12 +4,11 @@ import NewsPage from "./NewsPage";
 import ProjectsPage from "./ProjectsPage";
 import TeamsPage from "./TeamsPage";
 import SubNav from "../components/SubNav";
-import { fakePopularProjects, fakeNews, fakeProjects, fakeTeams } from "../data/data";
+import { fakePopularProjects, fakeTeams } from "../data/data";
 import PublishPage from "./PublishPage";
 import PopularNews from "../components/PopularNews";
 import PostPage from "./PostPage";
 import ProjectPage from "./ProjectPage";
-import ProjectProfile from "./ProjectProfile";
 
 const Feed = () => {
     return (

@@ -1,4 +1,3 @@
-import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLinkedin, faTelegram } from "@fortawesome/free-brands-svg-icons";
 import technologies from "../data/technologies";
@@ -22,7 +21,7 @@ const AboutUs = () => {
             <div className="mb-12">
                 <h2 className="text-xl font-semibold mb-4">What is ConnectIn?</h2>
                 <p className="text-gray-700 leading-relaxed">
-                    ConnectIn is your go-to platform for connecting professionals, fostering collaboration, and sharing knowledge. Whether you're working on innovative projects, staying updated with news, or joining teams, we’re here to help you thrive, powered by cutting-edge technology and
+                    ConnectIn is your go-to platform for connecting professionals, fostering collaboration, and sharing knowledge. Whether you&apos;re working on innovative projects, staying updated with news, or joining teams, we’re here to help you thrive, powered by cutting-edge technology and
                     personalized recommendations.
                 </p>
             </div>

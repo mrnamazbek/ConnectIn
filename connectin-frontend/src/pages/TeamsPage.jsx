@@ -1,6 +1,3 @@
-// src/pages/TeamsPage.jsx
-import React from "react";
-
 export default function TeamsPage({ fakeTeams }) {
     return (
         <>

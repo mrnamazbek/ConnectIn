@@ -226,7 +226,11 @@ const ChatPage = () => {
             {/* Chat Window */}
             <div className="flex-1 p-4">
                 {selectedConversation ? (
-                    <ChatWindow conversationId={selectedConversation} key={selectedConversation} />
+                    <ChatWindow 
+                        conversationId={selectedConversation} 
+                        conversations={conversations}
+                        key={selectedConversation} 
+                    />
                 ) : (
                     <div className="flex flex-col justify-center items-center h-full">
                         <p className="text-gray-500">Select a user to start chatting</p>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import qs from "qs";
 import { PostCard, LoadingMessage, ErrorMessage, NoDataMessage } from "../components/Post/PostCard";

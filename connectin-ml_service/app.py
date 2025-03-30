@@ -1,12 +1,17 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket
 from sqlalchemy import create_engine, text
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from typing import List, Dict
 import os
 from dotenv import load_dotenv
+import logging
 
 app = FastAPI()
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 @app.get("/")
 def read_root():
@@ -128,7 +133,6 @@ def create_skill_vector(skill_list: List[int], all_skills: List[int]) -> np.ndar
             print(f"Warning: Skill ID {skill_id} not found in all_skills")
     return vector
 
-# Генерация рекомендаций для проектов
 def generate_project_recommendations():
     projects_dict, project_skills_dict, user_skills_dict, all_skills = load_project_data()
     print(f"Project skills dict: {project_skills_dict}")
@@ -155,16 +159,12 @@ def generate_project_recommendations():
             if score > 0:
                 project_recommendations.append({
                     "from_user_id": owner_id,
-                    "to_user_id": user_id,
                     "project_id": project_id,
-                    "team_id": None,
-                    "post_id": None,
                     "text": f"Recommendation for project {project_id} based on skills",
                     "score": round(score, 2)
                 })
     return project_recommendations
 
-# Генерация рекомендаций для команд
 def generate_team_recommendations():
     teams_list, user_teams, user_skills_dict, all_skills = load_team_data()
     team_recommendations = []
@@ -207,6 +207,8 @@ def generate_team_recommendations():
                     "score": round(score, 2)
                 })
     return team_recommendations
+# Генерация рекомендаций для проектов
+# Генерация рекомендаций для команд
 
 # Генерация рекомендаций для постов
 def generate_post_recommendations():
@@ -267,17 +269,103 @@ def generate_post_recommendations():
                 })
     return post_recommendations
 
+
 # Сохранение всех рекомендаций
-def save_recommendations(recommendations: List[Dict]):
+def save_project_recommendations(recommendations: List[Dict]):
     with engine.connect() as conn:
-        conn.execute(text("DELETE FROM recommendations"))
-        if recommendations:
+        # Очищаем старые рекомендации для пользователя
+        conn.execute(
+            text("DELETE FROM project_recommendations WHERE recommendation_id IN "
+                 "(SELECT id FROM recommendations WHERE from_user_id = :user_id AND recommendation_type = 'project')"),
+            {"user_id": recommendations[0]["from_user_id"]}
+        )
+        for rec in recommendations:
+            # Проверка наличия и валидности project_id
+            if "project_id" not in rec or rec["project_id"] is None:
+                logger.warning(f"Skipping invalid recommendation for user {rec['from_user_id']}: project_id is missing or None")
+                continue
+
+            # Вставка в главную таблицу
+            result = conn.execute(
+                text("INSERT INTO recommendations (from_user_id, text, score, recommendation_type) "
+                     "VALUES (:from_user_id, :text, :score, 'project') RETURNING id"),
+                {"from_user_id": rec["from_user_id"], "text": rec["text"], "score": rec["score"]}
+            )
+            rec_id = result.fetchone()[0]
+
+            # Вставка в таблицу проектов
             conn.execute(
-                text("""
-                    INSERT INTO recommendations (from_user_id, to_user_id, project_id, team_id, post_id, text, score)
-                    VALUES (:from_user_id, :to_user_id, :project_id, :team_id, :post_id, :text, :score)
-                """),
-                recommendations
+                text("INSERT INTO project_recommendations (recommendation_id, to_project_id) "
+                     "VALUES (:rec_id, :to_project_id)"),
+                {"rec_id": rec_id, "to_project_id": rec["project_id"]}
+            )
+        conn.commit()
+
+
+def save_team_recommendations(recommendations: List[Dict]):
+    with engine.connect() as conn:
+        conn.execute(
+            text("DELETE FROM team_recommendations WHERE recommendation_id IN "
+                 "(SELECT id FROM recommendations WHERE from_user_id = :user_id AND recommendation_type = 'team')"),
+            {"user_id": recommendations[0]["from_user_id"]}
+        )
+        for rec in recommendations:
+            if "team_id" not in rec or rec["team_id"] is None:
+                logger.warning(
+                    f"Skipping invalid team recommendation for user {rec['from_user_id']}: to_team_id is missing or None")
+                continue
+
+            result = conn.execute(
+                text("INSERT INTO recommendations (from_user_id, text, score, recommendation_type) "
+                     "VALUES (:from_user_id, :text, :score, 'team') RETURNING id"),
+                {"from_user_id": rec["from_user_id"], "text": rec["text"], "score": rec["score"]}
+            )
+            rec_id = result.fetchone()[0]
+
+            conn.execute(
+                text("INSERT INTO team_recommendations (recommendation_id, to_team_id) "
+                     "VALUES (:rec_id, :to_team_id)"),
+                {"rec_id": rec_id, "to_team_id": rec["team_id"]}  # Исправлено на "to_team_id"
+            )
+        conn.commit()
+
+
+def save_post_recommendations(recommendations: List[Dict]):
+    """
+    Сохраняет рекомендации постов для пользователя в таблицы recommendations и post_recommendations.
+
+    Args:
+        recommendations: Список словарей с данными рекомендаций.
+                       Каждый словарь должен содержать: from_user_id, to_post_id, text, score.
+    """
+    with engine.connect() as conn:
+        # Очищаем старые рекомендации постов для пользователя
+        conn.execute(
+            text("DELETE FROM post_recommendations WHERE recommendation_id IN "
+                 "(SELECT id FROM recommendations WHERE from_user_id = :user_id AND recommendation_type = 'post')"),
+            {"user_id": recommendations[0]["from_user_id"]}
+        )
+
+        for rec in recommendations:
+            # Проверка наличия и валидности to_post_id
+            if "post_id" not in rec or rec["post_id"] is None:
+                logger.warning(
+                    f"Skipping invalid post recommendation for user {rec['from_user_id']}: to_post_id is missing or None")
+                continue
+
+            # Вставка в главную таблицу recommendations
+            result = conn.execute(
+                text("INSERT INTO recommendations (from_user_id, text, score, recommendation_type) "
+                     "VALUES (:from_user_id, :text, :score, 'post') RETURNING id"),
+                {"from_user_id": rec["from_user_id"], "text": rec["text"], "score": rec["score"]}
+            )
+            rec_id = result.fetchone()[0]
+
+            # Вставка в таблицу post_recommendations
+            conn.execute(
+                text("INSERT INTO post_recommendations (recommendation_id, to_post_id) "
+                     "VALUES (:rec_id, :to_post_id)"),
+                {"rec_id": rec_id, "to_post_id": rec["post_id"]}
             )
         conn.commit()
 
@@ -289,7 +377,9 @@ def generate_and_save_recommendations():
         team_recommendations = generate_team_recommendations()
         post_recommendations = generate_post_recommendations()
         all_recommendations = project_recommendations + team_recommendations + post_recommendations
-        save_recommendations(all_recommendations)
+        save_project_recommendations(all_recommendations)
+        save_team_recommendations(all_recommendations)
+        save_post_recommendations(all_recommendations)
         return {"status": "success", "recommendations": all_recommendations}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating recommendations: {str(e)}")

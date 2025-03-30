@@ -40,7 +40,7 @@ const SavedPostsSection = ({ posts: propPosts, loading, isStatic }) => {
     const handleUnsavePost = async (postId) => {
         try {
             const token = localStorage.getItem("access_token");
-            await axios.delete(`${import.meta.env.VITE_API_URL}/posts/${postId}/save`, {
+            await axios.post(`${import.meta.env.VITE_API_URL}/posts/${postId}/save`, {}, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             toast.success("Post unsaved successfully");

@@ -92,9 +92,9 @@ class UserBase(BaseModel):
     last_name: Optional[str] = Field(None, max_length=50)
     city: Optional[str] = Field(None, max_length=100)
     position: Optional[str] = Field(None, max_length=100)
-    github: Optional[HttpUrl] = None
-    linkedin: Optional[HttpUrl] = None
-    telegram: Optional[HttpUrl] = None
+    github: Optional[str] = Field(None, max_length=255)
+    linkedin: Optional[str] = Field(None, max_length=255)
+    telegram: Optional[str] = Field(None, max_length=255)
     # avatar_url: Optional[HttpUrl] = None  # ✅ NEW: URL for profile picture
 
 class UserCreate(UserBase):
@@ -103,7 +103,38 @@ class UserCreate(UserBase):
 
 class UserUpdate(UserBase):
     """Схема для обновления данных пользователя."""
-    pass  # ✅ Inherits all fields from UserBase
+    avatar_url: Optional[str] = Field(None, max_length=500)  # Добавлено URL аватара
+    status: Optional[str] = Field(None, max_length=100)  # Добавлено поле статуса
+
+class AvatarUpdate(BaseModel):
+    """Схема для обновления аватара пользователя."""
+    avatar_url: str = Field(..., max_length=500)
+
+class StatusUpdate(BaseModel):
+    """Схема для обновления статуса пользователя."""
+    status: str = Field(..., max_length=100)
+
+class BasicInfoUpdate(BaseModel):
+    """Схема для обновления основной информации пользователя."""
+    first_name: Optional[str] = Field(None, max_length=50)
+    last_name: Optional[str] = Field(None, max_length=50)
+    city: Optional[str] = Field(None, max_length=100)
+    position: Optional[str] = Field(None, max_length=100)
+
+class SocialLinksUpdate(BaseModel):
+    """Схема для обновления социальных ссылок пользователя."""
+    github: Optional[str] = Field(None, max_length=255)
+    linkedin: Optional[str] = Field(None, max_length=255)
+    telegram: Optional[str] = Field(None, max_length=255)
+    
+    class Config:
+        # Схема будет принимать пустые строки
+        extra = "ignore"
+
+class ContactInfoUpdate(BaseModel):
+    """Схема для обновления контактной информации пользователя."""
+    email: Optional[EmailStr] = None
+    username: Optional[str] = Field(None, max_length=50, min_length=3)
 
 class UserOut(BaseModel):
     id: int
@@ -113,9 +144,9 @@ class UserOut(BaseModel):
     last_name: Optional[str] = None
     city: Optional[str] = None
     position: Optional[str] = None
-    github: Optional[HttpUrl] = None
-    linkedin: Optional[HttpUrl] = None
-    telegram: Optional[HttpUrl] = None
+    github: Optional[str] = None
+    linkedin: Optional[str] = None
+    telegram: Optional[str] = None
     avatar_url: Optional[str] = None  # ✅ Add this field
     skills: List[SkillBase] = []
     projects: List[ProjectBase] = []
@@ -146,3 +177,8 @@ class UserOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class UserOutWithToken(UserOut):
+    """Схема для возвращения пользователя с токеном доступа"""
+    access_token: str
+    token_type: str

@@ -213,6 +213,12 @@ const UserProfile = () => {
 
             setUser(response.data);
             setEditMode(false);
+            
+            // If a new token was sent, update it in localStorage
+            if (response.data.access_token) {
+                localStorage.setItem("access_token", response.data.access_token);
+                console.log("Updated authentication token");
+            }
         } catch (error) {
             console.error("Failed to update profile", error);
             alert("Failed to update profile. Please try again.");

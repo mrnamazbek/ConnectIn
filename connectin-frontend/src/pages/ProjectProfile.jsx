@@ -2,22 +2,17 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUserMinus, faCheck, faTimes, faClipboardList, faPlus, faTrash, faPencilAlt, faThumbsUp, faThumbsDown } from "@fortawesome/free-solid-svg-icons";
+import { faUserMinus, faCheck, faTimes, faClipboardList } from "@fortawesome/free-solid-svg-icons";
 
 const ProjectProfile = () => {
     const { projectId } = useParams();
     const [projectDetails, setProjectDetails] = useState(null);
     const [members, setMembers] = useState([]);
     const [applications, setApplications] = useState([]);
-    const [todos, setTodos] = useState([]);
-    const [newTodo, setNewTodo] = useState("");
-    const [todoDescription, setTodoDescription] = useState("");
     const [isMember, setIsMember] = useState(false);
     const [isOwner, setIsOwner] = useState(false);
     const [loading, setLoading] = useState(true);
     const [comments, setComments] = useState([]);
-    const [newComment, setNewComment] = useState("");
-    const [voteStatus, setVoteStatus] = useState({ has_voted: false, is_upvote: null });
     const [currentUser, setCurrentUser] = useState(null);
 
     useEffect(() => {
@@ -69,30 +64,6 @@ const ProjectProfile = () => {
             setIsMember(data.members.some((member) => member.id === user?.id) || (user && data.project.owner?.id === user.id));
         } catch (error) {
             console.error("Failed to fetch project profile:", error);
-        }
-    };
-
-    const fetchVoteStatus = async () => {
-        try {
-            const token = localStorage.getItem("access_token");
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/${projectId}/vote_status`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setVoteStatus(response.data);
-        } catch (error) {
-            console.error("Failed to fetch vote status:", error);
-        }
-    };
-
-    const handleApply = async () => {
-        try {
-            const token = localStorage.getItem("access_token");
-            await axios.post(`${import.meta.env.VITE_API_URL}/projects/${projectId}/apply`, {}, { headers: { Authorization: `Bearer ${token}` } });
-            alert("Application submitted!");
-            await fetchProjectProfile(currentUser); // Pass currentUser
-        } catch (error) {
-            console.error("Failed to apply:", error);
-            alert(error.response?.data?.detail || "Failed to apply");
         }
     };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { CKEditor, useCKEditorCloud } from "@ckeditor/ckeditor5-react";
 
@@ -41,17 +41,16 @@ const PublishPage = () => {
     }, [postType]);
 
     // 🔹 Handle Tag Selection (Limit max 10 tags)
-const handleTagSelection = (tagId) => {
-    setSelectedTags((prevTags) => {
-        if (prevTags.includes(tagId)) {
-            return prevTags.filter((id) => id !== tagId); // Deselect tag
-        } else if (prevTags.length < 10) {
-            return [...prevTags, tagId]; // Select tag if limit not reached
-        }
-        return prevTags; // Do nothing if limit reached
-    });
-};
-
+    const handleTagSelection = (tagId) => {
+        setSelectedTags((prevTags) => {
+            if (prevTags.includes(tagId)) {
+                return prevTags.filter((id) => id !== tagId); // Deselect tag
+            } else if (prevTags.length < 10) {
+                return [...prevTags, tagId]; // Select tag if limit not reached
+            }
+            return prevTags; // Do nothing if limit reached
+        });
+    };
 
     // 🔹 Handle Skill Selection
     const handleSkillSelection = (skillId) => {
@@ -224,30 +223,24 @@ const handleTagSelection = (tagId) => {
             </select>
 
             {/* 🔹 Tag Selection (Only for Project Posts or News) */}
-{(postType === "project" || postType === "news") && (
-    <div className="flex flex-wrap items-center gap-2">
-        <p className="font-semibold text-sm">Select Tags (max 10):</p>
-        {tags.length > 0 ? (
-            // Отображаем только первые 20 тегов
-            tags.slice(0, 20).map((tag) => {
-                const isSelected = selectedTags.includes(tag.id);
-                return (
-                    <button
-                        key={tag.id}
-                        onClick={() => handleTagSelection(tag.id)}
-                        className={`px-2 py-1 shadow-sm rounded-md text-sm cursor-pointer transition ${isSelected ? "bg-green-700 text-white" : ""}`}
-                    >
-                        {tag.name}
-                    </button>
-                );
-            })
-        ) : (
-            <p className="text-gray-500 text-sm">No tags available.</p>
-        )}
-    </div>
-)}
-
-
+            {(postType === "project" || postType === "news") && (
+                <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-sm">Select Tags (max 10):</p>
+                    {tags.length > 0 ? (
+                        // Отображаем только первые 20 тегов
+                        tags.slice(0, 20).map((tag) => {
+                            const isSelected = selectedTags.includes(tag.id);
+                            return (
+                                <button key={tag.id} onClick={() => handleTagSelection(tag.id)} className={`px-2 py-1 shadow-sm rounded-md text-sm cursor-pointer transition ${isSelected ? "bg-green-700 text-white" : ""}`}>
+                                    {tag.name}
+                                </button>
+                            );
+                        })
+                    ) : (
+                        <p className="text-gray-500 text-sm">No tags available.</p>
+                    )}
+                </div>
+            )}
 
             {/* 🔹 Skill Selection (Only for Project Posts) */}
             {postType === "project" && (

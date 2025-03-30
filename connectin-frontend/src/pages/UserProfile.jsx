@@ -105,22 +105,6 @@ const UserProfile = () => {
         fetchUserPosts();
     }, [navigate]);
 
-    const handleDeletePost = async (postId) => {
-        if (!window.confirm("Are you sure you want to delete this post?")) return;
-
-        try {
-            const token = localStorage.getItem("access_token");
-            await axios.delete(`${import.meta.env.VITE_API_URL}/posts/${postId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setUserPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
-            alert("Post deleted successfully!");
-        } catch (error) {
-            console.error("Failed to delete post:", error);
-            setError("Failed to delete post. Please try again.");
-        }
-    };
-
     const handleAddEducation = async () => {
         if (!newEducation.institution || !newEducation.degree || !newEducation.start_year || !newEducation.end_year) {
             alert("All fields are required");
@@ -251,31 +235,84 @@ const UserProfile = () => {
                     <div className="flex space-x-5">
                         <img src="https://media.tenor.com/HmFcGkSu58QAAAAM/silly.gif" alt="Profile" className="rounded-full w-32 h-32 object-cover border border-black" />
                         <div className="flex flex-col space-y-2">
-                            <p className="">
-                                {user.first_name} {user.last_name} <span className="text-sm text-gray-500">{user.username}</span>
-                            </p>
-                            <p>{user.position || "Role not specified"}</p>
-                            <p>{user.city || "Location not specified"}</p>
-                            <a href={`mailto:${user.email}`} rel="noopener noreferrer" className="text-sm text-blue-500 font-semibold hover:underline hover:underline-offset-2">
-                                {user.email}
-                            </a>
-                            <div className="flex space-x-5">
-                                {user.github && (
-                                    <a href={user.github} target="_blank" rel="noopener noreferrer">
-                                        <FontAwesomeIcon icon={faGithub} size="lg" className="hover:text-green-700 transition" />
+                            {!editMode ? (
+                                <>
+                                    <p className="">
+                                        {user.first_name} {user.last_name} <span className="text-sm text-gray-500">{user.username}</span>
+                                    </p>
+                                    <p>{user.position || "Role not specified"}</p>
+                                    <p>{user.city || "Location not specified"}</p>
+                                    <a href={`mailto:${user.email}`} rel="noopener noreferrer" className="text-sm text-blue-500 font-semibold hover:underline hover:underline-offset-2">
+                                        {user.email}
                                     </a>
-                                )}
-                                {user.linkedin && (
-                                    <a href={user.linkedin} target="_blank" rel="noopener noreferrer">
-                                        <FontAwesomeIcon icon={faLinkedin} size="lg" className="hover:text-green-700 transition" />
-                                    </a>
-                                )}
-                                {user.telegram && (
-                                    <a href={user.telegram.startsWith("http") ? user.telegram : `https://t.me/${user.telegram}`} target="_blank" rel="noopener noreferrer">
-                                        <FontAwesomeIcon icon={faTelegram} size="lg" className="hover:text-green-700 transition" />
-                                    </a>
-                                )}
-                            </div>
+                                    <div className="flex space-x-5">
+                                        {user.github && (
+                                            <a href={user.github} target="_blank" rel="noopener noreferrer">
+                                                <FontAwesomeIcon icon={faGithub} size="lg" className="hover:text-green-700 transition" />
+                                            </a>
+                                        )}
+                                        {user.linkedin && (
+                                            <a href={user.linkedin} target="_blank" rel="noopener noreferrer">
+                                                <FontAwesomeIcon icon={faLinkedin} size="lg" className="hover:text-green-700 transition" />
+                                            </a>
+                                        )}
+                                        {user.telegram && (
+                                            <a href={user.telegram.startsWith("http") ? user.telegram : `https://t.me/${user.telegram}`} target="_blank" rel="noopener noreferrer">
+                                                <FontAwesomeIcon icon={faTelegram} size="lg" className="hover:text-green-700 transition" />
+                                            </a>
+                                        )}
+                                    </div>
+                                    <button onClick={() => setEditMode(true)} className="mt-2 px-3 py-1 bg-green-700 text-white rounded-md hover:bg-green-600 transition">
+                                        Edit Profile
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="text-xs text-gray-500">First Name</label>
+                                            <input type="text" name="first_name" value={updatedUser.first_name || ""} onChange={handleChange} className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500">Last Name</label>
+                                            <input type="text" name="last_name" value={updatedUser.last_name || ""} onChange={handleChange} className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500">Position/Title</label>
+                                            <input type="text" name="position" value={updatedUser.position || ""} onChange={handleChange} className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500">City</label>
+                                            <input type="text" name="city" value={updatedUser.city || ""} onChange={handleChange} className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500">Email</label>
+                                            <input type="email" name="email" value={updatedUser.email || ""} onChange={handleChange} className={`w-full border ${errors.email ? "border-red-500" : "border-gray-300"} rounded px-2 py-1 text-sm`} />
+                                            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500">GitHub URL</label>
+                                            <input type="url" name="github" value={updatedUser.github || ""} onChange={handleChange} className="w-full border border-gray-300 rounded px-2 py-1 text-sm" placeholder="https://github.com/username" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500">LinkedIn URL</label>
+                                            <input type="url" name="linkedin" value={updatedUser.linkedin || ""} onChange={handleChange} className="w-full border border-gray-300 rounded px-2 py-1 text-sm" placeholder="https://linkedin.com/in/username" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500">Telegram Username</label>
+                                            <input type="text" name="telegram" value={updatedUser.telegram || ""} onChange={handleChange} className="w-full border border-gray-300 rounded px-2 py-1 text-sm" placeholder="@username or URL" />
+                                        </div>
+                                    </div>
+                                    <div className="flex space-x-2 mt-2">
+                                        <button onClick={handleSave} className="px-3 py-1 bg-green-700 text-white rounded-md hover:bg-green-600 transition">
+                                            Save Changes
+                                        </button>
+                                        <button onClick={() => setEditMode(false)} className="px-3 py-1 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 ) : (
@@ -311,7 +348,12 @@ const UserProfile = () => {
             </div>
 
             <div className="col-span-6 bg-white border border-green-700 rounded-md shadow-sm p-5 w-full hover:shadow-green-700 transition">
-                <h4 className="font-semibold">Education</h4>
+                <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-semibold">Education</h4>
+                    <button onClick={() => setShowEducationForm(!showEducationForm)} className="text-sm text-green-700 font-semibold flex items-center cursor-pointer">
+                        <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                    </button>
+                </div>
                 {education.map((edu) => (
                     <div key={edu.id} className="flex justify-between items-center p-2 border-b border-gray-300 last:border-0">
                         <p>
@@ -320,9 +362,6 @@ const UserProfile = () => {
                         <FontAwesomeIcon icon={faTrashAlt} className="text-red-500 cursor-pointer hover:text-red-700" onClick={() => handleDeleteEducation(edu.id)} />
                     </div>
                 ))}
-                <button onClick={() => setShowEducationForm(!showEducationForm)} className="mt-2 text-sm text-green-700 font-semibold flex items-center cursor-pointer">
-                    <FontAwesomeIcon icon={faPlus} className="mr-2" /> Add Education
-                </button>
                 {showEducationForm && (
                     <div className="mt-2 flex flex-col space-y-2 text-sm">
                         <input type="text" placeholder="Institution" className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newEducation.institution} onChange={(e) => setNewEducation({ ...newEducation, institution: e.target.value })} />
@@ -357,7 +396,12 @@ const UserProfile = () => {
                 )}
 
                 <div className="mt-4">
-                    <h4 className="font-semibold">Experience</h4>
+                    <div className="flex justify-between items-center mb-4">
+                        <h4 className="font-semibold">Experience</h4>
+                        <button onClick={() => setShowExperienceForm(!showExperienceForm)} className="mt-2 text-sm text-green-700 font-semibold flex items-center cursor-pointer">
+                            <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                        </button>
+                    </div>
                     {experience.map((exp) => (
                         <div key={exp.id} className="flex justify-between items-center p-2 border-b border-gray-300 last:border-0">
                             <p>
@@ -366,9 +410,7 @@ const UserProfile = () => {
                             <FontAwesomeIcon icon={faTrashAlt} className="text-red-500 cursor-pointer hover:text-red-700" onClick={() => handleDeleteExperience(exp.id)} />
                         </div>
                     ))}
-                    <button onClick={() => setShowExperienceForm(!showExperienceForm)} className="mt-2 text-sm text-green-700 font-semibold flex items-center cursor-pointer">
-                        <FontAwesomeIcon icon={faPlus} className="mr-2" /> Add Experience
-                    </button>
+
                     {showExperienceForm && (
                         <div className="mt-2 flex flex-col space-y-2 text-sm">
                             <input type="text" placeholder="Company" className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newExperience.company} onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })} />

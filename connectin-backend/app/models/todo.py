@@ -3,7 +3,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import Base
-from .associations import todo_tags_association, todo_watchers_association
+from .relations.associations import todo_tags_association, todo_watchers_association
 
 
 class Todo(Base):

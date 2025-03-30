@@ -3,7 +3,7 @@ from enum import Enum
 from sqlalchemy import Column, ForeignKey, Integer, Text, DateTime, Enum as SQLEnum
 from sqlalchemy.orm import relationship, validates
 from .base import Base
-from .associations import conversation_participants
+from .relations.associations import conversation_participants
 
 
 class ConversationType(str, Enum):

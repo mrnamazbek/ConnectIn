@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Table, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import Base
-from .associations import project_tags_association, post_tags_association, todo_tags_association
+from .relations.associations import project_tags_association, post_tags_association, todo_tags_association
 
 class Tag(Base):
     __tablename__ = "tags"

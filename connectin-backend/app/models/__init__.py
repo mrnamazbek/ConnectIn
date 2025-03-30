@@ -2,12 +2,13 @@
 
 from .base import Base
 from .user import User
-from .todo import Todo  # Импорт до User
+from .todo import Todo
 from .team import Team
 from .project import Project
 from .post import Post
 from .tag import Tag
-from .skill import Skill
+from .skill_category import SkillCategory  # Import SkillCategory first
+from .skill import Skill  # Then import Skill
 from .chat import Conversation, Message
 from .request import Request
 from .review import Review
@@ -21,7 +22,7 @@ from .todo_comment import TodoComment
 
 
 # Import Many-to-Many association tables separately to avoid circular dependencies
-from .associations import (
+from .relations.associations import (
     conversation_participants,
     post_tags_association,
     project_applications,
@@ -32,13 +33,14 @@ from .associations import (
     user_teams_association,
     todo_tags_association,
     todo_watchers_association,
+    skill_mappings,
 )
 
 __all__ = [
     "Base",
-    #"Chat",
+    "Chat",
     "Conversation",
-   #"ConversationParticipant",
+    "ConversationParticipant",
     "Message",
     "Post",
     "PostComment",
@@ -51,6 +53,7 @@ __all__ = [
     "Review",
     "SavedPost",
     "Skill",
+    "SkillCategory",
     "Tag",
     "Team",
     "User",
@@ -65,4 +68,5 @@ __all__ = [
     "user_teams_association",
     "todo_watchers_association",
     "todo_tags_association",
+    "skill_mappings",
 ]

@@ -1,9 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from .base import Base
-from .associations import (user_teams_association, project_members_association,
-                           project_applications, user_skills_association,
-                           conversation_participants, todo_watchers_association, todo_tags_association)
+from .relations.associations import user_teams_association, project_members_association, project_applications, user_skills_association, conversation_participants, todo_watchers_association, todo_tags_association
 from sqlalchemy import Column, DateTime
 from datetime import datetime
 
@@ -45,6 +43,9 @@ class User(Base):
     project_comments = relationship("ProjectComment", back_populates="user", cascade="all, delete")
 
     recommendations = relationship("Recommendation", back_populates="from_user")
+
+    # Todos created by the user
+    todos = relationship("Todo", back_populates="user")
 
     #25.03.25:
     # Новые отношения

@@ -9,7 +9,7 @@ class Recommendation(Base):
     id = Column(Integer, primary_key=True, index=True)
     from_user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     text = Column(Text, nullable=True)
-    score = Column(Float, nullable=False)
+    score = Column(Float, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     recommendation_type = Column(String(20), nullable=False)
 

@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from .base import Base
-from .associations import user_teams_association
+from .relations.associations import user_teams_association
 
 class Team(Base):
     __tablename__ = "teams"

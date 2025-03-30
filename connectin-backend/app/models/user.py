@@ -29,8 +29,7 @@ class User(Base):
     status = Column(String, default="in progress")
     #last active
     last_active = Column(DateTime, default=datetime.now(), onupdate=datetime.now(), nullable=True)
-
-    todos = relationship("Todo", back_populates="user", cascade="all, delete-orphan")
+    
     teams = relationship("Team", secondary=user_teams_association, back_populates="members")
     owned_projects = relationship("Project", back_populates="owner")
     projects = relationship("Project", secondary=project_members_association, back_populates="members")
@@ -44,6 +43,8 @@ class User(Base):
     
     post_comments = relationship("PostComment", back_populates="user", cascade="all, delete")
     project_comments = relationship("ProjectComment", back_populates="user", cascade="all, delete")
+
+    recommendations = relationship("Recommendation", back_populates="from_user")
 
     #25.03.25:
     # Новые отношения

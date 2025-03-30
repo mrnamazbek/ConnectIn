@@ -4,6 +4,15 @@ from app.models.base import Base  # Make sure this is imported first
 from sqlalchemy import Column, Integer, Boolean, ForeignKey, Table
 from app.models.base import Base
 
+# Таблица для связи многих ко многим между skills и skill_categories
+skill_mappings = Table(
+    "skill_mappings",
+    Base.metadata,
+    Column("skill_id", Integer, ForeignKey("skills.id", ondelete="CASCADE"), primary_key=True),
+    Column("category_id", Integer, ForeignKey("skill_categories.id", ondelete="CASCADE"), primary_key=True),
+    extend_existing=True
+)
+
 # ✅ Many-to-Many: User ↔ Teams
 user_teams_association = Table(
     "user_teams",

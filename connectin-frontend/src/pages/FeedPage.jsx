@@ -1,6 +1,5 @@
 import PopularProjects from "../components/PopularProjects";
 import { Routes, Route, Navigate } from "react-router";
-import NewsPage from "./NewsPage";
 import ProjectsPage from "./ProjectsPage";
 import TeamsPage from "./TeamsPage";
 import SubNav from "../components/SubNav";
@@ -9,6 +8,7 @@ import PublishPage from "./PublishPage";
 import PopularNews from "../components/PopularNews";
 import PostPage from "./PostPage";
 import ProjectPage from "./ProjectPage";
+import PostsPage from "./PostsPage";
 
 const Feed = () => {
     return (
@@ -18,7 +18,7 @@ const Feed = () => {
                 <div className="col-span-6">
                     <Routes>
                         <Route index element={<Navigate to="news" />} />
-                        <Route path="news" element={<NewsPage />} />
+                        <Route path="news" element={<PostsPage />} />
                         <Route path="projects" element={<ProjectsPage />} />
                         <Route path="teams" element={<TeamsPage fakeTeams={fakeTeams} />} />
                         <Route path="post" element={<PublishPage />} />

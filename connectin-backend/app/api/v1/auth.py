@@ -30,7 +30,7 @@ from app.schemas.user import UserOut
 from app.schemas.user import UserCreate, UserOut
 from app.models.user import User
 from app.models.blacklisted_token import BlacklistedToken
-from app.schemas.auth import TokenResponse  # Новая схема ответа для токенов
+from app.schemas.auth import TokenResponse
 from app.utils.auth import (
     hash_password,
     verify_password,
@@ -204,36 +204,86 @@ async def read_current_user(current_user: User = Depends(get_current_user)) -> U
     return UserOut.from_orm(current_user)
 
 @router.post("/refresh_token", summary="Обновить токен")
+@limiter.limit("10 per minute")  # Rate limiting for refresh endpoint
 def refresh_access_token(
+    request: Request,
     refresh_token_body: dict = Body(..., embed=True),
     db: Session = Depends(get_db)
 ) -> dict[str, str]:
     """
     Обновляет access-токен с использованием refresh-токена.
+    Реализует токен ротацию: новый refresh токен выдается только если текущий близок к истечению.
     """
     refresh_token_value = refresh_token_body.get("refresh_token")
     if not refresh_token_value:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Refresh токен обязателен")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Refresh токен обязателен"
+        )
+
+    # Check if refresh token is blacklisted
+    if db.query(BlacklistedToken).filter(BlacklistedToken.token == refresh_token_value).first():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh токен отозван"
+        )
+
     try:
         payload = jwt.decode(refresh_token_value, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
+        exp = payload.get("exp")
+        
         if not email:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный refresh токен")
-    except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный refresh токен")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Неверный refresh токен"
+            )
+
+        # Check if refresh token is close to expiration (less than 7 days)
+        if exp:
+            exp_datetime = datetime.fromtimestamp(exp, tz=timezone.utc)
+            now = datetime.now(timezone.utc)
+            days_until_expiry = (exp_datetime - now).days
+            should_rotate = days_until_expiry < 7
+        else:
+            should_rotate = False
+
+    except JWTError as e:
+        logger.error(f"JWT decode error during refresh: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Неверный refresh токен"
+        )
 
     user = db.query(User).filter(User.email == email).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Пользователь не найден"
+        )
 
+    # Always create new access token
     new_access_token = create_access_token(user)
-    new_refresh_token = create_refresh_token(user)
-    logger.info(f"Новый access токен сгенерирован для пользователя: {user.email}")
-    return {
+    
+    # Only create new refresh token if rotation is needed
+    response = {
         "access_token": new_access_token,
-        "refresh_token": new_refresh_token,
         "token_type": "bearer"
     }
+
+    if should_rotate:
+        new_refresh_token = create_refresh_token(user)
+        response["refresh_token"] = new_refresh_token
+        # Blacklist the old refresh token
+        blacklisted = BlacklistedToken(token=refresh_token_value)
+        db.add(blacklisted)
+        db.commit()
+        logger.info(f"Refresh token rotated for user: {user.email}")
+    else:
+        response["refresh_token"] = refresh_token_value
+
+    logger.info(f"Access token refreshed for user: {user.email}")
+    return response
 
 @router.post("/logout", summary="Выход из системы")
 def logout(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> dict:

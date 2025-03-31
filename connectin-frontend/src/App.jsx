@@ -12,6 +12,7 @@ import ProjectProfile from "./pages/ProjectProfile";
 import AboutUs from "./pages/AboutUs";
 import { ToastContainer } from "react-toastify";
 import AboutUsNamazbeksVersion from "./pages/AboutUsNamazbeksVersion.jsx";
+import AuthWrapper from "./components/AuthWrapper.jsx";
 
 function App() {
     return (
@@ -31,6 +32,7 @@ function App() {
                                 <Route path="*" element={<NotFoundPage />} />
                                 <Route path="project/:projectId/profile" element={<ProjectProfile />} />
                                 <Route path="/about" element={<AboutUs />} />
+                                <Route path="/aboutus" element={<AboutUsNamazbeksVersion />} />
                             </Routes>
                         </div>
                         <ToastContainer autoClose={5000} position="bottom-left"/>
@@ -38,27 +40,6 @@ function App() {
                     <ConditionalFooter />
                 </div>
             </AuthWrapper>
-            <div className="flex flex-col min-h-screen dark:bg-black dark:text-white">
-                <NavBar />
-                <div className="flex-grow grid grid-cols-8">
-                    <div className="col-start-2 col-span-6">
-                        <Routes>
-                            <Route path="/login" element={<LoginPage />} />
-                            <Route path="/register" element={<RegisterPage />} />
-                            <Route path="/profile/*" element={<UserProfile />} />
-                            <Route path="/*" element={<FeedPage />} />
-                            <Route path="/search" element={<SearchPage />} />
-                            <Route path="/chats" element={<ChatPage />} />
-                            <Route path="*" element={<NotFoundPage />} />
-                            <Route path="project/:projectId/profile" element={<ProjectProfile />} />
-                            <Route path="/about" element={<AboutUs />} />
-                            <Route path="/aboutus" element={<AboutUsNamazbeksVersion />} />
-                        </Routes>
-                    </div>
-                    <ToastContainer autoClose={5000} position="bottom-left"/>
-                </div>
-                <ConditionalFooter />
-            </div>
         </Router>
     );
 }

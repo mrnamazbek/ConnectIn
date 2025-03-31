@@ -1,6 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { CKEditor, useCKEditorCloud } from "@ckeditor/ckeditor5-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSearch, faExclamationCircle } from "@fortawesome/free-solid-svg-icons";
+import { toast } from "react-toastify";
 
 const LICENSE_KEY = import.meta.env.VITE_CKEDITOR_LICENSE_KEY;
 
@@ -16,9 +19,12 @@ const PublishPage = () => {
     const [selectedSkills, setSelectedSkills] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isLayoutReady, setIsLayoutReady] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [showAllTags, setShowAllTags] = useState(false);
+    const [showAllSkills, setShowAllSkills] = useState(false);
+    const [error, setError] = useState(null);
     const cloud = useCKEditorCloud({ version: "44.1.0" });
 
-    // 🔹 Fetch Tags from DB
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -31,6 +37,8 @@ const PublishPage = () => {
                 }
             } catch (error) {
                 console.error("Failed to fetch data:", error);
+                setError("Failed to load tags and skills. Please try again.");
+                toast.error("Failed to load tags and skills");
             }
         };
 
@@ -40,59 +48,82 @@ const PublishPage = () => {
         return () => setIsLayoutReady(false);
     }, [postType]);
 
-    // 🔹 Handle Tag Selection (Limit max 10 tags)
+    // 🔹 Filter tags and skills based on search query
+    const filteredTags = useMemo(() => {
+        return tags.filter((tag) => tag.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [tags, searchQuery]);
+
+    const filteredSkills = useMemo(() => {
+        return skills.filter((skill) => skill.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [skills, searchQuery]);
+
     const handleTagSelection = (tagId) => {
         setSelectedTags((prevTags) => {
             if (prevTags.includes(tagId)) {
-                return prevTags.filter((id) => id !== tagId); // Deselect tag
+                return prevTags.filter((id) => id !== tagId);
             } else if (prevTags.length < 10) {
-                return [...prevTags, tagId]; // Select tag if limit not reached
+                return [...prevTags, tagId];
+            } else {
+                toast.warning("You can only select up to 10 tags");
+                return prevTags;
             }
-            return prevTags; // Do nothing if limit reached
         });
     };
 
-    // 🔹 Handle Skill Selection
     const handleSkillSelection = (skillId) => {
         setSelectedSkills((prevSkills) => (prevSkills.includes(skillId) ? prevSkills.filter((id) => id !== skillId) : [...prevSkills, skillId]));
     };
 
-    // 🔹 Submit Post
     const handleSubmit = async () => {
+        if (!title.trim()) {
+            toast.error("Title cannot be empty!");
+            return;
+        }
+
+        if (!content.trim()) {
+            toast.error("Content cannot be empty!");
+            return;
+        }
+
         setLoading(true);
         try {
             const token = localStorage.getItem("access_token");
-
-            if (!content.trim()) {
-                alert("Content cannot be empty!");
-                setLoading(false);
+            if (!token) {
+                toast.error("Please login to create a post");
                 return;
             }
 
             const payload = {
                 title,
-                content, // ✅ Ensure content is being sent correctly
+                content,
                 post_type: postType,
                 project_id: projectId ? parseInt(projectId) : null,
                 team_id: teamId ? parseInt(teamId) : null,
-                tag_ids: selectedTags, // ✅ Send tag IDs properly
+                tag_ids: selectedTags,
+                skill_ids: postType === "project" ? selectedSkills : [],
             };
 
-            await axios.post(`${import.meta.env.VITE_API_URL}/posts`, payload, { headers: { Authorization: `Bearer ${token}` } });
-            alert("Post created successfully!");
+            await axios.post(`${import.meta.env.VITE_API_URL}/posts`, payload, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            toast.success("Post created successfully!");
             setTitle("");
             setContent("");
             setPostType("news");
             setProjectId("");
             setTeamId("");
             setSelectedTags([]);
+            setSelectedSkills([]);
         } catch (error) {
             console.error("Failed to create post:", error);
+            toast.error(error.response?.data?.message || "Failed to create post");
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
-    // 🔹 CKEditor Configuration
+    // CKEditor Configuration
     const { ClassicEditor, editorConfig } = useMemo(() => {
         if (cloud.status !== "success" || !isLayoutReady) {
             return {};
@@ -213,52 +244,104 @@ const PublishPage = () => {
 
     return (
         <div className="col-span-6 flex flex-col space-y-5 shadow-md rounded-md border border-green-700 bg-white p-5">
-            <p className="font-semibold">New Post</p>
+            <p className="font-semibold text-xl">Create New Post</p>
 
-            {/* 🔹 Post Type Selection */}
-            <select className="w-full text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none" value={postType} onChange={(e) => setPostType(e.target.value)}>
+            {/* Post Type Selection */}
+            <select className="w-full text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500" value={postType} onChange={(e) => setPostType(e.target.value)}>
                 <option value="news">News</option>
                 <option value="project">Project</option>
                 <option value="team">Team</option>
             </select>
 
-            {/* 🔹 Tag Selection (Only for Project Posts or News) */}
+            {/* Title Input */}
+            <input type="text" placeholder="Enter post title..." value={title} onChange={(e) => setTitle(e.target.value)} className="w-full text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+
+            {/* Search Input for Tags and Skills */}
             {(postType === "project" || postType === "news") && (
-                <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-sm">Select Tags (max 10):</p>
-                    {tags.length > 0 ? (
-                        // Отображаем только первые 20 тегов
-                        tags.slice(0, 20).map((tag) => {
-                            const isSelected = selectedTags.includes(tag.id);
-                            return (
-                                <button key={tag.id} onClick={() => handleTagSelection(tag.id)} className={`px-2 py-1 shadow-sm rounded-md text-sm cursor-pointer transition ${isSelected ? "bg-green-700 text-white" : ""}`}>
-                                    {tag.name}
-                                </button>
-                            );
-                        })
-                    ) : (
-                        <p className="text-gray-500 text-sm">No tags available.</p>
+                <div className="relative">
+                    <input type="text" placeholder="Search tags and skills..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full text-sm px-3 py-2 pl-10 border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+                    <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                </div>
+            )}
+
+            {/* Tags Section */}
+            {(postType === "project" || postType === "news") && (
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                        <p className="font-semibold text-sm">Tags (max 10):</p>
+                        <span className="text-sm text-gray-500">{selectedTags.length}/10</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {(showAllTags ? filteredTags : filteredTags.slice(0, 10)).map((tag) => (
+                            <button key={tag.id} onClick={() => handleTagSelection(tag.id)} className={`px-2 py-1 rounded-full text-xs shadow-sm transition-all duration-200 ${selectedTags.includes(tag.id) ? "bg-green-700 text-white hover:bg-green-600" : "bg-gray-100 hover:bg-gray-200"}`}>
+                                {tag.name}
+                            </button>
+                        ))}
+                    </div>
+                    {filteredTags.length > 10 && (
+                        <button onClick={() => setShowAllTags(!showAllTags)} className="text-sm text-green-700 hover:text-green-800">
+                            {showAllTags ? "Show Less" : `Show More (${filteredTags.length - 10} more)`}
+                        </button>
                     )}
                 </div>
             )}
 
-            {/* 🔹 Skill Selection (Only for Project Posts) */}
+            {/* Skills Section (Only for Project Posts) */}
             {postType === "project" && (
-                <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-sm">Select Required Skills:</p>
-                    {skills.length > 0 ? (
-                        skills.map((skill) => (
-                            <button key={skill.id} onClick={() => handleSkillSelection(skill.id)} className={`px-2 py-1 shadow-sm rounded-md text-sm cursor-pointer transition ${selectedSkills.includes(skill.id) ? "bg-green-700 text-white" : ""}`}>
+                <div className="space-y-2">
+                    <p className="font-semibold text-sm">Required Skills:</p>
+                    <div className="flex flex-wrap gap-2">
+                        {(showAllSkills ? filteredSkills : filteredSkills.slice(0, 10)).map((skill) => (
+                            <button key={skill.id} onClick={() => handleSkillSelection(skill.id)} className={`px-2 py-1 rounded-full text-xs shadow-sm transition-all duration-200 ${selectedSkills.includes(skill.id) ? "bg-blue-700 text-white hover:bg-blue-600" : "bg-gray-100 hover:bg-gray-200"}`}>
                                 {skill.name}
                             </button>
-                        ))
-                    ) : (
-                        <p className="text-gray-500 text-sm">No skills available.</p>
+                        ))}
+                    </div>
+                    {filteredSkills.length > 10 && (
+                        <button onClick={() => setShowAllSkills(!showAllSkills)} className="text-sm text-blue-700 hover:text-blue-800">
+                            {showAllSkills ? "Show Less" : `Show More (${filteredSkills.length - 10} more)`}
+                        </button>
                     )}
                 </div>
             )}
 
-            {/* 🔹 CKEditor Content */}
+            {/* Selected Tags and Skills Display */}
+            {(selectedTags.length > 0 || selectedSkills.length > 0) && (
+                <div className="space-y-2">
+                    {selectedTags.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                            <p className="font-semibold text-sm">Selected Tags:</p>
+                            {selectedTags.map((tagId) => {
+                                const tag = tags.find((t) => t.id === tagId);
+                                return (
+                                    tag && (
+                                        <span key={tag.id} className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
+                                            {tag.name}
+                                        </span>
+                                    )
+                                );
+                            })}
+                        </div>
+                    )}
+                    {selectedSkills.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                            <p className="font-semibold text-sm">Selected Skills:</p>
+                            {selectedSkills.map((skillId) => {
+                                const skill = skills.find((s) => s.id === skillId);
+                                return (
+                                    skill && (
+                                        <span key={skill.id} className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
+                                            {skill.name}
+                                        </span>
+                                    )
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* CKEditor Content */}
             <div className="w-full text-sm border border-gray-200 rounded-md shadow-sm">
                 {ClassicEditor && editorConfig && (
                     <CKEditor
@@ -266,14 +349,22 @@ const PublishPage = () => {
                         config={editorConfig}
                         onChange={(event, editor) => {
                             const data = editor.getData();
-                            setContent(data); // ✅ Update state when typing
+                            setContent(data);
                         }}
                     />
                 )}
             </div>
 
-            {/* 🔹 Submit Button */}
-            <button type="submit" className="w-full font-semibold shadow-md bg-green-700 text-white py-2 rounded-md hover:bg-green-600 transition cursor-pointer" onClick={handleSubmit} disabled={loading}>
+            {/* Error Display */}
+            {error && (
+                <div className="flex items-center gap-2 text-red-500 text-sm">
+                    <FontAwesomeIcon icon={faExclamationCircle} />
+                    <span>{error}</span>
+                </div>
+            )}
+
+            {/* Submit Button */}
+            <button type="submit" className="w-full font-semibold shadow-md bg-green-700 text-white py-2 rounded-md hover:bg-green-600 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleSubmit} disabled={loading}>
                 {loading ? "Publishing..." : "Publish"}
             </button>
         </div>

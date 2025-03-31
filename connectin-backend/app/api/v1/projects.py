@@ -504,16 +504,23 @@ def vote_project(
         if existing_vote.is_upvote == vote_data.is_upvote:
             db.delete(existing_vote)
             db.commit()
-            return {"detail": "Голос удален"}
         else:
             existing_vote.is_upvote = vote_data.is_upvote
             db.commit()
-            return {"detail": "Голос изменен"}
+    else:
+        new_vote = ProjectVote(user_id=current_user.id, project_id=project_id, is_upvote=vote_data.is_upvote)
+        db.add(new_vote)
+        db.commit()
 
-    new_vote = ProjectVote(user_id=current_user.id, project_id=project_id, is_upvote=vote_data.is_upvote)
-    db.add(new_vote)
-    db.commit()
-    return {"detail": "Голос добавлен"}
+    # Get the actual vote count after the operation
+    vote_count = db.query(
+        func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
+    ).filter(ProjectVote.project_id == project_id).scalar() or 0
+
+    return {
+        "detail": "Голос добавлен" if not existing_vote else "Голос изменен" if existing_vote.is_upvote != vote_data.is_upvote else "Голос удален",
+        "vote_count": vote_count
+    }
 
 # 🔹 Проверить статус голоса
 @router.get("/{project_id}/vote_status", response_model=VoteStatusResponse)

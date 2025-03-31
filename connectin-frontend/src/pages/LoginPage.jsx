@@ -3,7 +3,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useLocation } from "react-router";
 
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import Cookies from "js-cookie";
@@ -44,6 +44,7 @@ axios.interceptors.response.use(
 
 const LoginPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [loading, setLoading] = useState(false);
 
     const validationSchema = Yup.object({
@@ -78,7 +79,10 @@ const LoginPage = () => {
                     position: "bottom-left",
                     autoClose: 5000,
                 });
-                navigate("/");
+                
+                // Redirect to the page user was trying to access, or home
+                const from = location.state?.from || "/";
+                navigate(from);
             } catch (error) {
                 console.error("Login failed:", error.response?.data || error.message);
                 const errorMessage = error.response?.data?.message || "Invalid username or password. Please try again.";

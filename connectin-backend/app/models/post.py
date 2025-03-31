@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from .base import Base
-from .associations import post_tags_association
+from .relations.associations import post_tags_association
 
 class Post(Base):
     __tablename__ = "posts"
@@ -20,7 +20,7 @@ class Post(Base):
     
     tags = relationship("Tag", secondary=post_tags_association, back_populates="posts")
     comments = relationship("PostComment", back_populates="post", cascade="all, delete-orphan")  # 🔹 Corrected reference
-
+    saved_by = relationship("SavedPost", back_populates="post", cascade="all, delete-orphan")
     post_recommendations = relationship("PostRecommendation", back_populates="post")
 
     def __repr__(self):

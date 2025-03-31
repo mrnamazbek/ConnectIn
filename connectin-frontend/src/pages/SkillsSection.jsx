@@ -1,118 +1,137 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faMinus, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrashAlt, faSearch } from "@fortawesome/free-solid-svg-icons";
+import { toast } from "react-toastify";
 
-const SkillsSection = ({ skills, setSkills, loading }) => {
+const SkillsSection = ({ setSkills, skills: propSkills, availableSkills: propAvailableSkills, loading, isStatic }) => {
+    const [skills, setLocalSkills] = useState([]);
     const [availableSkills, setAvailableSkills] = useState([]);
-    const [showAllSkills, setShowAllSkills] = useState(false);
-    const [selectedSkills, setSelectedSkills] = useState([]);
-    const [hoveredSkill, setHoveredSkill] = useState(null); // Track hovered skill ID
+    const [showAddSkills, setShowAddSkills] = useState(false);
+    const [localLoading, setLocalLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
 
-    useEffect(() => {
-        const fetchAvailableSkills = async () => {
-            try {
-                const token = localStorage.getItem("access_token");
-                const response = await axios.get(`${import.meta.env.VITE_API_URL}/skills/`, {
+    const fetchSkills = useCallback(async () => {
+        try {
+            setLocalLoading(true);
+            const token = localStorage.getItem("access_token");
+            
+            // Only fetch user skills if not static
+            if (!isStatic) {
+                const userSkillsResponse = await axios.get(`${import.meta.env.VITE_API_URL}/users/me/skills`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
-                const filteredSkills = response.data.filter((skill) => !skills.some((userSkill) => userSkill.id === skill.id));
-                setAvailableSkills(filteredSkills);
-            } catch (error) {
-                console.error("Failed to fetch available skills:", error);
+                if (userSkillsResponse?.data) {
+                    setLocalSkills(userSkillsResponse.data);
+                    if (setSkills) setSkills(userSkillsResponse.data);
+                }
             }
-        };
+        } catch (error) {
+            console.error("Failed to fetch skills:", error.response?.data || error.message);
+            toast.error(error.response?.data?.detail || "Failed to load skills");
+        } finally {
+            setLocalLoading(false);
+        }
+    }, [setSkills, isStatic]);
 
-        fetchAvailableSkills();
-    }, [skills]);
+    useEffect(() => {
+        if (isStatic && propSkills) {
+            setLocalSkills(propSkills);
+            setAvailableSkills(propAvailableSkills || []);
+            setLocalLoading(false);
+            return;
+        }
 
-    const handleSelectSkill = (skill) => {
-        setSelectedSkills((prevSelected) => (prevSelected.some((s) => s.id === skill.id) ? prevSelected.filter((s) => s.id !== skill.id) : [...prevSelected, skill]));
-    };
+        fetchSkills();
+    }, [isStatic, propSkills, propAvailableSkills, fetchSkills]);
 
-    const handleSaveSkills = async () => {
+    const handleSelectSkill = async (skill) => {
         try {
             const token = localStorage.getItem("access_token");
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/users/me/skills`, { skill_id: skill.id }, { headers: { Authorization: `Bearer ${token}` } });
 
-            for (const skill of selectedSkills) {
-                await axios.post(`${import.meta.env.VITE_API_URL}/users/me/skills?skill_id=${skill.id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            if (response?.data) {
+                setLocalSkills([...skills, response.data]);
+                if (setSkills) setSkills([...skills, response.data]);
+                toast.success("Skill added successfully");
             }
-
-            setSkills([...skills, ...selectedSkills]); // Update user skills in UI
-            setAvailableSkills(availableSkills.filter((s) => !selectedSkills.includes(s))); // Remove from available skills
-            setSelectedSkills([]); // Clear selection
-            setShowAllSkills(false);
         } catch (error) {
-            console.error("Failed to add skills:", error);
+            console.error("Failed to add skill:", error);
+            toast.error("Failed to add skill");
         }
     };
 
     const handleDeleteSkill = async (skillId) => {
-        if (!window.confirm("Are you sure you want to remove this skill?")) return;
-
         try {
             const token = localStorage.getItem("access_token");
-
             await axios.delete(`${import.meta.env.VITE_API_URL}/users/me/skills/${skillId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            setSkills((prevSkills) => prevSkills.filter((skill) => skill.id !== skillId));
+            setLocalSkills(skills.filter((skill) => skill.id !== skillId));
+            if (setSkills) setSkills(skills.filter((skill) => skill.id !== skillId));
+            toast.success("Skill deleted successfully");
         } catch (error) {
-            console.error("Failed to remove skill:", error);
+            console.error("Failed to delete skill:", error);
+            toast.error("Failed to delete skill");
         }
     };
 
+    const filteredAvailableSkills = availableSkills.filter(skill => 
+        skill.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     return (
-        <div>
-            <div className="flex justify-between items-center mb-2">
-                <button className="cursor-pointer hover:text-green-700" onClick={() => setShowAllSkills(!showAllSkills)}>
-                    {showAllSkills ? <FontAwesomeIcon icon={faMinus} /> : <FontAwesomeIcon icon={faPlus} />}
-                </button>
-            </div>
-
-            {/* Display User's Skills */}
-            <div className="flex flex-wrap gap-2">
-                {loading ? (
-                    <p className="text-gray-600">Loading skills...</p>
-                ) : skills.length > 0 ? (
-                    skills.map((skill) => (
-                        <span key={skill.id} className="flex items-center shadow-sm rounded-md px-2 py-1 bg-green-700 text-white" onMouseEnter={() => setHoveredSkill(skill.id)} onMouseLeave={() => setHoveredSkill(null)}>
-                            {skill.name}
-                            {hoveredSkill === skill.id && (
-                                <button className="ml-2 text-white hover:text-red-400 transition right-2" onClick={() => handleDeleteSkill(skill.id)}>
-                                    <FontAwesomeIcon icon={faTrashAlt} size="sm" />
-                                </button>
-                            )}
-                        </span>
-                    ))
-                ) : (
-                    <p className="text-gray-700">No skills added yet.</p>
-                )}
-            </div>
-
-            {/* Show All Skills if the button is clicked */}
-            {showAllSkills && (
+        <div className="space-y-6">
+            {loading || localLoading ? (
+                <p className="text-center text-gray-500 py-4">Loading skills...</p>
+            ) : (
                 <>
-                    <p className="font-semibold text-md mt-4">Available Skills</p>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                        {availableSkills.length > 0 ? (
-                            availableSkills.map((skill) => (
-                                <span key={skill.id} className={`shadow-sm rounded-md px-3 py-1 cursor-pointer ${selectedSkills.includes(skill) ? "bg-gray-300" : "bg-white border border-gray-300"}`} onClick={() => handleSelectSkill(skill)}>
-                                    {skill.name}
-                                </span>
-                            ))
-                        ) : (
-                            <p className="text-gray-500">No available skills</p>
-                        )}
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-lg font-semibold text-gray-800">Your Skills</h2>
+                        <button onClick={() => setShowAddSkills(!showAddSkills)} className="text-green-700 hover:text-green-600 transition-colors flex items-center gap-2">
+                            <FontAwesomeIcon icon={faPlus} />
+                        </button>
                     </div>
 
-                    {/* Save Button */}
-                    {selectedSkills.length > 0 && (
-                        <button className="mt-3 w-full text-white bg-green-700 font-semibold px-3 py-2 shadow-sm rounded-md cursor-pointer hover:bg-green-600" onClick={handleSaveSkills}>
-                            Save Skills
-                        </button>
+                    <div className="flex flex-wrap gap-2">
+                        {skills.map((skill) => (
+                            <div key={skill.id} className="bg-green-700 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2 group">
+                                <span>{skill.name}</span>
+                                <button onClick={() => handleDeleteSkill(skill.id)} className="text-white hover:text-red-200 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <FontAwesomeIcon icon={faTrashAlt} className="text-xs" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+
+                    {showAddSkills && (
+                        <div className="mt-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-4">Available Skills</h3>
+                            <div className="relative mb-4">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Search skills..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                                {filteredAvailableSkills
+                                    .filter((skill) => !skills.some((userSkill) => userSkill.id === skill.id))
+                                    .map((skill) => (
+                                        <button key={skill.id} onClick={() => handleSelectSkill(skill)} className="bg-gray-50 border border-gray-200 rounded-lg p-3 hover:bg-gray-100 transition-all text-left flex items-center justify-between">
+                                            <span className="font-medium text-gray-800">{skill.name}</span>
+                                            <FontAwesomeIcon icon={faPlus} className="text-green-700" />
+                                        </button>
+                                    ))}
+                            </div>
+                        </div>
                     )}
                 </>
             )}

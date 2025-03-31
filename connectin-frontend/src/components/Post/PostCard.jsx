@@ -1,44 +1,94 @@
-import React from "react";
 import { NavLink } from "react-router";
 import { faBookmark as faBookmarkRegular, faComment, faHeart } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark as faBookmarkSolid, faHeart as faHeartSolid } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useState } from "react";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router";
 
 export const PostCard = ({ post, showReadButton = true, onLike, onSave, isLiked = false, isSaved = false }) => {
-    const { id, title, content, author, tags, date, likes_count, comments_count, saves_count } = post;
+    const { id, title, content, author, tags, likes_count, comments_count, saves_count } = post;
+    const [isLikeLoading, setIsLikeLoading] = useState(false);
+    const [isSaveLoading, setIsSaveLoading] = useState(false);
+    const navigate = useNavigate();
+
+    const handleLike = async () => {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+            toast.error("Please log in to like posts");
+            navigate("/login", { state: { from: window.location.pathname } });
+            return;
+        }
+
+        setIsLikeLoading(true);
+        try {
+            await onLike();
+        } catch (error) {
+            toast.error("Failed to like post:", error);
+        } finally {
+            setIsLikeLoading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+            toast.error("Please log in to save posts");
+            navigate("/login", { state: { from: window.location.pathname } });
+            return;
+        }
+
+        setIsSaveLoading(true);
+        try {
+            await onSave();
+        } catch (error) {
+            toast.error("Failed to save post:", error);
+        } finally {
+            setIsSaveLoading(false);
+        }
+    };
 
     return (
-        <div className="bg-white dark:bg-zinc-800 border border-green-700 rounded-md shadow-md p-5">
+        <div className="bg-white dark:bg-zinc-800 border border-green-700 rounded-md shadow-md p-5 hover:shadow-lg transition-shadow">
             <div className="flex items-center mb-4">
-                <img src={author.avatar_url || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} alt={author.username || "User"} className="w-8 h-8 rounded-full border" />
+                <img
+                    src={author.avatar_url || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
+                    alt={author.username || "User"}
+                    className="w-8 h-8 rounded-full border hover:ring-2 hover:ring-green-500 transition"
+                    onError={(e) => (e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png")}
+                />
                 <p className="text-sm font-semibold ml-2">{author.username || "Unknown"}</p>
             </div>
 
             {tags.length > 0 && (
-                <div className="my-3">
+                <div className="my-3 flex flex-wrap gap-2">
                     {tags.map((tag, index) => (
-                        <span key={index} className="text-xs text-gray-500 whitespace-nowrap">
+                        <span key={index} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full">
                             {tag}
-                            {index < tags.length - 1 ? " • " : ""}
                         </span>
                     ))}
                 </div>
             )}
 
-            <p className="font-semibold mb-2">{title}</p>
-            <p className="text-sm mb-3 line-clamp-6" dangerouslySetInnerHTML={{ __html: content }} />
-            <p className="text-xs text-gray-500">{date ? `Posted on: ${new Date(date).toLocaleDateString()}` : "Date not available"}</p>
+            <p className="font-semibold mb-2 text-lg hover:text-green-700 transition-colors">{title}</p>
+            <p className="text-sm mb-3 line-clamp-6 prose dark:prose-invert" dangerouslySetInnerHTML={{ __html: content }} />
 
             <div className="flex justify-between items-center mt-3">
                 <div className="space-x-5 flex items-center">
-                    <button onClick={onLike} className="text-gray-500 hover:text-red-700 transition cursor-pointer">
-                        <FontAwesomeIcon icon={isLiked ? faHeartSolid : faHeart} style={isLiked ? { color: "#ff0000" } : {}} /> <span>{likes_count || ""}</span>
+                    <button onClick={handleLike} disabled={isLikeLoading} className="group relative text-gray-500 hover:text-red-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" title={isLikeLoading ? "Processing..." : "Like post"}>
+                        <FontAwesomeIcon icon={isLiked ? faHeartSolid : faHeart} className={`${isLikeLoading ? "animate-pulse" : ""}`} style={isLiked ? { color: "#ff0000" } : {}} />
+                        <span className="ml-1">{likes_count || ""}</span>
+                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{isLiked ? "Unlike" : "Like"}</span>
                     </button>
-                    <button className="text-gray-500 hover:text-gray-700 transition cursor-pointer">
-                        <FontAwesomeIcon icon={faComment} /> <span>{comments_count || ""}</span>
+                    <button className="group relative text-gray-500 hover:text-gray-700 transition cursor-pointer" title="View comments">
+                        <FontAwesomeIcon icon={faComment} />
+                        <span className="ml-1">{comments_count || ""}</span>
+                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Comments</span>
                     </button>
-                    <button onClick={onSave} className="text-gray-500 hover:text-yellow-400 transition cursor-pointer">
-                        <FontAwesomeIcon icon={isSaved ? faBookmarkSolid : faBookmarkRegular} style={isSaved ? { color: "#facc15" } : {}} /> <span>{saves_count || ""}</span>
+                    <button onClick={handleSave} disabled={isSaveLoading} className="group relative text-gray-500 hover:text-yellow-400 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" title={isSaveLoading ? "Processing..." : "Save post"}>
+                        <FontAwesomeIcon icon={isSaved ? faBookmarkSolid : faBookmarkRegular} className={`${isSaveLoading ? "animate-pulse" : ""}`} style={isSaved ? { color: "#facc15" } : {}} />
+                        <span className="ml-1">{saves_count || ""}</span>
+                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{isSaved ? "Unsave" : "Save"}</span>
                     </button>
                 </div>
                 {showReadButton && (
@@ -51,6 +101,23 @@ export const PostCard = ({ post, showReadButton = true, onLike, onSave, isLiked 
     );
 };
 
-export const LoadingMessage = () => <p className="text-center text-gray-500">Loading...</p>;
-export const ErrorMessage = ({ message }) => <p className="text-center text-red-500">{message}</p>;
-export const NoDataMessage = ({ message }) => <p className="text-center text-gray-500">{message}</p>;
+export const LoadingMessage = () => (
+    <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700"></div>
+    </div>
+);
+
+export const ErrorMessage = ({ message }) => (
+    <div className="text-center py-8">
+        <p className="text-red-500">{message}</p>
+        <button onClick={() => window.location.reload()} className="mt-4 text-sm text-green-700 hover:text-green-800 underline">
+            Try again
+        </button>
+    </div>
+);
+
+export const NoDataMessage = ({ message }) => (
+    <div className="text-center py-8 border border-dashed rounded-md">
+        <p className="text-gray-500">{message}</p>
+    </div>
+);

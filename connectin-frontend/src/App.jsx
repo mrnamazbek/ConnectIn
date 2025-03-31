@@ -16,6 +16,28 @@ import AboutUsNamazbeksVersion from "./pages/AboutUsNamazbeksVersion.jsx";
 function App() {
     return (
         <Router>
+            <AuthWrapper>
+                <div className="min-h-screen bg-gray-50">
+                    <NavBar />
+                    <div className="flex-grow grid grid-cols-8">
+                        <div className="col-start-2 col-span-6">
+                            <Routes>
+                                <Route path="/login" element={<LoginPage />} />
+                                <Route path="/register" element={<RegisterPage />} />
+                                <Route path="/profile/*" element={<UserProfile />} />
+                                <Route path="/*" element={<FeedPage />} />
+                                <Route path="/search" element={<SearchPage />} />
+                                <Route path="/chats" element={<ChatPage />} />
+                                <Route path="*" element={<NotFoundPage />} />
+                                <Route path="project/:projectId/profile" element={<ProjectProfile />} />
+                                <Route path="/about" element={<AboutUs />} />
+                            </Routes>
+                        </div>
+                        <ToastContainer autoClose={5000} position="bottom-left"/>
+                    </div>
+                    <ConditionalFooter />
+                </div>
+            </AuthWrapper>
             <div className="flex flex-col min-h-screen dark:bg-black dark:text-white">
                 <NavBar />
                 <div className="flex-grow grid grid-cols-8">

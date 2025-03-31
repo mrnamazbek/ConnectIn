@@ -1,25 +1,28 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrashAlt } from "@fortawesome/free-regular-svg-icons";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faTrashAlt, faEdit } from "@fortawesome/free-regular-svg-icons";
+import { faPlus, faUser, faGraduationCap, faBriefcase, faCode, faCheck, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { faGithub, faLinkedin, faTelegram } from "@fortawesome/free-brands-svg-icons";
 import { Routes, Route, NavLink, Navigate, useNavigate } from "react-router";
+import { toast } from "react-toastify";
 import ProjectsSection from "./ProjectsSection";
 import SkillsSection from "./SkillsSection";
 import ActionsSection from "./ActionsSection";
+import SavedPostsSection from "./SavedPostsSection";
+import { motion, AnimatePresence } from "framer-motion";
 
 const UserProfile = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [skills, setSkills] = useState([]);
+    const [availableSkills, setAvailableSkills] = useState([]);
     const [projects, setProjects] = useState([]);
     const [userPosts, setUserPosts] = useState([]);
     const [education, setEducation] = useState([]);
     const [experience, setExperience] = useState([]);
     const [loadingUser, setLoadingUser] = useState(true);
     const [loadingPosts, setLoadingPosts] = useState(true);
-    const [error, setError] = useState(null);
     const [showEducationForm, setShowEducationForm] = useState(false);
     const [showExperienceForm, setShowExperienceForm] = useState(false);
     const [newEducation, setNewEducation] = useState({ institution: "", degree: "", start_year: "", end_year: "" });
@@ -36,78 +39,93 @@ const UserProfile = () => {
         telegram: "",
     });
     const [errors, setErrors] = useState({});
+    const [savedPosts, setSavedPosts] = useState([]);
+    const [loadingSavedPosts, setLoadingSavedPosts] = useState(true);
 
     const degreeOptions = ["High School Diploma", "Associate's Degree", "Bachelor's Degree", "Master's Degree", "PhD", "Other"];
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
 
     useEffect(() => {
-        const fetchUserData = async () => {
+        const fetchAllData = async () => {
             try {
                 setLoadingUser(true);
+                setLoadingPosts(true);
+                setLoadingSavedPosts(true);
+
                 const token = localStorage.getItem("access_token");
                 if (!token) {
                     navigate("/login");
                     return;
                 }
-                const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
+
+                // Fetch all data in parallel
+                const [userResponse, postsResponse, skillsResponse, savedPostsResponse] = await Promise.all([
+                    axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                    axios.get(`${import.meta.env.VITE_API_URL}/posts/my`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                    axios.get(`${import.meta.env.VITE_API_URL}/skills`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                    axios.get(`${import.meta.env.VITE_API_URL}/users/me/saved-posts`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                ]);
+
+                // Update all state at once
+                if (userResponse?.data) {
+                    setUser(userResponse.data);
+                    setUpdatedUser(userResponse.data);
+                    setSkills(userResponse.data.skills || []);
+                    setEducation(userResponse.data.education || []);
+                    setExperience(userResponse.data.experience || []);
+                }
+
+                if (postsResponse?.data) {
+                    setUserPosts(postsResponse.data);
+                }
+
+                if (savedPostsResponse?.data) {
+                    setSavedPosts(savedPostsResponse.data);
+                }
+
+                if (skillsResponse?.data) {
+                    setAvailableSkills(skillsResponse.data);
+                }
+
+                // Fetch projects separately
+                const projectsResponse = await axios.get(`${import.meta.env.VITE_API_URL}/projects/my`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
-                setUser(response.data);
-                setUpdatedUser(response.data);
-                setSkills(response.data.skills || []);
-                setProjects(response.data.projects || []);
-                setEducation(response.data.education || []);
-                setExperience(response.data.experience || []);
+                if (projectsResponse?.data) {
+                    setProjects(projectsResponse.data);
+                }
             } catch (error) {
                 if (error.response?.status === 401) {
                     localStorage.removeItem("access_token");
                     localStorage.removeItem("refresh_token");
                     navigate("/login");
                 } else {
-                    console.error("Failed to fetch user data", error);
-                    setError("Failed to load user profile. Please try again later.");
+                    console.error("Failed to fetch data", error);
+                    toast.error("Failed to load data. Please try again later.");
                 }
             } finally {
                 setLoadingUser(false);
-            }
-        };
-
-        const fetchUserPosts = async () => {
-            try {
-                setLoadingPosts(true);
-                const token = localStorage.getItem("access_token");
-                if (!token) {
-                    navigate("/login");
-                    return;
-                }
-                const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts/my`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-
-                setUserPosts(response.data);
-            } catch (error) {
-                if (error.response?.status === 401) {
-                    localStorage.removeItem("access_token");
-                    localStorage.removeItem("refresh_token");
-                    navigate("/login");
-                } else {
-                    console.error("Failed to fetch user posts", error);
-                    setError("Failed to load user posts. Please try again later.");
-                }
-            } finally {
                 setLoadingPosts(false);
+                setLoadingSavedPosts(false);
             }
         };
 
-        fetchUserData();
-        fetchUserPosts();
+        fetchAllData();
     }, [navigate]);
 
     const handleAddEducation = async () => {
         if (!newEducation.institution || !newEducation.degree || !newEducation.start_year || !newEducation.end_year) {
-            alert("All fields are required");
+            toast.error("All fields are required");
             return;
         }
 
@@ -126,9 +144,10 @@ const UserProfile = () => {
             setEducation([...education, response.data]);
             setNewEducation({ institution: "", degree: "", start_year: "", end_year: "" });
             setShowEducationForm(false);
+            toast.success("Education added successfully");
         } catch (error) {
             console.error("Failed to add education:", error);
-            setError("Failed to add education. Please try again.");
+            toast.error("Failed to add education. Please try again.");
         }
     };
 
@@ -140,15 +159,16 @@ const UserProfile = () => {
             });
 
             setEducation(education.filter((edu) => edu.id !== eduId));
+            toast.success("Education deleted successfully");
         } catch (error) {
             console.error("Failed to delete education:", error);
-            setError("Failed to delete education. Please try again.");
+            toast.error("Failed to delete education. Please try again.");
         }
     };
 
     const handleAddExperience = async () => {
         if (!newExperience.company || !newExperience.role || !newExperience.start_year || !newExperience.end_year) {
-            alert("All fields are required");
+            toast.error("All fields are required");
             return;
         }
 
@@ -167,9 +187,10 @@ const UserProfile = () => {
             setExperience([...experience, response.data]);
             setNewExperience({ company: "", role: "", start_year: "", end_year: "" });
             setShowExperienceForm(false);
+            toast.success("Experience added successfully");
         } catch (error) {
             console.error("Failed to add experience:", error);
-            setError("Failed to add experience. Please try again.");
+            toast.error("Failed to add experience. Please try again.");
         }
     };
 
@@ -180,9 +201,10 @@ const UserProfile = () => {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setExperience(experience.filter((exp) => exp.id !== expId));
+            toast.success("Experience deleted successfully");
         } catch (error) {
             console.error("Failed to delete experience:", error);
-            setError("Failed to delete experience. Please try again.");
+            toast.error("Failed to delete experience. Please try again.");
         }
     };
 
@@ -203,7 +225,10 @@ const UserProfile = () => {
     };
 
     const handleSave = async () => {
-        if (!validateForm()) return;
+        if (!validateForm()) {
+            toast.error("Please fix the validation errors before saving");
+            return;
+        }
 
         try {
             const token = localStorage.getItem("access_token");
@@ -213,251 +238,372 @@ const UserProfile = () => {
 
             setUser(response.data);
             setEditMode(false);
+            toast.success("Profile updated successfully");
+
+            // If a new token was sent, update it in localStorage
+            if (response.data.access_token) {
+                localStorage.setItem("access_token", response.data.access_token);
+                console.log("Updated authentication token");
+            }
         } catch (error) {
             console.error("Failed to update profile", error);
-            alert("Failed to update profile. Please try again.");
+            toast.error("Failed to update profile. Please try again.");
         }
     };
 
     return (
-        <div className="grid grid-cols-8 gap-4 my-4">
-            <div className="col-span-6 bg-white p-5 shadow-sm rounded-md border border-green-700 flex flex-col self-start hover:shadow-green-700 transition">
-                {error && <p className="text-red-500 mb-4">{error}</p>}
-                {loadingUser ? (
-                    <div className="flex justify-center items-center">
-                        <svg className="animate-spin h-5 w-5 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-                        </svg>
-                        <span className="ml-2">Loading profile...</span>
-                    </div>
-                ) : user ? (
-                    <div className="flex space-x-5">
-                        <img src="https://media.tenor.com/HmFcGkSu58QAAAAM/silly.gif" alt="Profile" className="rounded-full w-32 h-32 object-cover border border-black" />
-                        <div className="flex flex-col space-y-2">
-                            {!editMode ? (
-                                <>
-                                    <p className="">
-                                        {user.first_name} {user.last_name} <span className="text-sm text-gray-500">{user.username}</span>
-                                    </p>
-                                    <p>{user.position || "Role not specified"}</p>
-                                    <p>{user.city || "Location not specified"}</p>
-                                    <a href={`mailto:${user.email}`} rel="noopener noreferrer" className="text-sm text-blue-500 font-semibold hover:underline hover:underline-offset-2">
-                                        {user.email}
-                                    </a>
-                                    <div className="flex space-x-5">
-                                        {user.github && (
-                                            <a href={user.github} target="_blank" rel="noopener noreferrer">
-                                                <FontAwesomeIcon icon={faGithub} size="lg" className="hover:text-green-700 transition" />
-                                            </a>
-                                        )}
-                                        {user.linkedin && (
-                                            <a href={user.linkedin} target="_blank" rel="noopener noreferrer">
-                                                <FontAwesomeIcon icon={faLinkedin} size="lg" className="hover:text-green-700 transition" />
-                                            </a>
-                                        )}
-                                        {user.telegram && (
-                                            <a href={user.telegram.startsWith("http") ? user.telegram : `https://t.me/${user.telegram}`} target="_blank" rel="noopener noreferrer">
-                                                <FontAwesomeIcon icon={faTelegram} size="lg" className="hover:text-green-700 transition" />
-                                            </a>
-                                        )}
-                                    </div>
-                                    <button onClick={() => setEditMode(true)} className="mt-2 px-3 py-1 bg-green-700 text-white rounded-md hover:bg-green-600 transition">
-                                        Edit Profile
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label className="text-xs text-gray-500">First Name</label>
-                                            <input type="text" name="first_name" value={updatedUser.first_name || ""} onChange={handleChange} className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-500">Last Name</label>
-                                            <input type="text" name="last_name" value={updatedUser.last_name || ""} onChange={handleChange} className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-500">Position/Title</label>
-                                            <input type="text" name="position" value={updatedUser.position || ""} onChange={handleChange} className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-500">City</label>
-                                            <input type="text" name="city" value={updatedUser.city || ""} onChange={handleChange} className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-500">Email</label>
-                                            <input type="email" name="email" value={updatedUser.email || ""} onChange={handleChange} className={`w-full border ${errors.email ? "border-red-500" : "border-gray-300"} rounded px-2 py-1 text-sm`} />
-                                            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-500">GitHub URL</label>
-                                            <input type="url" name="github" value={updatedUser.github || ""} onChange={handleChange} className="w-full border border-gray-300 rounded px-2 py-1 text-sm" placeholder="https://github.com/username" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-500">LinkedIn URL</label>
-                                            <input type="url" name="linkedin" value={updatedUser.linkedin || ""} onChange={handleChange} className="w-full border border-gray-300 rounded px-2 py-1 text-sm" placeholder="https://linkedin.com/in/username" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-500">Telegram Username</label>
-                                            <input type="text" name="telegram" value={updatedUser.telegram || ""} onChange={handleChange} className="w-full border border-gray-300 rounded px-2 py-1 text-sm" placeholder="@username or URL" />
-                                        </div>
-                                    </div>
-                                    <div className="flex space-x-2 mt-2">
-                                        <button onClick={handleSave} className="px-3 py-1 bg-green-700 text-white rounded-md hover:bg-green-600 transition">
-                                            Save Changes
-                                        </button>
-                                        <button onClick={() => setEditMode(false)} className="px-3 py-1 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition">
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                ) : (
-                    <p className="text-gray-600">User data not available.</p>
-                )}
-            </div>
-
-            <div className="col-span-2 flex-col space-y-4">
-                <div className="bg-white border border-green-700 rounded-md shadow-sm p-5 self-start w-full hover:shadow-green-700 transition">
-                    <p className="font-semibold">Projects</p>
-                    {loadingUser ? (
-                        <div className="flex justify-center items-center">
-                            <svg className="animate-spin h-5 w-5 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-                            </svg>
-                            <span className="ml-2">Loading projects...</span>
-                        </div>
-                    ) : projects.length > 0 ? (
-                        projects.map((project) => (
-                            <div key={project.id} className="p-4 border-b last:border-b-0">
-                                <h4 className="font-semibold">{project.name}</h4>
-                                <p className="text-gray-600">{project.description}</p>
-                                <button onClick={() => console.log(`Entered ${project.name}!`)} className="hover:text-green-700 transition duration-300 cursor-pointer underline">
-                                    Enter Project
-                                </button>
+        <div className="max-w-7xl mx-auto py-8">
+            <div className="grid grid-cols-1 lg:grid-cols-8 gap-6">
+                {/* Main Profile Card */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-8 bg-white rounded-xl shadow-lg border border-green-700 overflow-hidden hover:shadow-xl transition-all duration-300">
+                    <div className="p-6">
+                        {loadingUser ? (
+                            <div className="flex justify-center items-center py-12">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
                             </div>
-                        ))
-                    ) : (
-                        <p className="text-gray-700">No projects found.</p>
-                    )}
-                </div>
-            </div>
+                        ) : user ? (
+                            <div className="space-y-6">
+                                {/* Profile Header */}
+                                <div className="flex flex-col md:flex-row gap-6">
+                                    {/* Profile Image */}
+                                    <motion.div whileHover={{ scale: 1.05 }} className="relative flex-shrink-0">
+                                        <img src={user.avatar_url || "https://media.tenor.com/HmFcGkSu58QAAAAM/silly.gif"} alt="Profile" className="w-32 h-32 rounded-full object-cover border-4 border-green-700 shadow-lg" />
+                                        {editMode && (
+                                            <motion.button whileHover={{ scale: 1.1 }} className="absolute bottom-0 right-0 bg-green-700 text-white p-2 rounded-full shadow-lg hover:bg-green-600 transition-colors">
+                                                <FontAwesomeIcon icon={faEdit} />
+                                            </motion.button>
+                                        )}
+                                    </motion.div>
 
-            <div className="col-span-6 bg-white border border-green-700 rounded-md shadow-sm p-5 w-full hover:shadow-green-700 transition">
-                <div className="flex justify-between items-center mb-4">
-                    <h4 className="font-semibold">Education</h4>
-                    <button onClick={() => setShowEducationForm(!showEducationForm)} className="text-sm text-green-700 font-semibold flex items-center cursor-pointer">
-                        <FontAwesomeIcon icon={faPlus} className="mr-2" />
-                    </button>
-                </div>
-                {education.map((edu) => (
-                    <div key={edu.id} className="flex justify-between items-center p-2 border-b border-gray-300 last:border-0">
-                        <p>
-                            {edu.institution} - {edu.degree} ({edu.start_year} - {edu.end_year})
-                        </p>
-                        <FontAwesomeIcon icon={faTrashAlt} className="text-red-500 cursor-pointer hover:text-red-700" onClick={() => handleDeleteEducation(edu.id)} />
-                    </div>
-                ))}
-                {showEducationForm && (
-                    <div className="mt-2 flex flex-col space-y-2 text-sm">
-                        <input type="text" placeholder="Institution" className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newEducation.institution} onChange={(e) => setNewEducation({ ...newEducation, institution: e.target.value })} />
-                        <select className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newEducation.degree} onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })}>
-                            <option value="">Select Degree</option>
-                            {degreeOptions.map((degree, index) => (
-                                <option key={index} value={degree}>
-                                    {degree}
-                                </option>
-                            ))}
-                        </select>
-                        <select className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newEducation.start_year} onChange={(e) => setNewEducation({ ...newEducation, start_year: e.target.value })}>
-                            <option value="">Select Start Year</option>
-                            {years.map((year) => (
-                                <option key={year} value={year}>
-                                    {year}
-                                </option>
-                            ))}
-                        </select>
-                        <select className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newEducation.end_year} onChange={(e) => setNewEducation({ ...newEducation, end_year: e.target.value })}>
-                            <option value="">Select End Year</option>
-                            {years.map((year) => (
-                                <option key={year} value={year}>
-                                    {year}
-                                </option>
-                            ))}
-                        </select>
-                        <button onClick={handleAddEducation} className="text-white bg-green-700 font-semibold px-3 py-1 rounded-md">
-                            Save
-                        </button>
-                    </div>
-                )}
+                                    {/* Profile Info */}
+                                    <div className="flex-1 min-w-0">
+                                        {!editMode ? (
+                                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+                                                <div className="flex items-center gap-2">
+                                                    <h1 className="text-2xl font-bold text-gray-800 truncate">
+                                                        {user.first_name} {user.last_name}
+                                                    </h1>
+                                                    <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full whitespace-nowrap">{user.username}</span>
+                                                </div>
 
-                <div className="mt-4">
-                    <div className="flex justify-between items-center mb-4">
-                        <h4 className="font-semibold">Experience</h4>
-                        <button onClick={() => setShowExperienceForm(!showExperienceForm)} className="mt-2 text-sm text-green-700 font-semibold flex items-center cursor-pointer">
-                            <FontAwesomeIcon icon={faPlus} className="mr-2" />
-                        </button>
-                    </div>
-                    {experience.map((exp) => (
-                        <div key={exp.id} className="flex justify-between items-center p-2 border-b border-gray-300 last:border-0">
-                            <p>
-                                {exp.company} - {exp.role} ({exp.start_year} - {exp.end_year})
-                            </p>
-                            <FontAwesomeIcon icon={faTrashAlt} className="text-red-500 cursor-pointer hover:text-red-700" onClick={() => handleDeleteExperience(exp.id)} />
-                        </div>
-                    ))}
+                                                <div className="flex items-center gap-2 text-gray-600">
+                                                    <FontAwesomeIcon icon={faUser} className="text-green-700 flex-shrink-0" />
+                                                    <span className="truncate">{user.position || "Role not specified"}</span>
+                                                </div>
 
-                    {showExperienceForm && (
-                        <div className="mt-2 flex flex-col space-y-2 text-sm">
-                            <input type="text" placeholder="Company" className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newExperience.company} onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })} />
-                            <input type="text" placeholder="Role" className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newExperience.role} onChange={(e) => setNewExperience({ ...newExperience, role: e.target.value })} />
-                            <select className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newExperience.start_year} onChange={(e) => setNewExperience({ ...newExperience, start_year: e.target.value })}>
-                                <option value="">Select Start Year</option>
-                                {years.map((year) => (
-                                    <option key={year} value={year}>
-                                        {year}
-                                    </option>
+                                                <div className="flex items-center gap-2 text-gray-600">
+                                                    <FontAwesomeIcon icon={faCode} className="text-green-700 flex-shrink-0" />
+                                                    <span className="truncate">{user.city || "Location not specified"}</span>
+                                                </div>
+
+                                                <a href={`mailto:${user.email}`} className="flex items-center gap-2 text-green-700 hover:text-green-600 transition-colors">
+                                                    <FontAwesomeIcon icon={faUser} className="flex-shrink-0" />
+                                                    <span className="truncate">{user.email}</span>
+                                                </a>
+
+                                                {/* Social Links */}
+                                                <div className="flex gap-4 pt-2">
+                                                    {user.github && (
+                                                        <motion.a whileHover={{ scale: 1.1 }} href={user.github} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-green-700 transition-colors">
+                                                            <FontAwesomeIcon icon={faGithub} size="lg" />
+                                                        </motion.a>
+                                                    )}
+                                                    {user.linkedin && (
+                                                        <motion.a whileHover={{ scale: 1.1 }} href={user.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-green-700 transition-colors">
+                                                            <FontAwesomeIcon icon={faLinkedin} size="lg" />
+                                                        </motion.a>
+                                                    )}
+                                                    {user.telegram && (
+                                                        <motion.a whileHover={{ scale: 1.1 }} href={user.telegram.startsWith("http") ? user.telegram : `https://t.me/${user.telegram}`} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-green-700 transition-colors">
+                                                            <FontAwesomeIcon icon={faTelegram} size="lg" />
+                                                        </motion.a>
+                                                    )}
+                                                </div>
+
+                                                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setEditMode(true)} className="mt-4 px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2">
+                                                    <FontAwesomeIcon icon={faEdit} />
+                                                    Edit Profile
+                                                </motion.button>
+                                            </motion.div>
+                                        ) : (
+                                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                                                        <input type="text" name="first_name" value={updatedUser.first_name || ""} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                                                        <input type="text" name="last_name" value={updatedUser.last_name || ""} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Position/Title</label>
+                                                        <input type="text" name="position" value={updatedUser.position || ""} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                                                        <input type="text" name="city" value={updatedUser.city || ""} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                                        <input
+                                                            type="email"
+                                                            name="email"
+                                                            value={updatedUser.email || ""}
+                                                            onChange={handleChange}
+                                                            className={`w-full px-3 py-2 border ${errors.email ? "border-red-500" : "border-gray-300"} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all`}
+                                                        />
+                                                        {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">GitHub URL</label>
+                                                        <input
+                                                            type="url"
+                                                            name="github"
+                                                            value={updatedUser.github || ""}
+                                                            onChange={handleChange}
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                                            placeholder="https://github.com/username"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL</label>
+                                                        <input
+                                                            type="url"
+                                                            name="linkedin"
+                                                            value={updatedUser.linkedin || ""}
+                                                            onChange={handleChange}
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                                            placeholder="https://linkedin.com/in/username"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Telegram Username</label>
+                                                        <input
+                                                            type="text"
+                                                            name="telegram"
+                                                            value={updatedUser.telegram || ""}
+                                                            onChange={handleChange}
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                                            placeholder="@username or URL"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-3 mt-4">
+                                                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSave} className="px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2">
+                                                        <FontAwesomeIcon icon={faCheck} />
+                                                        Save Changes
+                                                    </motion.button>
+                                                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setEditMode(false)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2">
+                                                        <FontAwesomeIcon icon={faTimes} />
+                                                        Cancel
+                                                    </motion.button>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-gray-600 text-center py-8">User data not available.</p>
+                        )}
+                    </div>
+                </motion.div>
+
+                {/* Education and Experience Card */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-8 bg-white rounded-xl shadow-lg border border-green-700 overflow-hidden hover:shadow-xl transition-all duration-300">
+                    <div className="p-6">
+                        {/* Education Section */}
+                        <div className="mb-8">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <FontAwesomeIcon icon={faGraduationCap} className="text-green-700" />
+                                    <h2 className="text-lg font-semibold text-gray-800">Education</h2>
+                                </div>
+                                <motion.button whileHover={{ scale: 1.1 }} onClick={() => setShowEducationForm(!showEducationForm)} className="text-green-700 hover:text-green-600 transition-colors">
+                                    <FontAwesomeIcon icon={faPlus} />
+                                </motion.button>
+                            </div>
+
+                            <div className="space-y-3">
+                                {education.map((edu) => (
+                                    <motion.div key={edu.id} whileHover={{ scale: 1.02 }} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                        <div className="flex justify-between items-start">
+                                            <div className="min-w-0">
+                                                <h4 className="font-medium text-gray-800 truncate">{edu.institution}</h4>
+                                                <p className="text-sm text-gray-600 truncate">{edu.degree}</p>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    {edu.start_year} - {edu.end_year}
+                                                </p>
+                                            </div>
+                                            <motion.button whileHover={{ scale: 1.1 }} onClick={() => handleDeleteEducation(edu.id)} className="text-red-500 hover:text-red-600 transition-colors flex-shrink-0 ml-2">
+                                                <FontAwesomeIcon icon={faTrashAlt} />
+                                            </motion.button>
+                                        </div>
+                                    </motion.div>
                                 ))}
-                            </select>
-                            <select className="border border-gray-200 shadow-sm rounded-md px-2 py-1" value={newExperience.end_year} onChange={(e) => setNewExperience({ ...newExperience, end_year: e.target.value })}>
-                                <option value="">Select End Year</option>
-                                {years.map((year) => (
-                                    <option key={year} value={year}>
-                                        {year}
-                                    </option>
-                                ))}
-                            </select>
-                            <button onClick={handleAddExperience} className="text-white bg-green-700 font-semibold px-3 py-1 rounded-md">
-                                Save
-                            </button>
+                            </div>
+
+                            <AnimatePresence>
+                                {showEducationForm && (
+                                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-4 space-y-3">
+                                        <input
+                                            type="text"
+                                            placeholder="Institution"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                            value={newEducation.institution}
+                                            onChange={(e) => setNewEducation({ ...newEducation, institution: e.target.value })}
+                                        />
+                                        <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" value={newEducation.degree} onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })}>
+                                            <option value="">Select Degree</option>
+                                            {degreeOptions.map((degree, index) => (
+                                                <option key={index} value={degree}>
+                                                    {degree}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <select
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                                value={newEducation.start_year}
+                                                onChange={(e) => setNewEducation({ ...newEducation, start_year: e.target.value })}
+                                            >
+                                                <option value="">Start Year</option>
+                                                {years.map((year) => (
+                                                    <option key={year} value={year}>
+                                                        {year}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" value={newEducation.end_year} onChange={(e) => setNewEducation({ ...newEducation, end_year: e.target.value })}>
+                                                <option value="">End Year</option>
+                                                {years.map((year) => (
+                                                    <option key={year} value={year}>
+                                                        {year}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleAddEducation} className="w-full px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-600 transition-colors">
+                                            Add Education
+                                        </motion.button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
-                    )}
-                </div>
-            </div>
 
-            <div className="col-span-6 bg-white border border-green-700 rounded-md shadow-sm p-5 w-full hover:shadow-green-700 transition">
-                <div className="flex mb-4 space-x-5 border-b border-gray-300">
-                    <NavLink to="/profile/projects" className={({ isActive }) => (isActive ? "text-green-700 py-1" : "hover:text-green-700 py-1")}>
-                        Projects
-                    </NavLink>
-                    <NavLink to="/profile/skills" className={({ isActive }) => (isActive ? "text-green-700 py-1" : "hover:text-green-700 py-1")}>
-                        Skills
-                    </NavLink>
-                    <NavLink to="/profile/actions" className={({ isActive }) => (isActive ? "text-green-700 py-1" : "hover:text-green-700 py-1")}>
-                        News
-                    </NavLink>
-                </div>
+                        {/* Experience Section */}
+                        <div>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <FontAwesomeIcon icon={faBriefcase} className="text-green-700" />
+                                    <h2 className="text-lg font-semibold text-gray-800">Experience</h2>
+                                </div>
+                                <motion.button whileHover={{ scale: 1.1 }} onClick={() => setShowExperienceForm(!showExperienceForm)} className="text-green-700 hover:text-green-600 transition-colors">
+                                    <FontAwesomeIcon icon={faPlus} />
+                                </motion.button>
+                            </div>
 
-                <Routes>
-                    <Route index element={<Navigate to="projects" />} />
-                    <Route path="projects" element={<ProjectsSection user={user} projects={projects} loading={loadingUser} />} />
-                    <Route path="skills" element={<SkillsSection setSkills={setSkills} skills={skills} loading={loadingUser} />} />
-                    <Route path="actions" element={<ActionsSection setUserPosts={setUserPosts} userPosts={userPosts} loading={loadingPosts} />} />
-                </Routes>
+                            <div className="space-y-3">
+                                {experience.map((exp) => (
+                                    <motion.div key={exp.id} whileHover={{ scale: 1.02 }} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                        <div className="flex justify-between items-start">
+                                            <div className="min-w-0">
+                                                <h4 className="font-medium text-gray-800 truncate">{exp.company}</h4>
+                                                <p className="text-sm text-gray-600 truncate">{exp.role}</p>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    {exp.start_year} - {exp.end_year}
+                                                </p>
+                                            </div>
+                                            <motion.button whileHover={{ scale: 1.1 }} onClick={() => handleDeleteExperience(exp.id)} className="text-red-500 hover:text-red-600 transition-colors flex-shrink-0 ml-2">
+                                                <FontAwesomeIcon icon={faTrashAlt} />
+                                            </motion.button>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+
+                            <AnimatePresence>
+                                {showExperienceForm && (
+                                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-4 space-y-3">
+                                        <input
+                                            type="text"
+                                            placeholder="Company"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                            value={newExperience.company}
+                                            onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })}
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="Role"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                            value={newExperience.role}
+                                            onChange={(e) => setNewExperience({ ...newExperience, role: e.target.value })}
+                                        />
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <select
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                                value={newExperience.start_year}
+                                                onChange={(e) => setNewExperience({ ...newExperience, start_year: e.target.value })}
+                                            >
+                                                <option value="">Start Year</option>
+                                                {years.map((year) => (
+                                                    <option key={year} value={year}>
+                                                        {year}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <select
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                                value={newExperience.end_year}
+                                                onChange={(e) => setNewExperience({ ...newExperience, end_year: e.target.value })}
+                                            >
+                                                <option value="">End Year</option>
+                                                {years.map((year) => (
+                                                    <option key={year} value={year}>
+                                                        {year}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleAddExperience} className="w-full px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-600 transition-colors">
+                                            Add Experience
+                                        </motion.button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Main Content Area */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="lg:col-span-8 bg-white rounded-xl shadow-lg border border-green-700 overflow-hidden hover:shadow-xl transition-all duration-300">
+                    <div className="p-6">
+                        <div className="flex space-x-6 border-b border-gray-200 mb-6">
+                            <NavLink to="/profile/projects" className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? "text-green-700 border-b-2 border-green-700" : "text-gray-500 hover:text-green-700"}`}>
+                                Projects
+                            </NavLink>
+                            <NavLink to="/profile/skills" className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? "text-green-700 border-b-2 border-green-700" : "text-gray-500 hover:text-green-700"}`}>
+                                Skills
+                            </NavLink>
+                            <NavLink to="/profile/actions" className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? "text-green-700 border-b-2 border-green-700" : "text-gray-500 hover:text-green-700"}`}>
+                                News
+                            </NavLink>
+                            <NavLink to="/profile/saved" className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? "text-green-700 border-b-2 border-green-700" : "text-gray-500 hover:text-green-700"}`}>
+                                Saved
+                            </NavLink>
+                        </div>
+
+                        <Routes>
+                            <Route index element={<Navigate to="projects" />} />
+                            <Route path="projects" element={<ProjectsSection user={user} projects={projects} loading={loadingUser} isStatic={true} />} />
+                            <Route path="skills" element={<SkillsSection setSkills={setSkills} skills={skills} availableSkills={availableSkills} loading={loadingUser} isStatic={true} />} />
+                            <Route path="actions" element={<ActionsSection user={user} posts={userPosts} loading={loadingPosts} isStatic={true} />} />
+                            <Route path="saved" element={<SavedPostsSection posts={savedPosts} loading={loadingSavedPosts} isStatic={true} />} />
+                        </Routes>
+                    </div>
+                </motion.div>
             </div>
         </div>
     );

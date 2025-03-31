@@ -11,6 +11,7 @@ import Footer from "./components/Footer";
 import ProjectProfile from "./pages/ProjectProfile";
 import AboutUs from "./pages/AboutUs";
 import { ToastContainer } from "react-toastify";
+import AboutUsNamazbeksVersion from "./pages/AboutUsNamazbeksVersion.jsx";
 
 function App() {
     return (
@@ -29,6 +30,7 @@ function App() {
                             <Route path="*" element={<NotFoundPage />} />
                             <Route path="project/:projectId/profile" element={<ProjectProfile />} />
                             <Route path="/about" element={<AboutUs />} />
+                            <Route path="/aboutus" element={<AboutUsNamazbeksVersion />} />
                         </Routes>
                     </div>
                     <ToastContainer autoClose={5000} position="bottom-left"/>

@@ -38,15 +38,21 @@ const AccessTokenManager = () => {
     useEffect(() => {
         const handleTokenRefresh = async () => {
             if (accessToken) {
-                const decoded = decode(accessToken);
-                const expiresAt = decoded.exp * 1000;
-                const timeLeft = expiresAt - Date.now();
+                try {
+                    const decoded = decode(accessToken);
+                    const expiresAt = decoded.exp * 1000;
+                    const timeLeft = expiresAt - Date.now();
 
-                if (timeLeft < 0) {
-                    await refreshAccessToken();
-                } else {
-                    const timeout = setTimeout(refreshAccessToken, timeLeft - 60000); // Refresh 1 minute before
-                    return () => clearTimeout(timeout);
+                    if (timeLeft < 0) {
+                        await refreshAccessToken();
+                    } else {
+                        const timeout = setTimeout(refreshAccessToken, timeLeft - 60000); // Refresh 1 minute before
+                        return () => clearTimeout(timeout);
+                    }
+                } catch (error) {
+                    console.error("Token decode error:", error);
+                    TokenService.removeTokens();
+                    navigate("/login");
                 }
             }
         };
@@ -57,12 +63,21 @@ const AccessTokenManager = () => {
         const accessTokenCookie = Cookies.get("access_token");
         const refreshTokenCookie = Cookies.get("refresh_token");
         if (accessTokenCookie && refreshTokenCookie) {
-            TokenService.setTokens(accessTokenCookie, refreshTokenCookie);
-            Cookies.remove("access_token");
-            Cookies.remove("refresh_token");
-            setAccessToken(accessTokenCookie);
+            try {
+                // Validate token before setting
+                decode(accessTokenCookie);
+                TokenService.setTokens(accessTokenCookie, refreshTokenCookie);
+                Cookies.remove("access_token");
+                Cookies.remove("refresh_token");
+                setAccessToken(accessTokenCookie);
+            } catch (error) {
+                console.error("Invalid OAuth token:", error);
+                Cookies.remove("access_token");
+                Cookies.remove("refresh_token");
+                navigate("/login");
+            }
         }
-    }, [accessToken, refreshAccessToken]);
+    }, [accessToken, refreshAccessToken, navigate]);
 
     return { accessToken };
 };

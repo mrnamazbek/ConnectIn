@@ -5,19 +5,29 @@ class TokenService {
     static REFRESH_TOKEN_KEY = "refresh_token";
 
     static getAccessToken() {
-        return localStorage.getItem(this.ACCESS_TOKEN_KEY);
+        const token = localStorage.getItem(this.ACCESS_TOKEN_KEY);
+        return token || null;
     }
 
     static getRefreshToken() {
-        return localStorage.getItem(this.REFRESH_TOKEN_KEY);
+        const token = localStorage.getItem(this.REFRESH_TOKEN_KEY);
+        return token || null;
     }
 
     static setAccessToken(accessToken) {
+        if (!accessToken) {
+            this.removeTokens();
+            return;
+        }
         localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
         axios.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
     }
 
     static setTokens(accessToken, refreshToken) {
+        if (!accessToken) {
+            this.removeTokens();
+            return;
+        }
         localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
         if (refreshToken) {
             localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
@@ -28,6 +38,7 @@ class TokenService {
     static removeTokens() {
         localStorage.removeItem(this.ACCESS_TOKEN_KEY);
         localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+        delete axios.defaults.headers.common["Authorization"];
     }
 
     static async refreshToken() {

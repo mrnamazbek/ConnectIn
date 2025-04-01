@@ -1,27 +1,42 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLinkedin, faTelegram } from "@fortawesome/free-brands-svg-icons";
 import technologies from "../data/technologies.js"; // Ensure this includes Backend, DB, etc.
-import members from "../data/team";
-import Typist from "react-typist"; // npm install react-typist
-import { FaLightbulb, FaHandshake, FaRocket } from "react-icons/fa";
+import team from "../data/team";
+import Typed from "react-typed"; // Вариант 1: Использование react-typedimport { FaLightbulb, FaHandshake, FaRocket } from "react-icons/fa";
 import { useEffect, useState } from "react";
+import { FaLightbulb, FaHandshake, FaRocket } from "react-icons/fa";
 
+// Группировка технологий по категориям
 const technologyCategories = technologies.reduce((acc, tech) => {
-  const category = tech.category || "Other";
+  const category = tech.category || "Другое";
   if (!acc[category]) acc[category] = [];
   acc[category].push(tech);
   return acc;
 }, {});
 
+// Вариант 2: Собственный компонент Typewriter
+const Typewriter = ({ text, speed = 100 }) => {
+  const [displayedText, setDisplayedText] = useState("");
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (index < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayedText((prev) => prev + text[index]);
+        setIndex((prev) => prev + 1);
+      }, speed);
+      return () => clearTimeout(timeout);
+    }
+  }, [index, text, speed]);
+
+  return <span>{displayedText}</span>;
+};
+
 const AboutUsV3 = () => {
-  const [typingKey, setTypingKey] = useState(0);
   const [daysSinceStart, setDaysSinceStart] = useState(0);
 
-  // Reset Typist animation on mount
   useEffect(() => {
-    setTypingKey((prev) => prev + 1);
-
-    // Calculate days since Dec 1, 2024
+    // Расчет дней с 1 декабря 2024 года
     const startDate = new Date("2024-12-01");
     const today = new Date();
     const diffTime = Math.abs(today - startDate);
@@ -30,7 +45,8 @@ const AboutUsV3 = () => {
   }, []);
 
   return (
-    <div className="col-span-6 flex flex-col my-5 bg-white p-6 md:p-10 rounded-lg shadow-xl border border-gray-200 overflow-hidden font-sans">
+    <div className="col-span-6 flex flex-col my-5 bg-white p-6 md:p-10 rounded-lg shadow-xl border border-gray-200 overflow-hidden">
+      {/* Встроенный CSS для flip card и progress circle */}
       <style>{`
         .flip-card {
           perspective: 1000px;
@@ -107,23 +123,33 @@ const AboutUsV3 = () => {
         }
       `}</style>
 
-      {/* Hero Section */}
+      {/* Герой-секция с react-typed (Вариант 1) */}
       <div className="text-center mb-12 bg-gradient-to-r from-green-600 via-teal-500 to-blue-600 text-white py-16 rounded-t-lg fade-in">
         <h1 className="text-4xl md:text-6xl font-extrabold mb-4 px-4 tracking-tight">ConnectIn</h1>
-        <Typist
-          key={typingKey}
+        <Typed
+          strings={["Beyond Code: Building Futures.", "Beyond Code: Building Teams, Projects, Careers."]}
+          typeSpeed={40}
+          backSpeed={50}
+          backDelay={1000}
+          loop
           className="text-xl md:text-2xl px-4"
-          cursor={{ show: true, blink: true, element: "|", hideWhenDone: true }}
-        >
-          <span>Beyond Code: Building Futures.</span>
-          <Typist.Backspace count={8} delay={1000} />
-          <span>Teams, Projects, Careers.</span>
-        </Typist>
+        />
       </div>
 
-      {/* Work in Progress Section */}
+      {/* Альтернатива: Герой-секция с собственным Typewriter (Вариант 2) */}
+      {/* Раскомментируйте этот блок, если хотите использовать собственное решение */}
+      {/*
+      <div className="text-center mb-12 bg-gradient-to-r from-green-600 via-teal-500 to-blue-600 text-white py-16 rounded-t-lg fade-in">
+        <h1 className="text-4xl md:text-6xl font-extrabold mb-4 px-4 tracking-tight">ConnectIn</h1>
+        <p className="text-xl md:text-2xl px-4">
+          <Typewriter text="Beyond Code: Building Teams, Projects, and Careers." speed={50} />
+        </p>
+      </div>
+      */}
+
+      {/* Секция "В разработке с декабря 2024" */}
       <div className="mb-16 px-4 bg-gray-50 py-8 rounded-lg shadow-inner fade-in">
-        <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-6 text-center">In Progress Since Dec 2024</h2>
+        <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-6 text-center">В разработке с декабря 2024</h2>
         <div className="flex justify-center">
           <div className="progress-circle">
             <svg width="100" height="100">
@@ -137,42 +163,42 @@ const AboutUsV3 = () => {
                 strokeDashoffset={282.6 - (daysSinceStart / 365) * 282.6}
               />
             </svg>
-            <div className="progress-text">{daysSinceStart} Days</div>
+            <div className="progress-text">{daysSinceStart} дней</div>
           </div>
         </div>
         <p className="text-gray-700 text-lg text-center mt-4 max-w-xl mx-auto">
-          We’ve been crafting ConnectIn since December 2024, evolving it into a game-changer!
+          Мы создаем ConnectIn с декабря 2024 года, превращая его в революционный проект!
         </p>
       </div>
 
-      {/* Problem and Solution Section */}
+      {/* Секция "Проблема и решение" */}
       <div className="mb-16 px-4 fade-in">
-        <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-10 text-center">What We Solve</h2>
+        <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-10 text-center">Что мы решаем</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
           <div className="flex flex-col items-center text-center">
             <FaLightbulb className="text-5xl text-yellow-400 mb-4" />
-            <h3 className="font-semibold text-lg mb-2">Finding Projects</h3>
-            <p className="text-gray-600 text-sm">Match your skills with inspiring projects.</p>
+            <h3 className="font-semibold text-lg mb-2">Поиск проектов</h3>
+            <p className="text-gray-600 text-sm">Находите проекты, соответствующие вашим навыкам.</p>
           </div>
           <div className="flex flex-col items-center text-center">
             <FaHandshake className="text-5xl text-blue-500 mb-4" />
-            <h3 className="font-semibold text-lg mb-2">Connecting Teams</h3>
-            <p className="text-gray-600 text-sm">Collaborate with the right professionals.</p>
+            <h3 className="font-semibold text-lg mb-2">Соединение команд</h3>
+            <p className="text-gray-600 text-sm">Сотрудничайте с правильными профессионалами.</p>
           </div>
           <div className="flex flex-col items-center text-center">
             <FaRocket className="text-5xl text-red-500 mb-4" />
-            <h3 className="font-semibold text-lg mb-2">Opportunities</h3>
-            <p className="text-gray-600 text-sm">Discover jobs and gigs effortlessly.</p>
+            <h3 className="font-semibold text-lg mb-2">Возможности</h3>
+            <p className="text-gray-600 text-sm">Легко находите работу и проекты.</p>
           </div>
         </div>
         <p className="text-gray-700 text-lg text-center max-w-3xl mx-auto">
-          ConnectIn bridges the gap left by code-centric platforms, creating a <span className="font-semibold text-green-700">collaboration hub</span>.
+          ConnectIn устраняет разрыв, созданный платформами, ориентированными на код, создавая <span className="font-semibold text-green-700">центр для совместной работы</span>.
         </p>
       </div>
 
-      {/* Technologies Section */}
+      {/* Секция "Технологии" */}
       <div className="mb-16 px-4 fade-in">
-        <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-8 text-center">Our Tech Stack</h2>
+        <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-8 text-center">Наш технологический стек</h2>
         {Object.keys(technologyCategories).map((category) => (
           <div key={category} className="mb-10">
             <h3 className="text-xl font-semibold mb-5 text-green-700 border-l-4 border-green-700 pl-3">{category}</h3>
@@ -185,7 +211,7 @@ const AboutUsV3 = () => {
                       <p className="font-semibold">{tech.name}</p>
                     </div>
                     <div className="flip-card-back">
-                      <p className="text-sm">{tech.description || "Key platform tech."}</p>
+                      <p className="text-sm">{tech.description || "Ключевая технология платформы."}</p>
                     </div>
                   </div>
                 </div>
@@ -195,11 +221,11 @@ const AboutUsV3 = () => {
         ))}
       </div>
 
-      {/* Team Section */}
+      {/* Секция "Команда" */}
       <div className="mb-16 px-4 fade-in">
-        <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-10 text-center">Our Team</h2>
+        <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-10 text-center">Наша команда</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {members.map((member) => (
+          {team.map((member) => (
             <div
               key={member.name || member.linkedin}
               className="flex flex-col items-center p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
@@ -224,13 +250,13 @@ const AboutUsV3 = () => {
         </div>
       </div>
 
-      {/* Call to Action */}
+      {/* Призыв к действию */}
       <div className="text-center mb-8 px-4 fade-in">
         <a
           href="/signup"
           className="inline-block bg-green-700 text-white font-bold py-3 px-10 rounded-full shadow-lg hover:bg-green-800 hover:scale-105 transition-all duration-300"
         >
-          Join ConnectIn Now
+          Присоединяйтесь к ConnectIn сейчас
         </a>
       </div>
     </div>

@@ -14,23 +14,23 @@ const technologyCategories = technologies.reduce((acc, tech) => {
   return acc;
 }, {});
 
-// Вариант 2: Собственный компонент Typewriter
-const Typewriter = ({ text, speed = 100 }) => {
-  const [displayedText, setDisplayedText] = useState("");
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    if (index < text.length) {
-      const timeout = setTimeout(() => {
-        setDisplayedText((prev) => prev + text[index]);
-        setIndex((prev) => prev + 1);
-      }, speed);
-      return () => clearTimeout(timeout);
-    }
-  }, [index, text, speed]);
-
-  return <span>{displayedText}</span>;
-};
+// // Вариант 2: Собственный компонент Typewriter
+// const Typewriter = ({ text, speed = 100 }) => {
+//   const [displayedText, setDisplayedText] = useState("");
+//   const [index, setIndex] = useState(0);
+//
+//   useEffect(() => {
+//     if (index < text.length) {
+//       const timeout = setTimeout(() => {
+//         setDisplayedText((prev) => prev + text[index]);
+//         setIndex((prev) => prev + 1);
+//       }, speed);
+//       return () => clearTimeout(timeout);
+//     }
+//   }, [index, text, speed]);
+//
+//   return <span>{displayedText}</span>;
+// };
 
 const AboutUsV3 = () => {
   const [daysSinceStart, setDaysSinceStart] = useState(0);
@@ -250,15 +250,15 @@ const AboutUsV3 = () => {
         </div>
       </div>
 
-      {/* Призыв к действию */}
-      <div className="text-center mb-8 px-4 fade-in">
-        <a
-          href="/signup"
-          className="inline-block bg-green-700 text-white font-bold py-3 px-10 rounded-full shadow-lg hover:bg-green-800 hover:scale-105 transition-all duration-300"
-        >
-          Присоединяйтесь к ConnectIn сейчас
-        </a>
-      </div>
+      {/*/!* Призыв к действию *!/*/}
+      {/*<div className="text-center mb-8 px-4 fade-in">*/}
+      {/*  <a*/}
+      {/*    href="/auth/register"*/}
+      {/*    className="inline-block bg-green-700 text-white font-bold py-3 px-10 rounded-full shadow-lg hover:bg-green-800 hover:scale-105 transition-all duration-300"*/}
+      {/*  >*/}
+      {/*    Присоединяйтесь к ConnectIn сейчас*/}
+      {/*  </a>*/}
+      {/*</div>*/}
     </div>
   );
 };

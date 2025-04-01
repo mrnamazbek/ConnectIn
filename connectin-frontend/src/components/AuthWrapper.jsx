@@ -27,33 +27,52 @@ const AuthWrapper = ({ children }) => {
             async (error) => {
                 const originalRequest = error.config;
 
+                // Prevent infinite loops
+                if (originalRequest._retry) {
+                    handleAuthError();
+                    return Promise.reject(error);
+                }
+
                 // Handle 401 errors
                 if (error.response?.status === 401) {
-                    // If it's a refresh token request, redirect to login
-                    if (originalRequest.url.includes("/auth/refresh_token")) {
+                    originalRequest._retry = true;
+
+                    // If it's already a refresh token request that failed, logout
+                    if (originalRequest.url.includes("/auth/refresh-token")) {
                         handleAuthError();
                         return Promise.reject(error);
                     }
 
-                    // Try to refresh the token
                     try {
                         const refreshToken = localStorage.getItem("refresh_token");
                         if (!refreshToken) {
-                            handleAuthError();
-                            return Promise.reject(error);
+                            throw new Error("No refresh token available");
                         }
 
                         const response = await axios.post(
-                            `${import.meta.env.VITE_API_URL}/auth/refresh_token`,
-                            { refresh_token: refreshToken }
+                            `${import.meta.env.VITE_API_URL}/auth/refresh-token`,
+                            { refresh_token: refreshToken },
+                            {
+                                headers: { "Content-Type": "application/json" }
+                            }
                         );
 
-                        const newAccessToken = response.data.access_token;
-                        localStorage.setItem("access_token", newAccessToken);
-                        axios.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
-                        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                        const { access_token, refresh_token } = response.data;
+                        
+                        // Update both tokens if we got new ones
+                        localStorage.setItem("access_token", access_token);
+                        if (refresh_token) {
+                            localStorage.setItem("refresh_token", refresh_token);
+                        }
+
+                        // Update auth headers
+                        axios.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
+                        originalRequest.headers.Authorization = `Bearer ${access_token}`;
+                        
+                        // Retry the original request
                         return axios(originalRequest);
                     } catch (refreshError) {
+                        console.error("Token refresh failed:", refreshError);
                         handleAuthError();
                         return Promise.reject(refreshError);
                     }
@@ -81,10 +100,15 @@ const AuthWrapper = ({ children }) => {
         localStorage.removeItem("refresh_token");
 
         // Show message
-        toast.error("Please log in to continue");
+        toast.error("Session expired. Please log in again.");
 
         // Redirect to login
-        navigate("/login", { state: { from: window.location.pathname } });
+        navigate("/login", { 
+            state: { 
+                from: window.location.pathname,
+                message: "Session expired. Please log in again." 
+            } 
+        });
     };
 
     return children;

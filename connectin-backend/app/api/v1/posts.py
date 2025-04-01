@@ -52,7 +52,24 @@ def create_post(
     db.commit()
     db.refresh(new_post)
 
-    return PostOut.model_validate(new_post)  # ✅ Ensure tag names are returned
+    # Format the response data according to PostOut schema
+    return PostOut(
+        id=new_post.id,
+        title=new_post.title,
+        content=new_post.content,
+        post_type=new_post.post_type,
+        author_id=new_post.author_id,
+        project_id=new_post.project_id,
+        team_id=new_post.team_id,
+        tags=[tag.name for tag in new_post.tags],  # Extract tag names
+        author={
+            "username": new_post.author.username if new_post.author else "Unknown",
+            "avatar_url": new_post.author.avatar_url if new_post.author else None
+        },
+        likes_count=0,  # New post starts with 0 likes
+        comments_count=0,  # New post starts with 0 comments
+        saves_count=0  # New post starts with 0 saves
+    )
 
 
 # Get All Posts with Counts

@@ -15,11 +15,21 @@ const ProjectsPage = () => {
     const [filterLoading, setFilterLoading] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
     const [error, setError] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const pageSize = 10;
 
     const fetchAllData = useCallback(async () => {
         try {
-            const [projectsRes, tagsRes, userRes] = await Promise.all([axios.get(`${import.meta.env.VITE_API_URL}/projects/`), axios.get(`${import.meta.env.VITE_API_URL}/tags/`), fetchCurrentUser()]);
-            setProjects(projectsRes.data);
+            setLoading(true);
+            const [tagsRes, userRes] = await Promise.all([
+                axios.get(`${import.meta.env.VITE_API_URL}/tags/`), 
+                fetchCurrentUser()
+            ]);
+            
+            // Fetch projects with pagination
+            await fetchProjects(currentPage);
+            
             setAllTags(tagsRes.data);
             setCurrentUser(userRes);
         } catch (error) {
@@ -29,7 +39,30 @@ const ProjectsPage = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [currentPage]);
+
+    const fetchProjects = async (page) => {
+        try {
+            const projectsRes = await axios.get(`${import.meta.env.VITE_API_URL}/projects/`, {
+                params: { 
+                    page: page,
+                    page_size: pageSize
+                }
+            });
+            
+            setProjects(projectsRes.data.items || projectsRes.data);
+            
+            // Set total pages if available in response
+            if (projectsRes.data.total_pages) {
+                setTotalPages(projectsRes.data.total_pages);
+            } else if (projectsRes.data.total) {
+                setTotalPages(Math.ceil(projectsRes.data.total / pageSize));
+            }
+        } catch (error) {
+            console.error("Error fetching projects:", error);
+            throw error;
+        }
+    };
 
     useEffect(() => {
         fetchAllData();
@@ -62,12 +95,25 @@ const ProjectsPage = () => {
         setFilterLoading(true);
         try {
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/filter_by_tags`, {
-                params: { tag_ids: tags },
+                params: { 
+                    tag_ids: tags,
+                    page: 1, // Reset to page 1 when filtering
+                    page_size: pageSize
+                },
                 paramsSerializer: (params) => {
                     return qs.stringify(params, { arrayFormat: "repeat" });
                 },
             });
-            setProjects(response.data);
+            
+            setProjects(response.data.items || response.data);
+            setCurrentPage(1);
+            
+            // Set total pages if available in response
+            if (response.data.total_pages) {
+                setTotalPages(response.data.total_pages);
+            } else if (response.data.total) {
+                setTotalPages(Math.ceil(response.data.total / pageSize));
+            }
         } catch (error) {
             console.error("Error filtering projects:", error);
             toast.error("Failed to filter projects");
@@ -164,6 +210,53 @@ const ProjectsPage = () => {
         }
     };
 
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
+
+    const renderPagination = () => {
+        const pageNumbers = [];
+        for (let i = 1; i <= totalPages; i++) {
+            pageNumbers.push(i);
+        }
+
+        return (
+            <div className="flex justify-center mt-6">
+                <nav className="flex items-center space-x-2">
+                    <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 rounded border border-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Previous
+                    </button>
+                    
+                    {pageNumbers.map(number => (
+                        <button
+                            key={number}
+                            onClick={() => handlePageChange(number)}
+                            className={`px-3 py-1 rounded ${
+                                currentPage === number 
+                                    ? 'bg-green-700 text-white' 
+                                    : 'border border-green-700 hover:bg-green-50'
+                            }`}
+                        >
+                            {number}
+                        </button>
+                    ))}
+                    
+                    <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 rounded border border-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Next
+                    </button>
+                </nav>
+            </div>
+        );
+    };
+
     return (
         <div className="space-y-6">
             <TagsFilter allTags={allTags} selectedTags={selectedTags} onTagSelect={handleTagSelect} title="Filter Projects by Tags" />
@@ -190,6 +283,9 @@ const ProjectsPage = () => {
                     {projects.map((project) => (
                         <ProjectCard key={project.id} project={project} currentUser={currentUser} handleApply={handleApply} handleUpvote={handleUpvote} handleDownvote={handleDownvote} showViewProject={true} showCommentsLink={true} />
                     ))}
+                    
+                    {/* Pagination controls */}
+                    {totalPages > 1 && renderPagination()}
                 </div>
             ) : (
                 <div className="text-center py-8 border border-dashed rounded-md">

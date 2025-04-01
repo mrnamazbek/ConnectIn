@@ -16,6 +16,7 @@ from app.schemas.comment import CommentCreate, CommentOut
 from app.api.v1.auth import get_current_user
 from app.utils.logger import get_logger
 from datetime import datetime
+from math import ceil
 
 router = APIRouter()
 
@@ -73,9 +74,11 @@ def create_post(
 
 
 # Get All Posts with Counts
-@router.get("/", response_model=List[PostOut])
+@router.get("/", response_model=dict)
 def get_all_posts(
     post_type: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
     # Subqueries for counts
@@ -93,15 +96,19 @@ def get_all_posts(
                  .outerjoin(comments_count_subquery, Post.id == comments_count_subquery.c.post_id)\
                  .outerjoin(saves_count_subquery, Post.id == saves_count_subquery.c.post_id)
 
-    # Select with coalesced counts
+    # Get total count for pagination
+    total_count = query.count()
+    
+    # Apply pagination
     posts = query.with_entities(
         Post,
         func.coalesce(likes_count_subquery.c.likes_count, 0).label('likes_count'),
         func.coalesce(comments_count_subquery.c.comments_count, 0).label('comments_count'),
         func.coalesce(saves_count_subquery.c.saves_count, 0).label('saves_count')
-    ).all()
+    ).order_by(Post.id.desc()).offset((page - 1) * page_size).limit(page_size).all()
 
-    return [
+    # Format the posts
+    formatted_posts = [
         PostOut(
             id=post.id,
             title=post.title,
@@ -111,7 +118,6 @@ def get_all_posts(
             project_id=post.project_id,
             team_id=post.team_id,
             tags=[tag.name for tag in post.tags],
-            # date=post.date.isoformat() if post.date else None,
             author={
                 "username": post.author.username if post.author else "Unknown",
                 "avatar_url": post.author.avatar_url if post.author else None
@@ -123,10 +129,24 @@ def get_all_posts(
         for post, likes_count, comments_count, saves_count in posts
     ]
 
-@router.get("/filter_by_tags", response_model=List[PostOut])
+    # Calculate total pages
+    total_pages = ceil(total_count / page_size)
+
+    # Return paginated response
+    return {
+        "items": formatted_posts,
+        "total": total_count,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages
+    }
+
+@router.get("/filter_by_tags", response_model=dict)
 def filter_posts_by_tags(
     tag_ids: List[int] = Query([]),  # List of tag IDs for filtering
     post_type: Optional[str] = "news",  # Default to "news"
+    page: int = Query(1, ge=1), 
+    page_size: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
     # Subqueries for counts
@@ -146,21 +166,24 @@ def filter_posts_by_tags(
         subquery = db.query(post_tags_association.c.post_id).filter(post_tags_association.c.tag_id.in_(tag_ids)).subquery()
         query = query.filter(Post.id.in_(subquery))
 
+    # Get total count for pagination
+    total_count = query.count()
+
     # Join with counts subqueries
     query = query.outerjoin(likes_count_subquery, Post.id == likes_count_subquery.c.post_id)\
                  .outerjoin(comments_count_subquery, Post.id == comments_count_subquery.c.post_id)\
                  .outerjoin(saves_count_subquery, Post.id == saves_count_subquery.c.post_id)
 
-    # Select with coalesced counts
+    # Apply pagination
     posts = query.with_entities(
         Post,
         func.coalesce(likes_count_subquery.c.likes_count, 0).label('likes_count'),
         func.coalesce(comments_count_subquery.c.comments_count, 0).label('comments_count'),
         func.coalesce(saves_count_subquery.c.saves_count, 0).label('saves_count')
-    ).all()
+    ).order_by(Post.id.desc()).offset((page - 1) * page_size).limit(page_size).all()
 
-    # Format response
-    return [
+    # Format the posts
+    formatted_posts = [
         PostOut(
             id=post.id,
             title=post.title,
@@ -180,6 +203,18 @@ def filter_posts_by_tags(
         )
         for post, likes_count, comments_count, saves_count in posts
     ]
+
+    # Calculate total pages
+    total_pages = ceil(total_count / page_size)
+
+    # Return paginated response
+    return {
+        "items": formatted_posts,
+        "total": total_count,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages
+    }
     
 @router.get("/my", response_model=List[PostOut])
 def get_user_posts(

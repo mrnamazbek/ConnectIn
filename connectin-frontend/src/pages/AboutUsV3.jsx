@@ -5,6 +5,8 @@ import members from "../data/team";
 import Typist from "react-typist"; // Ensure 'react-typist' is installed (npm install react-typist)
 import { FaLightbulb, FaHandshake, FaRocket } from "react-icons/fa"; // Correct import from react-icons
 import { useEffect, useState } from "react"; // Import useState and useEffect for Typist reset
+import { FaSyncAlt } from "react-icons/fa"; // Or FaCog, etc.
+
 
 // Group technologies by category (Logic is sound)
 const technologyCategories = technologies_v2.reduce((acc, tech) => {
@@ -92,6 +94,13 @@ const AboutUsV3 = () => {
             50% { opacity: 0; }
             100% { opacity: 1; }
         }
+        @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+        animation: spin 2.5s linear infinite; /* Adjust duration (2.5s) for desired speed */
+        }
       `}</style>
 
       {/* Hero Section */}
@@ -157,6 +166,19 @@ const AboutUsV3 = () => {
         </p>
       </div>
 
+        {/* === Option A: Project Journey Section === */}
+<div className="text-center my-16 py-8 bg-gray-50 rounded-lg shadow-inner mx-4">
+    <div className="flex justify-center items-center space-x-3">
+        <FaSyncAlt className="text-3xl text-green-600 animate-spin-slow" /> {/* Apply animation */}
+        <h3 className="text-xl md:text-2xl font-semibold text-gray-700 tracking-tight">
+            Constantly Evolving
+        </h3>
+    </div>
+    <p className="text-gray-600 mt-3 text-lg">
+        In active development since <span className="font-semibold">December 2024</span>.
+    </p>
+</div>
+{/* === End Option A === */}
       {/* Technologies Section */}
       <div className="mb-16 px-4"> {/* Added horizontal padding */}
         <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-8 text-center tracking-tight">Built with Cutting-Edge Technology</h2>

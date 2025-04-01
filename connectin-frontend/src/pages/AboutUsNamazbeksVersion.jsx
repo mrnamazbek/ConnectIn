@@ -1,10 +1,10 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLinkedin, faTelegram } from "@fortawesome/free-brands-svg-icons";
-import technologies from "../data/technologies_v2.js"; // Ensure this is updated with Backend, DB, etc.
+import technologies_v2 from "../data/technologies_v2.js"; // Ensure this is updated with Backend, DB, etc.
 import members from "../data/team";
 
 // Helper function to group technologies (consider refining categories)
-const technologyCategories = technologies.reduce((acc, tech) => {
+const technologyCategories = technologies_v2.reduce((acc, tech) => {
     const category = tech.category || 'Other'; // Default category if none provided
     if (!acc[category]) {
         acc[category] = [];

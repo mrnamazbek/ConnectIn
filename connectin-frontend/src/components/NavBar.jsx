@@ -5,6 +5,7 @@ import { faSun, faMoon, faMagnifyingGlass, faUser, faComments, faNewspaper, faPe
 import Logo from "../assets/images/connectin-logo-png.png";
 import axios from "axios";
 import TokenService from "../services/tokenService";
+import { toast } from "react-toastify";
 
 const NavBar = () => {
     const location = useLocation();
@@ -14,6 +15,7 @@ const NavBar = () => {
 
     const [isDark, setIsDark] = useState(localStorage.getItem("theme") === "dark");
     const [showMenu, setShowMenu] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(TokenService.isUserLoggedIn());
 
     useEffect(() => {
         if (isDark) {
@@ -23,6 +25,9 @@ const NavBar = () => {
             document.documentElement.classList.remove("dark");
             localStorage.setItem("theme", "light");
         }
+
+        // Check auth status on mount and when token changes
+        setIsAuthenticated(TokenService.isUserLoggedIn());
 
         // Close dropdown when clicking outside
         const handleClickOutside = (event) => {
@@ -34,18 +39,17 @@ const NavBar = () => {
         return () => document.removeEventListener("click", handleClickOutside);
     }, [isDark, showMenu]);
 
-    const isLoggedIn = () => {
-        return TokenService.isUserLoggedIn();
-    };
-
     const handleLogout = async () => {
-        const token = TokenService.getAccessToken();
-        if (!token) {
-            navigate("/login");
-            return;
-        }
-
         try {
+            const token = TokenService.getAccessToken();
+            if (!token) {
+                // Already logged out
+                TokenService.clearTokens();
+                setIsAuthenticated(false);
+                navigate("/login");
+                return;
+            }
+
             await axios.post(
                 `${import.meta.env.VITE_API_URL}/auth/logout`,
                 {},
@@ -53,13 +57,27 @@ const NavBar = () => {
                     headers: { Authorization: `Bearer ${token}` },
                 }
             );
+            
             TokenService.clearTokens();
+            setIsAuthenticated(false);
             navigate("/login");
+            toast.success("You have been logged out successfully");
         } catch (error) {
             console.error("Logout failed:", error);
+            // Clear tokens even if the logout request fails
             TokenService.clearTokens();
+            setIsAuthenticated(false);
             navigate("/login");
         }
+    };
+
+    const handleNavigation = (path) => {
+        if ((path === "/chats" || path === "/profile") && !isAuthenticated) {
+            toast.warning("Please login to access this feature");
+            navigate("/login");
+            return false;
+        }
+        return true;
     };
 
     return (
@@ -90,10 +108,17 @@ const NavBar = () => {
                         <NavLink to="/" className={({ isActive }) => (isActive ? "text-green-700 dark:text-white" : "hover:text-green-700 dark:hover:text-white")}>
                             <FontAwesomeIcon icon={faNewspaper} />
                         </NavLink>
-                        <NavLink to="/chats" className={({ isActive }) => (isActive ? "text-green-700 dark:text-white" : "hover:text-green-700 dark:hover:text-white")}>
+                        
+                        {/* Chats - verify auth before navigating */}
+                        <button 
+                            onClick={() => handleNavigation("/chats") && navigate("/chats")}
+                            className="hover:text-green-700 dark:hover:text-white"
+                            aria-label="Chats"
+                        >
                             <FontAwesomeIcon icon={faComments} />
-                        </NavLink>
-                        {isLoggedIn() ? (
+                        </button>
+                        
+                        {isAuthenticated ? (
                             <div className="relative user-button">
                                 <div
                                     role="button"
@@ -112,9 +137,15 @@ const NavBar = () => {
                                 </div>
                                 {showMenu && (
                                     <div className="absolute z-10 top-6 right-0 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-gray-700 shadow-md p-2">
-                                        <NavLink to="/profile" className="block py-2 px-4 text-sm text-gray-700 dark:text-white hover:underline dark:hover:bg-gray-700" onClick={() => setShowMenu(false)}>
+                                        <button
+                                            onClick={() => {
+                                                setShowMenu(false);
+                                                handleNavigation("/profile") && navigate("/profile");
+                                            }}
+                                            className="block py-2 px-4 text-sm text-gray-700 dark:text-white hover:underline dark:hover:bg-gray-700 text-left w-full"
+                                        >
                                             Profile
-                                        </NavLink>
+                                        </button>
                                         <button
                                             className="block py-2 px-4 text-sm text-gray-700 dark:text-white hover:underline dark:hover:bg-gray-700 text-left w-full"
                                             onClick={() => {

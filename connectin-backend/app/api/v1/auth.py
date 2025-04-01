@@ -120,8 +120,26 @@ def generate_unique_username(base_username: str, db: Session) -> str:
 def validate_token(token: str) -> dict:
     """
     Validates a JWT token and returns its payload.
+    Improved error handling for malformed tokens.
     """
     try:
+        # Basic token format validation before attempting to decode
+        if not token or not isinstance(token, str):
+            logger.error("Token is empty or not a string")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token format"
+            )
+        
+        # Check for correct JWT format (should have 3 segments separated by dots)
+        if len(token.split('.')) != 3:
+            logger.error("Token does not have the correct number of segments")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token format"
+            )
+            
+        # Decode and validate token
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except JWTError as e:
@@ -134,6 +152,7 @@ def validate_token(token: str) -> dict:
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     """
     Извлекает текущего пользователя из JWT-токена.
+    Improved error handling for authentication.
     """
     try:
         # Validate token
@@ -167,8 +186,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     except Exception as e:
         logger.error(f"Error getting current user: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while getting the current user"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed"
         )
 
 # ---------------------- Регистрация и Логин ----------------------

@@ -173,8 +173,20 @@ class TokenService {
                         // Retry the original request
                         return axios(originalRequest);
                     } catch (refreshError) {
-                        // If refresh fails, redirect to login
-                        window.location.href = "/login";
+                        // Handle token refresh failure more gracefully
+                        console.error("Failed to refresh token:", refreshError);
+                        this.clearTokens();
+                        
+                        // Redirect to login page instead of allowing Railway to show a 404
+                        if (!window.location.pathname.includes('/login')) {
+                            window.location.href = "/login?session_expired=true";
+                            // Show a user-friendly message
+                            if (typeof window !== 'undefined') {
+                                // Optional: display a toast message if you have a toast library
+                                // toast.error("Your session has expired. Please log in again.");
+                            }
+                        }
+                        
                         return Promise.reject(refreshError);
                     }
                 }
@@ -182,7 +194,9 @@ class TokenService {
                 // If it's a 422 error on refresh-token endpoint, clear tokens and redirect
                 if (error.response?.status === 422 && error.config.url?.includes("/auth/refresh-token")) {
                     this.clearTokens();
-                    window.location.href = "/login";
+                    if (!window.location.pathname.includes('/login')) {
+                        window.location.href = "/login?token_invalid=true";
+                    }
                 }
                 
                 return Promise.reject(error);

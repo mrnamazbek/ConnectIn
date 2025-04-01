@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"; // Объединяем импорты React
+import  { useEffect, useState } from "react"; // Объединяем импорты React
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLinkedin, faTelegram } from "@fortawesome/free-brands-svg-icons";
 import Typed from "react-typed";

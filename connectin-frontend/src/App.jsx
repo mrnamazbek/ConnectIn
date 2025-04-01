@@ -12,6 +12,7 @@ import ProjectProfile from "./pages/ProjectProfile";
 import AboutUs from "./pages/AboutUs";
 import { ToastContainer } from "react-toastify";
 import AboutUsNamazbeksVersion from "./pages/AboutUsNamazbeksVersion.jsx";
+import AboutUsV3 from "./pages/AboutUsV3.jsx";
 import AuthWrapper from "./components/AuthWrapper.jsx";
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
                                 <Route path="project/:projectId/profile" element={<ProjectProfile />} />
                                 <Route path="/about" element={<AboutUs />} />
                                 <Route path="/aboutus" element={<AboutUsNamazbeksVersion />} />
+                                <Route path="/theynotlikeus" element={<AboutUsV3 />} />
                             </Routes>
                         </div>
                         <ToastContainer autoClose={5000} position="bottom-left"/>

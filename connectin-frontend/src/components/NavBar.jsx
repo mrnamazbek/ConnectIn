@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSun, faMoon, faMagnifyingGlass, faUser, faComments, faNewspaper, faPen } from "@fortawesome/free-solid-svg-icons";
 import Logo from "../assets/images/connectin-logo-png.png";
 import axios from "axios";
+import TokenService from "../services/tokenService";
 
 const NavBar = () => {
     const location = useLocation();
@@ -34,11 +35,11 @@ const NavBar = () => {
     }, [isDark, showMenu]);
 
     const isLoggedIn = () => {
-        return !!localStorage.getItem("access_token");
+        return TokenService.isUserLoggedIn();
     };
 
     const handleLogout = async () => {
-        const token = localStorage.getItem("access_token");
+        const token = TokenService.getAccessToken();
         if (!token) {
             navigate("/login");
             return;
@@ -52,11 +53,11 @@ const NavBar = () => {
                     headers: { Authorization: `Bearer ${token}` },
                 }
             );
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("refresh_token");
+            TokenService.clearTokens();
             navigate("/login");
         } catch (error) {
             console.error("Logout failed:", error);
+            TokenService.clearTokens();
             navigate("/login");
         }
     };

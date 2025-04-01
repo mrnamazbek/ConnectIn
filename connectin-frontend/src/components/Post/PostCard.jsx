@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router";
+import TokenService from "../../services/tokenService";
 
 export const PostCard = ({ post, showReadButton = true, onLike, onSave, isLiked = false, isSaved = false }) => {
     const { id, title, content, author, tags, likes_count, comments_count, saves_count } = post;
@@ -13,7 +14,7 @@ export const PostCard = ({ post, showReadButton = true, onLike, onSave, isLiked 
     const navigate = useNavigate();
 
     const handleLike = async () => {
-        const token = localStorage.getItem("access_token");
+        const token = TokenService.getAccessToken();
         if (!token) {
             toast.error("Please log in to like posts");
             navigate("/login", { state: { from: window.location.pathname } });
@@ -31,7 +32,7 @@ export const PostCard = ({ post, showReadButton = true, onLike, onSave, isLiked 
     };
 
     const handleSave = async () => {
-        const token = localStorage.getItem("access_token");
+        const token = TokenService.getAccessToken();
         if (!token) {
             toast.error("Please log in to save posts");
             navigate("/login", { state: { from: window.location.pathname } });

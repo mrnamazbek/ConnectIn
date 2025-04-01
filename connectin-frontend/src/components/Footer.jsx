@@ -21,6 +21,9 @@ const Footer = () => {
                         <NavLink to="/about" className="transition hover:text-green-700">
                             About Us
                         </NavLink>
+                        <NavLink to="/aboutus" className="transition hover:text-green-700">
+                            About Us more details
+                        </NavLink>
 
                         {/* Right Section: Social Media Links */}
                         <a href="https://github.com" target="_blank" rel="noopener noreferrer">

@@ -55,6 +55,7 @@ SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30   # JWT действует 30 минут
 REFRESH_TOKEN_EXPIRE_DAYS = 30     # Refresh-токен действует 30 дней
+TOKEN_ROTATION_THRESHOLD_DAYS = 7
 FRONTEND_URL = settings.FRONTEND_URL  # Например, URL фронтенда для редиректа
 
 def create_jwt_token(subject: str, expire_delta: timedelta) -> str:
@@ -64,7 +65,8 @@ def create_jwt_token(subject: str, expire_delta: timedelta) -> str:
     expire = datetime.utcnow().replace(tzinfo=timezone.utc) + expire_delta
     payload = {
         "sub": subject,
-        "exp": expire
+        "exp": expire,
+        "iat": datetime.utcnow().replace(tzinfo=timezone.utc)
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -115,34 +117,59 @@ def generate_unique_username(base_username: str, db: Session) -> str:
         counter += 1
     return username
 
+def validate_token(token: str) -> dict:
+    """
+    Validates a JWT token and returns its payload.
+    """
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError as e:
+        logger.error(f"Token validation error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token"
+        )
+
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     """
     Извлекает текущего пользователя из JWT-токена.
     """
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Неверные учетные данные или токен истек",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: Optional[str] = payload.get("sub")
+        # Validate token
+        payload = validate_token(token)
+        email = payload.get("sub")
+        
         if not email:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token"
+            )
 
-    # Проверка на черный список токенов
-    if db.query(BlacklistedToken).filter(BlacklistedToken.token == token).first():
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Токен отозван")
+        # Check if token is blacklisted
+        if db.query(BlacklistedToken).filter(BlacklistedToken.token == token).first():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has been revoked"
+            )
 
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
+        # Get user
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        return user
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting current user: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while getting the current user"
         )
-    return user
 
 # ---------------------- Регистрация и Логин ----------------------
 
@@ -203,87 +230,92 @@ async def read_current_user(current_user: User = Depends(get_current_user)) -> U
     """
     return UserOut.from_orm(current_user)
 
-@router.post("/refresh_token", summary="Обновить токен")
-@limiter.limit("10 per minute")  # Rate limiting for refresh endpoint
+@router.post("/refresh-token", summary="Refresh access token")
+@limiter.limit("10 per minute")
 def refresh_access_token(
     request: Request,
     refresh_token_body: dict = Body(..., embed=True),
     db: Session = Depends(get_db)
 ) -> dict[str, str]:
     """
-    Обновляет access-токен с использованием refresh-токена.
-    Реализует токен ротацию: новый refresh токен выдается только если текущий близок к истечению.
+    Refreshes the access token using a refresh token.
+    Implements token rotation: new refresh token is issued only if current one is close to expiration.
     """
     refresh_token_value = refresh_token_body.get("refresh_token")
     if not refresh_token_value:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Refresh токен обязателен"
+            detail="Refresh token is required"
         )
 
     # Check if refresh token is blacklisted
     if db.query(BlacklistedToken).filter(BlacklistedToken.token == refresh_token_value).first():
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh токен отозван"
+            detail="Refresh token has been revoked"
         )
 
     try:
-        payload = jwt.decode(refresh_token_value, SECRET_KEY, algorithms=[ALGORITHM])
+        # Validate refresh token
+        payload = validate_token(refresh_token_value)
         email = payload.get("sub")
         exp = payload.get("exp")
         
         if not email:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Неверный refresh токен"
+                detail="Invalid refresh token"
             )
 
-        # Check if refresh token is close to expiration (less than 7 days)
+        # Check if refresh token is close to expiration
         if exp:
             exp_datetime = datetime.fromtimestamp(exp, tz=timezone.utc)
             now = datetime.now(timezone.utc)
             days_until_expiry = (exp_datetime - now).days
-            should_rotate = days_until_expiry < 7
+            should_rotate = days_until_expiry < TOKEN_ROTATION_THRESHOLD_DAYS
         else:
             should_rotate = False
 
-    except JWTError as e:
-        logger.error(f"JWT decode error during refresh: {str(e)}")
+        # Get user
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        # Create new access token
+        new_access_token = create_access_token(user)
+        response = {
+            "access_token": new_access_token,
+            "token_type": "bearer"
+        }
+
+        # Rotate refresh token if needed
+        if should_rotate:
+            new_refresh_token = create_refresh_token(user)
+            response["refresh_token"] = new_refresh_token
+            
+            # Blacklist the old refresh token
+            blacklisted = BlacklistedToken(token=refresh_token_value)
+            db.add(blacklisted)
+            db.commit()
+            
+            logger.info(f"Refresh token rotated for user: {user.email}")
+        else:
+            response["refresh_token"] = refresh_token_value
+
+        logger.info(f"Access token refreshed for user: {user.email}")
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error during token refresh: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверный refresh токен"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while refreshing the token"
         )
-
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден"
-        )
-
-    # Always create new access token
-    new_access_token = create_access_token(user)
-    
-    # Only create new refresh token if rotation is needed
-    response = {
-        "access_token": new_access_token,
-        "token_type": "bearer"
-    }
-
-    if should_rotate:
-        new_refresh_token = create_refresh_token(user)
-        response["refresh_token"] = new_refresh_token
-        # Blacklist the old refresh token
-        blacklisted = BlacklistedToken(token=refresh_token_value)
-        db.add(blacklisted)
-        db.commit()
-        logger.info(f"Refresh token rotated for user: {user.email}")
-    else:
-        response["refresh_token"] = refresh_token_value
-
-    logger.info(f"Access token refreshed for user: {user.email}")
-    return response
 
 @router.post("/logout", summary="Выход из системы")
 def logout(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> dict:

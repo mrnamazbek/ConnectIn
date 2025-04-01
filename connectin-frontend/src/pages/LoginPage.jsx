@@ -1,46 +1,13 @@
 import { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import axios from "axios";
+import axios from "../utils/axiosConfig";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Link, useNavigate, useLocation } from "react-router";
-
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
-
-// Axios interceptor for token refresh
-axios.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-        const originalRequest = error.config;
-        if (error.response?.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
-            try {
-                const refreshToken = localStorage.getItem("refresh_token");
-                if (!refreshToken) throw new Error("No refresh token");
-                const response = await axios.post(
-                    `${import.meta.env.VITE_API_URL}/refresh_token`,
-                    { refresh_token: refreshToken },
-                    {
-                        headers: { "Content-Type": "application/json" },
-                    }
-                );
-                const newAccessToken = response.data.access_token;
-                localStorage.setItem("access_token", newAccessToken);
-                axios.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
-                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-                return axios(originalRequest);
-            } catch (refreshError) {
-                localStorage.removeItem("access_token");
-                localStorage.removeItem("refresh_token");
-                window.location.href = "/login";
-                return Promise.reject(refreshError);
-            }
-        }
-        return Promise.reject(error);
-    }
-);
+import TokenService from "../services/tokenService";
 
 const LoginPage = () => {
     const navigate = useNavigate();
@@ -73,13 +40,15 @@ const LoginPage = () => {
                         headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     }
                 );
-                localStorage.setItem("access_token", response.data.access_token);
-                localStorage.setItem("refresh_token", response.data.refresh_token);
+
+                // Use TokenService to handle tokens
+                TokenService.setTokens(response.data.access_token, response.data.refresh_token);
+
                 toast.success("Login successful!", {
                     position: "bottom-left",
                     autoClose: 5000,
                 });
-                
+
                 // Redirect to the page user was trying to access, or home
                 const from = location.state?.from || "/";
                 navigate(from);
@@ -102,8 +71,7 @@ const LoginPage = () => {
         const accessTokenCookie = Cookies.get("access_token");
         const refreshTokenCookie = Cookies.get("refresh_token");
         if (accessTokenCookie && refreshTokenCookie) {
-            localStorage.setItem("access_token", accessTokenCookie);
-            localStorage.setItem("refresh_token", refreshTokenCookie);
+            TokenService.setTokens(accessTokenCookie, refreshTokenCookie);
             Cookies.remove("access_token");
             Cookies.remove("refresh_token");
             toast.success("Login successful via OAuth!", {

@@ -67,7 +67,7 @@ const UserProfile = () => {
                     axios.get(`${import.meta.env.VITE_API_URL}/posts/my`, {
                         headers: { Authorization: `Bearer ${token}` },
                     }),
-                    axios.get(`${import.meta.env.VITE_API_URL}/skills`, {
+                    axios.get(`${import.meta.env.VITE_API_URL}/skills/`, {
                         headers: { Authorization: `Bearer ${token}` },
                     }),
                     axios.get(`${import.meta.env.VITE_API_URL}/users/me/saved-posts`, {

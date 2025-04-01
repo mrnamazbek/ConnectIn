@@ -1,12 +1,39 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { decode } from "jwt-decode";
-import axios from "axios";
+import axios from "../utils/axiosConfig";
 import { useNavigate } from "react-router";
 import Cookies from "js-cookie";
+import TokenService from "../services/tokenService";
 
 const AccessTokenManager = () => {
-    const [accessToken, setAccessToken] = useState(localStorage.getItem("access_token"));
+    const [accessToken, setAccessToken] = useState(TokenService.getAccessToken());
     const navigate = useNavigate();
+
+    const refreshAccessToken = useCallback(async () => {
+        try {
+            const refreshToken = TokenService.getRefreshToken();
+            if (!refreshToken) throw new Error("No refresh token");
+
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/auth/refresh-token`,
+                { refresh_token: refreshToken },
+                {
+                    headers: { "Content-Type": "application/json" },
+                }
+            );
+            
+            if (response.data.refresh_token) {
+                TokenService.setTokens(response.data.access_token, response.data.refresh_token);
+            } else {
+                TokenService.setAccessToken(response.data.access_token);
+            }
+            setAccessToken(response.data.access_token);
+        } catch (error) {
+            console.error("Failed to refresh token:", error);
+            TokenService.clearTokens();
+            navigate("/login");
+        }
+    }, [navigate]);
 
     useEffect(() => {
         const handleTokenRefresh = async () => {
@@ -26,40 +53,16 @@ const AccessTokenManager = () => {
 
         handleTokenRefresh();
 
-        // Handle tokens from Google OAuth redirect
+        // Handle tokens from OAuth redirect
         const accessTokenCookie = Cookies.get("access_token");
         const refreshTokenCookie = Cookies.get("refresh_token");
         if (accessTokenCookie && refreshTokenCookie) {
-            localStorage.setItem("access_token", accessTokenCookie);
-            localStorage.setItem("refresh_token", refreshTokenCookie);
+            TokenService.setTokens(accessTokenCookie, refreshTokenCookie);
             Cookies.remove("access_token");
             Cookies.remove("refresh_token");
             setAccessToken(accessTokenCookie);
         }
-    }, [accessToken]);
-
-    const refreshAccessToken = async () => {
-        try {
-            const refreshToken = localStorage.getItem("refresh_token");
-            if (!refreshToken) throw new Error("No refresh token");
-
-            const response = await axios.post(
-                `${import.meta.env.VITE_API_URL}/auth/refresh_token`,
-                { refresh_token: refreshToken },
-                {
-                    headers: { "Content-Type": "application/json" },
-                }
-            );
-            const newAccessToken = response.data.access_token;
-            localStorage.setItem("access_token", newAccessToken);
-            setAccessToken(newAccessToken);
-        } catch (error) {
-            console.error("Failed to refresh token:", error);
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("refresh_token");
-            navigate("/login");
-        }
-    };
+    }, [accessToken, refreshAccessToken]);
 
     return { accessToken };
 };

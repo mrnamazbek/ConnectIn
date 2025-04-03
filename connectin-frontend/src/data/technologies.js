@@ -74,18 +74,18 @@ const technologies = [
         description: "Handles data validation and settings management.",
         category: "Backend",
     },
-    {
-        name: "Celery", // Added from requirements.txt
-        logo: "https://docs.celeryq.dev/en/stable/_static/celery_512.png", // Found official logo
-        description: "Manages background tasks and asynchronous operations.",
-        category: "Backend",
-    },
     // {
-    //     name: "NumPy",
-    //     logo: "https://cdn.worldvectorlogo.com/logos/numpy-1.svg",
-    //     description: "Supports numerical operations, especially for ML features.",
-    //     category: "Backend", // Re-categorized as primarily backend computation tool
+    //     name: "Celery", // Added from requirements.txt
+    //     logo: "https://docs.celeryq.dev/en/stable/_static/celery_512.png", // Found official logo
+    //     description: "Manages background tasks and asynchronous operations.",
+    //     category: "Backend",
     // },
+    {
+        name: "NumPy",
+        logo: "https://cdn.worldvectorlogo.com/logos/numpy-1.svg",
+        description: "Supports numerical operations, especially for ML features.",
+        category: "Backend", // Re-categorized as primarily backend computation tool
+    },
     {
         name: "Scikit-learn (Sklearn)", // Expanded name
         logo: "https://upload.wikimedia.org/wikipedia/commons/0/05/Scikit_learn_logo_small.svg",
@@ -113,13 +113,13 @@ const technologies = [
         category: "Cloud / Infrastructure", // Re-categorized
     },
     // --- Consider adding if still used ---
-    /*
-    {
-        name: "MongoDB", // Was in requirements.txt (via mongoengine)
-        logo: "https://cdn.worldvectorlogo.com/logos/mongodb-icon-1.svg",
-        description: "Stores flexible, NoSQL data (if applicable).",
-        category: "Database",
-    }, */
+{
+    "name": "AWS S3",
+    "logo": "https://cdn.worldvectorlogo.com/logos/amazon-s3.svg",
+    "description": "Provides scalable object storage for file management.",
+    "category": "Cloud Storage"
+}
+,
     {
         name: "Elasticsearch", // Was in requirements.txt
         logo: "https://cdn.worldvectorlogo.com/logos/elasticsearch.svg",

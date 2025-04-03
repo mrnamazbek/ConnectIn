@@ -35,14 +35,14 @@ const ChatPage = () => {
         const fetchData = async () => {
             setLoading(true);
             setError(null);
-            
+
             // Check if user is authenticated
             if (!TokenService.isUserLoggedIn()) {
                 setError("You need to be logged in to access chats");
                 setLoading(false);
                 return;
             }
-            
+
             try {
                 // Try to load cached users first
                 const cachedUsers = localStorage.getItem("cachedUsers");
@@ -51,7 +51,7 @@ const ChatPage = () => {
                 } else {
                     await fetchUsers();
                 }
-                
+
                 // Fetch current user and conversations
                 const userResult = await fetchCurrentUser();
                 if (userResult) {
@@ -64,7 +64,7 @@ const ChatPage = () => {
                 setLoading(false);
             }
         };
-        
+
         fetchData();
     }, []);
 
@@ -77,7 +77,7 @@ const ChatPage = () => {
                 navigate("/login");
                 return;
             }
-            
+
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -112,7 +112,7 @@ const ChatPage = () => {
                     navigate("/login");
                     return;
                 }
-                
+
                 const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/search?query=${searchQuery}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
@@ -165,7 +165,7 @@ const ChatPage = () => {
                 navigate("/login");
                 return;
             }
-            
+
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/chats/`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -231,7 +231,7 @@ const ChatPage = () => {
             }
         } catch (error) {
             console.error("Error starting conversation", error);
-            
+
             if (error.response?.status === 401) {
                 toast.error("Your session has expired. Please log in again.");
                 navigate("/login");
@@ -263,22 +263,16 @@ const ChatPage = () => {
 
     if (error) {
         return (
-            <div className="flex justify-center items-center h-screen">
-                <div className="text-center max-w-md mx-auto p-6 bg-white shadow-md rounded-lg">
+            <div className="flex justify-center items-center h-screen bg-gray-100 dark:bg-gray-900">
+                <div className="text-center max-w-md mx-auto p-6 bg-white dark:bg-gray-800 shadow-md rounded-lg">
                     <FontAwesomeIcon icon={faExclamationTriangle} className="text-yellow-500 text-4xl mb-4" />
-                    <h2 className="text-xl font-semibold mb-2">Unable to Load Chats</h2>
-                    <p className="text-gray-700 mb-4">{error}</p>
+                    <h2 className="text-xl font-semibold mb-2 dark:text-white">Unable to Load Chats</h2>
+                    <p className="text-gray-700 dark:text-gray-300 mb-4">{error}</p>
                     <div className="flex justify-center space-x-4">
-                        <button 
-                            onClick={() => navigate("/login")} 
-                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                        >
+                        <button onClick={() => navigate("/login")} className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
                             Log In
                         </button>
-                        <button 
-                            onClick={() => navigate("/")} 
-                            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                        >
+                        <button onClick={() => navigate("/")} className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white">
                             Return Home
                         </button>
                     </div>
@@ -288,12 +282,12 @@ const ChatPage = () => {
     }
 
     return (
-        <div className="flex h-screen bg-gray-100">
+        <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
             {/* Left Sidebar */}
-            <div className="w-1/4 p-4 bg-white border-r flex flex-col">
-                {/* 🔍 Search Input & Button */}
+            <div className="w-1/4 p-4 bg-white dark:bg-gray-800 border-r dark:border-gray-700 flex flex-col">
+                {/* Search Input & Button */}
                 <div className="flex space-x-2 mb-3">
-                    <input type="text" placeholder="Search users..." className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" value={searchQuery} onChange={handleSearchChange} />
+                    <input type="text" placeholder="Search users..." className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 dark:text-white" value={searchQuery} onChange={handleSearchChange} />
                     <button onClick={debouncedSearchUsers} className="px-3 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 transition" disabled={isSearching}>
                         {isSearching ? <FontAwesomeIcon icon={faSpinner} spin className="text-white" /> : "Search"}
                     </button>
@@ -301,53 +295,49 @@ const ChatPage = () => {
 
                 {/* Scrollable Users List */}
                 <div className="overflow-y-auto h-[80vh] space-y-1">
-                    {/* 🔹 Display Searched Users */}
+                    {/* Display Searched Users */}
                     {searchedUsers.length > 0 && (
-                        <div className="border-b border-gray-300 pb-2 mb-2">
-                            <p className="text-sm font-semibold text-gray-600">Search Results:</p>
+                        <div className="border-b border-gray-300 dark:border-gray-700 pb-2 mb-2">
+                            <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Search Results:</p>
                             {searchedUsers.map((user) => (
-                                <div key={user.id} className="flex items-center p-2 cursor-pointer hover:bg-gray-50 rounded-md" onClick={() => startConversation(user)}>
+                                <div key={user.id} className="flex items-center p-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md" onClick={() => startConversation(user)}>
                                     <div className="w-6 h-6 bg-blue-300 rounded-full flex items-center justify-center text-xs font-semibold">{user.username[0].toUpperCase()}</div>
                                     <div className="ml-2">
-                                        <p className="text-sm font-medium">{user.username}</p>
+                                        <p className="text-sm font-medium dark:text-white">{user.username}</p>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     )}
 
-                    {/* 🔹 Display All Users */}
-                    <p className="text-sm font-semibold text-gray-600">All Users:</p>
+                    {/* Display All Users */}
+                    <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">All Users:</p>
                     {loadingUsers ? (
                         <div className="flex justify-center py-2">
-                            <FontAwesomeIcon icon={faSpinner} spin className="text-green-600" />
+                            <FontAwesomeIcon icon={faSpinner} spin className="text-green-600 dark:text-green-400" />
                         </div>
                     ) : users.length > 0 ? (
                         users.map((user) => (
-                            <div key={user.id} className="flex items-center p-2 cursor-pointer hover:bg-gray-50 rounded-md" onClick={() => startConversation(user)}>
-                                <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs font-semibold">{user.username[0].toUpperCase()}</div>
+                            <div key={user.id} className="flex items-center p-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md" onClick={() => startConversation(user)}>
+                                <div className="w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center text-xs font-semibold">{user.username[0].toUpperCase()}</div>
                                 <div className="ml-2">
-                                    <p className="text-sm font-medium">{user.username}</p>
+                                    <p className="text-sm font-medium dark:text-white">{user.username}</p>
                                 </div>
                             </div>
                         ))
                     ) : (
-                        <p className="text-sm text-gray-500 mt-2">No users found</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">No users found</p>
                     )}
                 </div>
             </div>
 
             {/* Chat Window */}
-            <div className="flex-1 p-4">
+            <div className="flex-1 p-4 bg-gray-50 dark:bg-gray-900">
                 {selectedConversation ? (
-                    <ChatWindow 
-                        conversationId={selectedConversation} 
-                        conversations={conversations}
-                        key={selectedConversation} 
-                    />
+                    <ChatWindow conversationId={selectedConversation} conversations={conversations} key={selectedConversation} />
                 ) : (
                     <div className="flex flex-col justify-center items-center h-full">
-                        <p className="text-gray-500">Select a user to start chatting</p>
+                        <p className="text-gray-500 dark:text-gray-400">Select a user to start chatting</p>
                     </div>
                 )}
             </div>

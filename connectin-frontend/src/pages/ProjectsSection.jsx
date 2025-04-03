@@ -79,7 +79,7 @@ const ProjectsSection = ({ user, projects: propProjects, loading, isStatic }) =>
                                     {user && user.id === project.owner?.id && (
                                         <button
                                             onClick={() => handleDeleteProject(project.id)}
-                                            className="text-red-500 hover:text-red-700 px-2 py-1 flex items-center gap-2"
+                                            className="text-red-500 cursor-pointer hover:text-red-700 px-2 py-1 flex items-center gap-2"
                                         >
                                             <FontAwesomeIcon icon={faTrashAlt} />
                                             Delete

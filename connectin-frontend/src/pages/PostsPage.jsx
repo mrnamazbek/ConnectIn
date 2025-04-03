@@ -25,14 +25,11 @@ const PostsPage = () => {
     const fetchAllData = useCallback(async () => {
         try {
             setLoading(true);
-            const [tagsRes, userRes] = await Promise.all([
-                axios.get(`${import.meta.env.VITE_API_URL}/tags/`), 
-                fetchCurrentUser()
-            ]);
-            
+            const [tagsRes, userRes] = await Promise.all([axios.get(`${import.meta.env.VITE_API_URL}/tags/`), fetchCurrentUser()]);
+
             // Fetch posts with pagination
             await fetchPosts(currentPage);
-            
+
             setAllTags(tagsRes.data);
             setCurrentUser(userRes);
         } catch (error) {
@@ -47,26 +44,23 @@ const PostsPage = () => {
     const fetchPosts = async (page) => {
         try {
             const postsRes = await axios.get(`${import.meta.env.VITE_API_URL}/posts/`, {
-                params: { 
+                params: {
                     page: page,
-                    page_size: pageSize
-                }
+                    page_size: pageSize,
+                },
             });
-            
+
             setPosts(postsRes.data.items || postsRes.data);
-            
+
             // Set total pages if available in response
             if (postsRes.data.total_pages) {
                 setTotalPages(postsRes.data.total_pages);
             } else if (postsRes.data.total) {
                 setTotalPages(Math.ceil(postsRes.data.total / pageSize));
             }
-            
+
             // Fetch like and save statuses for posts
-            await Promise.all([
-                fetchLikeStatuses(postsRes.data.items || postsRes.data), 
-                fetchSaveStatuses(postsRes.data.items || postsRes.data)
-            ]);
+            await Promise.all([fetchLikeStatuses(postsRes.data.items || postsRes.data), fetchSaveStatuses(postsRes.data.items || postsRes.data)]);
         } catch (error) {
             console.error("Error fetching posts:", error);
             throw error;
@@ -188,19 +182,19 @@ const PostsPage = () => {
         setFilterLoading(true);
         try {
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts/filter_by_tags`, {
-                params: { 
+                params: {
                     tag_ids: tags,
-                    page: 1,  // Reset to page 1 when filtering
-                    page_size: pageSize
+                    page: 1, // Reset to page 1 when filtering
+                    page_size: pageSize,
                 },
                 paramsSerializer: (params) => {
                     return qs.stringify(params, { arrayFormat: "repeat" });
                 },
             });
-            
+
             setPosts(response.data.items || response.data);
             setCurrentPage(1);
-            
+
             // Set total pages if available in response
             if (response.data.total_pages) {
                 setTotalPages(response.data.total_pages);
@@ -209,10 +203,7 @@ const PostsPage = () => {
             }
 
             // Fetch like and save statuses for filtered posts
-            await Promise.all([
-                fetchLikeStatuses(response.data.items || response.data), 
-                fetchSaveStatuses(response.data.items || response.data)
-            ]);
+            await Promise.all([fetchLikeStatuses(response.data.items || response.data), fetchSaveStatuses(response.data.items || response.data)]);
         } catch (error) {
             console.error("Error filtering posts:", error);
             toast.error("Failed to filter posts");
@@ -234,33 +225,17 @@ const PostsPage = () => {
         return (
             <div className="flex justify-center mt-6">
                 <nav className="flex items-center space-x-2">
-                    <button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className="px-3 py-1 rounded border border-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                    <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 rounded border border-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
                         Previous
                     </button>
-                    
-                    {pageNumbers.map(number => (
-                        <button
-                            key={number}
-                            onClick={() => handlePageChange(number)}
-                            className={`px-3 py-1 rounded ${
-                                currentPage === number 
-                                    ? 'bg-green-700 text-white' 
-                                    : 'border border-green-700 hover:bg-green-50'
-                            }`}
-                        >
+
+                    {pageNumbers.map((number) => (
+                        <button key={number} onClick={() => handlePageChange(number)} className={`px-3 py-1 rounded ${currentPage === number ? "bg-green-700 text-white" : "border border-green-700 hover:bg-green-50"}`}>
                             {number}
                         </button>
                     ))}
-                    
-                    <button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className="px-3 py-1 rounded border border-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+
+                    <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="px-3 py-1 rounded border border-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
                         Next
                     </button>
                 </nav>
@@ -294,7 +269,7 @@ const PostsPage = () => {
                     {posts.map((post) => (
                         <PostCard key={post.id} post={post} currentUser={currentUser} showViewPost={true} showCommentsLink={true} onLike={() => handleLike(post.id)} onSave={() => handleSave(post.id)} isLiked={likedPosts[post.id] || false} isSaved={savedPosts[post.id] || false} />
                     ))}
-                    
+
                     {/* Pagination controls */}
                     {totalPages > 1 && renderPagination()}
                 </div>

@@ -70,7 +70,7 @@ const technologies = [
     },
     {
         name: "Pydantic", // Added from requirements.txt
-        logo: "https://docs.pydantic.dev/latest/logo.png", // Found official logo
+        logo: "https://pydantic.dev/favicon/apple-touch-icon.png", // Found official logo
         description: "Handles data validation and settings management.",
         category: "Backend",
     },

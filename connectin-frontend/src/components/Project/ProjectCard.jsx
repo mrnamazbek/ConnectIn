@@ -81,7 +81,7 @@ const ProjectCard = ({ project, currentUser, handleApply, handleUpvote, handleDo
     };
 
     return (
-        <div className="bg-white dark:bg-zinc-800 shadow-md rounded-md border border-green-700 p-5 hover:shadow-lg transition-shadow">
+        <div className="bg-white dark:bg-gray-800 shadow-md rounded-md border border-green-700 p-5 hover:shadow-lg transition-shadow">
             <div className="flex items-center space-x-2 mb-4">
                 <img src={owner.avatar_url} alt={owner.username} className="w-10 h-10 rounded-full border hover:ring-2 hover:ring-green-500 transition" onError={(e) => (e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png")} />
                 <div>

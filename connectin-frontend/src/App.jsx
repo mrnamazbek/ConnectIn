@@ -18,7 +18,7 @@ function App() {
     return (
         <Router>
             <AuthWrapper>
-                <div className="min-h-screen bg-gray-50">
+                <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
                     <NavBar />
                     <div className="flex-grow grid grid-cols-8">
                         <div className="col-start-2 col-span-6">

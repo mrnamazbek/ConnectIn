@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { fetchMessages, sendMessage } from "../../api/chatApi";
 import { connectToChat } from "../../api/chatWebSocket";
 import axios from "axios";
@@ -160,29 +160,29 @@ const ChatWindow = ({ conversationId }) => {
     }, [messages]);
 
     return (
-        <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
+        <div className="flex flex-col h-full bg-white dark:bg-gray-800 rounded-lg shadow-lg">
             <div className="flex-1 p-4 overflow-y-auto">
                 {isLoading || isConnecting ? (
                     <div className="flex justify-center items-center h-full">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 dark:border-green-400"></div>
                     </div>
                 ) : connectionError ? (
                     <div className="flex justify-center items-center h-full">
-                        <p className="text-red-500">{connectionError}</p>
+                        <p className="text-red-500 dark:text-red-400">{connectionError}</p>
                     </div>
                 ) : messages.length === 0 ? (
                     <div className="flex justify-center items-center h-full">
-                        <p className="text-gray-500">No messages yet. Start the conversation!</p>
+                        <p className="text-gray-500 dark:text-gray-400">No messages yet. Start the conversation!</p>
                     </div>
                 ) : (
                     messages.map((msg, index) => {
                         const isCurrentUser = currentUser && msg.sender_id === currentUser.id;
                         return (
                             <div key={msg.id || index} className={`mb-4 ${isCurrentUser ? "text-right" : "text-left"}`}>
-                                <div className={`inline-block max-w-[70%] p-3 rounded-lg ${isCurrentUser ? "bg-green-100 text-green-900" : "bg-gray-100 text-gray-900"}`}>
+                                <div className={`inline-block max-w-[70%] p-3 rounded-lg ${isCurrentUser ? "bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100" : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100"}`}>
                                     <p className="text-sm break-words">{msg.content}</p>
                                     <div className="flex items-center justify-end mt-1">
-                                        <p className="text-xs text-gray-500">{formatTimestamp(msg.timestamp)}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">{formatTimestamp(msg.timestamp)}</p>
                                     </div>
                                 </div>
                             </div>
@@ -192,18 +192,18 @@ const ChatWindow = ({ conversationId }) => {
                 <div ref={messagesEndRef}></div>
             </div>
 
-            <div className="p-4 border-t">
+            <div className="p-4 border-t dark:border-gray-700">
                 <div className="flex">
                     <input
                         type="text"
-                        className="flex-1 p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        className="flex-1 p-2 border dark:border-gray-600 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 dark:text-white"
                         placeholder="Type a message..."
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={handleKeyPress}
                         disabled={isConnecting || connectionError}
                     />
-                    <button className="px-4 bg-green-700 text-white rounded-r-lg hover:bg-green-800 transition-colors" onClick={handleSend} disabled={isConnecting || connectionError || !newMessage.trim()}>
+                    <button className="px-4 bg-green-700 dark:bg-green-600 text-white rounded-r-lg hover:bg-green-800 dark:hover:bg-green-700 transition-colors" onClick={handleSend} disabled={isConnecting || connectionError || !newMessage.trim()}>
                         Send
                     </button>
                 </div>

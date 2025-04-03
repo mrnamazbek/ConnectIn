@@ -57,7 +57,7 @@ const NavBar = () => {
                     headers: { Authorization: `Bearer ${token}` },
                 }
             );
-            
+
             TokenService.clearTokens();
             setIsAuthenticated(false);
             navigate("/login");
@@ -81,10 +81,10 @@ const NavBar = () => {
     };
 
     return (
-        <nav className={`grid grid-cols-8 bg-white dark:bg-zinc-800 text-sm border-b border-green-700 shadow-md ${isSticky ? "sticky top-0" : ""}`}>
+        <nav className={`grid grid-cols-8 bg-white dark:bg-gray-800 text-sm border-b border-green-700 shadow-md ${isSticky ? "sticky top-0" : ""} z-20`}>
             <div className="col-start-2 col-span-6">
                 <div className="flex justify-between items-center py-3">
-                    <NavLink to="/" className="flex items-center space-x-2 font-semibold text-green-700">
+                    <NavLink to="/" className="flex items-center space-x-2 font-semibold text-green-700 dark:text-green-400">
                         <img src={Logo} alt="Logo" width={24} height={24} />
                         <p>ConnectIn</p>
                     </NavLink>
@@ -95,29 +95,25 @@ const NavBar = () => {
                         </button>
 
                         {/* Search */}
-                        <NavLink to="/search" className={({ isActive }) => (isActive ? "text-green-700 dark:text-white" : "hover:text-green-700 dark:hover:text-white")}>
+                        <NavLink to="/search" className={({ isActive }) => (isActive ? "text-green-700 dark:text-green-700" : "hover:text-green-600 dark:text-white dark:hover:text-green-700")}>
                             <FontAwesomeIcon icon={faMagnifyingGlass} />
                         </NavLink>
 
                         {/* New Post */}
-                        <NavLink to="/post" className={({ isActive }) => (isActive ? "text-green-700 dark:text-white" : "hover:text-green-700 dark:hover:text-white")}>
+                        <NavLink to="/post" className={({ isActive }) => (isActive ? "text-green-700 dark:text-green-700" : "hover:text-green-600 dark:text-white dark:hover:text-green-700")}>
                             <FontAwesomeIcon icon={faPen} />
                         </NavLink>
 
                         {/* Navigation Links */}
-                        <NavLink to="/" className={({ isActive }) => (isActive ? "text-green-700 dark:text-white" : "hover:text-green-700 dark:hover:text-white")}>
+                        <NavLink to="/" className={({ isActive }) => (isActive ? "text-green-700 dark:text-green-700" : "hover:text-green-600 dark:text-white dark:hover:text-green-700")}>
                             <FontAwesomeIcon icon={faNewspaper} />
                         </NavLink>
-                        
+
                         {/* Chats - verify auth before navigating */}
-                        <button 
-                            onClick={() => handleNavigation("/chats") && navigate("/chats")}
-                            className="hover:text-green-700 dark:hover:text-white"
-                            aria-label="Chats"
-                        >
+                        <button onClick={() => handleNavigation("/chats") && navigate("/chats")} className={({ isActive }) => (isActive ? "text-green-700 dark:text-green-700" : "hover:text-green-600 dark:text-white dark:hover:text-green-700")} aria-label="Chats">
                             <FontAwesomeIcon icon={faComments} />
                         </button>
-                        
+
                         {isAuthenticated ? (
                             <div className="relative user-button">
                                 <div
@@ -136,18 +132,18 @@ const NavBar = () => {
                                     <FontAwesomeIcon icon={faUser} />
                                 </div>
                                 {showMenu && (
-                                    <div className="absolute z-10 top-6 right-0 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-gray-700 shadow-md p-2">
+                                    <div className="absolute z-20 top-6 right-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 shadow-md p-2">
                                         <button
                                             onClick={() => {
                                                 setShowMenu(false);
                                                 handleNavigation("/profile") && navigate("/profile");
                                             }}
-                                            className="block py-2 px-4 text-sm text-gray-700 dark:text-white hover:underline dark:hover:bg-gray-700 text-left w-full"
+                                            className="block cursor-pointer py-2 px-4 text-sm text-gray-700 dark:text-white dark:hover:bg-gray-700 text-left w-full"
                                         >
                                             Profile
                                         </button>
                                         <button
-                                            className="block py-2 px-4 text-sm text-gray-700 dark:text-white hover:underline dark:hover:bg-gray-700 text-left w-full"
+                                            className="block cursor-pointer py-2 px-4 text-sm text-gray-700 dark:text-white dark:hover:bg-gray-700 text-left w-full"
                                             onClick={() => {
                                                 setShowMenu(false);
                                                 handleLogout();

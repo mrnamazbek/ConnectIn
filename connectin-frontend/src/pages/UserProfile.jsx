@@ -255,11 +255,11 @@ const UserProfile = () => {
         <div className="max-w-7xl mx-auto py-8">
             <div className="grid grid-cols-1 lg:grid-cols-8 gap-6">
                 {/* Main Profile Card */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-8 bg-white rounded-xl shadow-lg border border-green-700 overflow-hidden hover:shadow-xl transition-all duration-300">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-green-700 dark:border-green-500 overflow-hidden hover:shadow-xl transition-all duration-300">
                     <div className="p-6">
                         {loadingUser ? (
                             <div className="flex justify-center items-center py-12">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700 dark:border-green-500"></div>
                             </div>
                         ) : user ? (
                             <div className="space-y-6">
@@ -267,9 +267,9 @@ const UserProfile = () => {
                                 <div className="flex flex-col md:flex-row gap-6">
                                     {/* Profile Image */}
                                     <motion.div whileHover={{ scale: 1.05 }} className="relative flex-shrink-0">
-                                        <img src={user.avatar_url || "https://media.tenor.com/HmFcGkSu58QAAAAM/silly.gif"} alt="Profile" className="w-32 h-32 rounded-full object-cover border-4 border-green-700 shadow-lg" />
+                                        <img src={user.avatar_url || "https://media.tenor.com/HmFcGkSu58QAAAAM/silly.gif"} alt="Profile" className="w-32 h-32 rounded-full object-cover border-4 border-green-700 dark:border-green-500 shadow-lg" />
                                         {editMode && (
-                                            <motion.button whileHover={{ scale: 1.1 }} className="absolute bottom-0 right-0 bg-green-700 text-white p-2 rounded-full shadow-lg hover:bg-green-600 transition-colors">
+                                            <motion.button whileHover={{ scale: 1.1 }} className="absolute bottom-0 right-0 bg-green-700 dark:bg-green-600 text-white p-2 rounded-full shadow-lg hover:bg-green-600 dark:hover:bg-green-500 transition-colors">
                                                 <FontAwesomeIcon icon={faEdit} />
                                             </motion.button>
                                         )}
@@ -280,23 +280,23 @@ const UserProfile = () => {
                                         {!editMode ? (
                                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
                                                 <div className="flex items-center gap-2">
-                                                    <h1 className="text-2xl font-bold text-gray-800 truncate">
+                                                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white truncate">
                                                         {user.first_name} {user.last_name}
                                                     </h1>
-                                                    <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full whitespace-nowrap">{user.username}</span>
+                                                    <span className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full whitespace-nowrap">{user.username}</span>
                                                 </div>
 
-                                                <div className="flex items-center gap-2 text-gray-600">
-                                                    <FontAwesomeIcon icon={faUser} className="text-green-700 flex-shrink-0" />
+                                                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                                                    <FontAwesomeIcon icon={faUser} className="text-green-700 dark:text-green-400 flex-shrink-0" />
                                                     <span className="truncate">{user.position || "Role not specified"}</span>
                                                 </div>
 
-                                                <div className="flex items-center gap-2 text-gray-600">
-                                                    <FontAwesomeIcon icon={faCode} className="text-green-700 flex-shrink-0" />
+                                                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                                                    <FontAwesomeIcon icon={faCode} className="text-green-700 dark:text-green-400 flex-shrink-0" />
                                                     <span className="truncate">{user.city || "Location not specified"}</span>
                                                 </div>
 
-                                                <a href={`mailto:${user.email}`} className="flex items-center gap-2 text-green-700 hover:text-green-600 transition-colors">
+                                                <a href={`mailto:${user.email}`} className="flex items-center gap-2 text-green-700 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors">
                                                     <FontAwesomeIcon icon={faUser} className="flex-shrink-0" />
                                                     <span className="truncate">{user.email}</span>
                                                 </a>
@@ -304,23 +304,34 @@ const UserProfile = () => {
                                                 {/* Social Links */}
                                                 <div className="flex gap-4 pt-2">
                                                     {user.github && (
-                                                        <motion.a whileHover={{ scale: 1.1 }} href={user.github} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-green-700 transition-colors">
+                                                        <motion.a whileHover={{ scale: 1.1 }} href={user.github} target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 transition-colors">
                                                             <FontAwesomeIcon icon={faGithub} size="lg" />
                                                         </motion.a>
                                                     )}
                                                     {user.linkedin && (
-                                                        <motion.a whileHover={{ scale: 1.1 }} href={user.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-green-700 transition-colors">
+                                                        <motion.a whileHover={{ scale: 1.1 }} href={user.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 transition-colors">
                                                             <FontAwesomeIcon icon={faLinkedin} size="lg" />
                                                         </motion.a>
                                                     )}
                                                     {user.telegram && (
-                                                        <motion.a whileHover={{ scale: 1.1 }} href={user.telegram.startsWith("http") ? user.telegram : `https://t.me/${user.telegram}`} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-green-700 transition-colors">
+                                                        <motion.a
+                                                            whileHover={{ scale: 1.1 }}
+                                                            href={user.telegram.startsWith("http") ? user.telegram : `https://t.me/${user.telegram}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-gray-600 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 transition-colors"
+                                                        >
                                                             <FontAwesomeIcon icon={faTelegram} size="lg" />
                                                         </motion.a>
                                                     )}
                                                 </div>
 
-                                                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setEditMode(true)} className="mt-4 px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2">
+                                                <motion.button
+                                                    whileHover={{ scale: 1.02 }}
+                                                    whileTap={{ scale: 0.98 }}
+                                                    onClick={() => setEditMode(true)}
+                                                    className="mt-4 px-4 py-2 cursor-pointer bg-green-700 dark:bg-green-600 text-white rounded-lg hover:bg-green-600 dark:hover:bg-green-500 transition-colors flex items-center gap-2"
+                                                >
                                                     <FontAwesomeIcon icon={faEdit} />
                                                     Edit Profile
                                                 </motion.button>
@@ -329,73 +340,109 @@ const UserProfile = () => {
                                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                                                        <input type="text" name="first_name" value={updatedUser.first_name || ""} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" />
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>
+                                                        <input
+                                                            type="text"
+                                                            name="first_name"
+                                                            value={updatedUser.first_name || ""}
+                                                            onChange={handleChange}
+                                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                        />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                                                        <input type="text" name="last_name" value={updatedUser.last_name || ""} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" />
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
+                                                        <input
+                                                            type="text"
+                                                            name="last_name"
+                                                            value={updatedUser.last_name || ""}
+                                                            onChange={handleChange}
+                                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                        />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Position/Title</label>
-                                                        <input type="text" name="position" value={updatedUser.position || ""} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" />
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Position/Title</label>
+                                                        <input
+                                                            type="text"
+                                                            name="position"
+                                                            value={updatedUser.position || ""}
+                                                            onChange={handleChange}
+                                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                        />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                                                        <input type="text" name="city" value={updatedUser.city || ""} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" />
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>
+                                                        <input
+                                                            type="text"
+                                                            name="city"
+                                                            value={updatedUser.city || ""}
+                                                            onChange={handleChange}
+                                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                        />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                                                         <input
                                                             type="email"
                                                             name="email"
                                                             value={updatedUser.email || ""}
                                                             onChange={handleChange}
-                                                            className={`w-full px-3 py-2 border ${errors.email ? "border-red-500" : "border-gray-300"} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all`}
+                                                            className={`w-full px-3 py-2 border ${
+                                                                errors.email ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                                                            } rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                                                         />
                                                         {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
                                                     </div>
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">GitHub URL</label>
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">GitHub URL</label>
                                                         <input
                                                             type="url"
                                                             name="github"
                                                             value={updatedUser.github || ""}
                                                             onChange={handleChange}
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                                             placeholder="https://github.com/username"
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL</label>
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">LinkedIn URL</label>
                                                         <input
                                                             type="url"
                                                             name="linkedin"
                                                             value={updatedUser.linkedin || ""}
                                                             onChange={handleChange}
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                                             placeholder="https://linkedin.com/in/username"
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Telegram Username</label>
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telegram Username</label>
                                                         <input
                                                             type="text"
                                                             name="telegram"
                                                             value={updatedUser.telegram || ""}
                                                             onChange={handleChange}
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                                             placeholder="@username or URL"
                                                         />
                                                     </div>
                                                 </div>
 
                                                 <div className="flex gap-3 mt-4">
-                                                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSave} className="px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2">
+                                                    <motion.button
+                                                        whileHover={{ scale: 1.02 }}
+                                                        whileTap={{ scale: 0.98 }}
+                                                        onClick={handleSave}
+                                                        className="px-4 py-2 bg-green-700 dark:bg-green-600 text-white rounded-lg hover:bg-green-600 dark:hover:bg-green-500 transition-colors flex items-center gap-2"
+                                                    >
                                                         <FontAwesomeIcon icon={faCheck} />
                                                         Save Changes
                                                     </motion.button>
-                                                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setEditMode(false)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2">
+                                                    <motion.button
+                                                        whileHover={{ scale: 1.02 }}
+                                                        whileTap={{ scale: 0.98 }}
+                                                        onClick={() => setEditMode(false)}
+                                                        className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
+                                                    >
                                                         <FontAwesomeIcon icon={faTimes} />
                                                         Cancel
                                                     </motion.button>
@@ -406,38 +453,38 @@ const UserProfile = () => {
                                 </div>
                             </div>
                         ) : (
-                            <p className="text-gray-600 text-center py-8">User data not available.</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-center py-8">User data not available.</p>
                         )}
                     </div>
                 </motion.div>
 
                 {/* Education and Experience Card */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-8 bg-white rounded-xl shadow-lg border border-green-700 overflow-hidden hover:shadow-xl transition-all duration-300">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-green-700 dark:border-green-500 overflow-hidden hover:shadow-xl transition-all duration-300">
                     <div className="p-6">
                         {/* Education Section */}
                         <div className="mb-8">
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
-                                    <FontAwesomeIcon icon={faGraduationCap} className="text-green-700" />
-                                    <h2 className="text-lg font-semibold text-gray-800">Education</h2>
+                                    <FontAwesomeIcon icon={faGraduationCap} className="text-green-700 dark:text-green-400" />
+                                    <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Education</h2>
                                 </div>
-                                <motion.button whileHover={{ scale: 1.1 }} onClick={() => setShowEducationForm(!showEducationForm)} className="text-green-700 hover:text-green-600 transition-colors">
+                                <motion.button whileHover={{ scale: 1.1 }} onClick={() => setShowEducationForm(!showEducationForm)} className="text-green-700 cursor-pointer dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors">
                                     <FontAwesomeIcon icon={faPlus} />
                                 </motion.button>
                             </div>
 
                             <div className="space-y-3">
                                 {education.map((edu) => (
-                                    <motion.div key={edu.id} whileHover={{ scale: 1.02 }} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                    <motion.div key={edu.id} whileHover={{ scale: 1.02 }} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
                                         <div className="flex justify-between items-start">
                                             <div className="min-w-0">
-                                                <h4 className="font-medium text-gray-800 truncate">{edu.institution}</h4>
-                                                <p className="text-sm text-gray-600 truncate">{edu.degree}</p>
-                                                <p className="text-xs text-gray-500 mt-1">
+                                                <h4 className="font-medium text-gray-800 dark:text-white truncate">{edu.institution}</h4>
+                                                <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{edu.degree}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                                     {edu.start_year} - {edu.end_year}
                                                 </p>
                                             </div>
-                                            <motion.button whileHover={{ scale: 1.1 }} onClick={() => handleDeleteEducation(edu.id)} className="text-red-500 hover:text-red-600 transition-colors flex-shrink-0 ml-2">
+                                            <motion.button whileHover={{ scale: 1.1 }} onClick={() => handleDeleteEducation(edu.id)} className="text-red-500 cursor-pointer dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors flex-shrink-0 ml-2">
                                                 <FontAwesomeIcon icon={faTrashAlt} />
                                             </motion.button>
                                         </div>
@@ -451,11 +498,15 @@ const UserProfile = () => {
                                         <input
                                             type="text"
                                             placeholder="Institution"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                                             value={newEducation.institution}
                                             onChange={(e) => setNewEducation({ ...newEducation, institution: e.target.value })}
                                         />
-                                        <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" value={newEducation.degree} onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })}>
+                                        <select
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                            value={newEducation.degree}
+                                            onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })}
+                                        >
                                             <option value="">Select Degree</option>
                                             {degreeOptions.map((degree, index) => (
                                                 <option key={index} value={degree}>
@@ -465,7 +516,7 @@ const UserProfile = () => {
                                         </select>
                                         <div className="grid grid-cols-2 gap-3">
                                             <select
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                                 value={newEducation.start_year}
                                                 onChange={(e) => setNewEducation({ ...newEducation, start_year: e.target.value })}
                                             >
@@ -476,7 +527,11 @@ const UserProfile = () => {
                                                     </option>
                                                 ))}
                                             </select>
-                                            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" value={newEducation.end_year} onChange={(e) => setNewEducation({ ...newEducation, end_year: e.target.value })}>
+                                            <select
+                                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                value={newEducation.end_year}
+                                                onChange={(e) => setNewEducation({ ...newEducation, end_year: e.target.value })}
+                                            >
                                                 <option value="">End Year</option>
                                                 {years.map((year) => (
                                                     <option key={year} value={year}>
@@ -485,7 +540,7 @@ const UserProfile = () => {
                                                 ))}
                                             </select>
                                         </div>
-                                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleAddEducation} className="w-full px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-600 transition-colors">
+                                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleAddEducation} className="w-full cursor-pointer px-4 py-2 bg-green-700 dark:bg-green-600 text-white rounded-lg hover:bg-green-600 dark:hover:bg-green-500 transition-colors">
                                             Add Education
                                         </motion.button>
                                     </motion.div>
@@ -497,26 +552,26 @@ const UserProfile = () => {
                         <div>
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
-                                    <FontAwesomeIcon icon={faBriefcase} className="text-green-700" />
-                                    <h2 className="text-lg font-semibold text-gray-800">Experience</h2>
+                                    <FontAwesomeIcon icon={faBriefcase} className="text-green-700 dark:text-green-400" />
+                                    <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Experience</h2>
                                 </div>
-                                <motion.button whileHover={{ scale: 1.1 }} onClick={() => setShowExperienceForm(!showExperienceForm)} className="text-green-700 hover:text-green-600 transition-colors">
+                                <motion.button whileHover={{ scale: 1.1 }} onClick={() => setShowExperienceForm(!showExperienceForm)} className="text-green-700 cursor-pointer dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors">
                                     <FontAwesomeIcon icon={faPlus} />
                                 </motion.button>
                             </div>
 
                             <div className="space-y-3">
                                 {experience.map((exp) => (
-                                    <motion.div key={exp.id} whileHover={{ scale: 1.02 }} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                    <motion.div key={exp.id} whileHover={{ scale: 1.02 }} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
                                         <div className="flex justify-between items-start">
                                             <div className="min-w-0">
-                                                <h4 className="font-medium text-gray-800 truncate">{exp.company}</h4>
-                                                <p className="text-sm text-gray-600 truncate">{exp.role}</p>
-                                                <p className="text-xs text-gray-500 mt-1">
+                                                <h4 className="font-medium text-gray-800 dark:text-white truncate">{exp.company}</h4>
+                                                <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{exp.role}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                                     {exp.start_year} - {exp.end_year}
                                                 </p>
                                             </div>
-                                            <motion.button whileHover={{ scale: 1.1 }} onClick={() => handleDeleteExperience(exp.id)} className="text-red-500 hover:text-red-600 transition-colors flex-shrink-0 ml-2">
+                                            <motion.button whileHover={{ scale: 1.1 }} onClick={() => handleDeleteExperience(exp.id)} className="text-red-500 cursor-pointer dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors flex-shrink-0 ml-2">
                                                 <FontAwesomeIcon icon={faTrashAlt} />
                                             </motion.button>
                                         </div>
@@ -530,20 +585,20 @@ const UserProfile = () => {
                                         <input
                                             type="text"
                                             placeholder="Company"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                                             value={newExperience.company}
                                             onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })}
                                         />
                                         <input
                                             type="text"
                                             placeholder="Role"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                                             value={newExperience.role}
                                             onChange={(e) => setNewExperience({ ...newExperience, role: e.target.value })}
                                         />
                                         <div className="grid grid-cols-2 gap-3">
                                             <select
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                                 value={newExperience.start_year}
                                                 onChange={(e) => setNewExperience({ ...newExperience, start_year: e.target.value })}
                                             >
@@ -555,7 +610,7 @@ const UserProfile = () => {
                                                 ))}
                                             </select>
                                             <select
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                                 value={newExperience.end_year}
                                                 onChange={(e) => setNewExperience({ ...newExperience, end_year: e.target.value })}
                                             >
@@ -567,7 +622,7 @@ const UserProfile = () => {
                                                 ))}
                                             </select>
                                         </div>
-                                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleAddExperience} className="w-full px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-600 transition-colors">
+                                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleAddExperience} className="w-full cursor-pointer px-4 py-2 bg-green-700 dark:bg-green-600 text-white rounded-lg hover:bg-green-600 dark:hover:bg-green-500 transition-colors">
                                             Add Experience
                                         </motion.button>
                                     </motion.div>
@@ -578,19 +633,31 @@ const UserProfile = () => {
                 </motion.div>
 
                 {/* Main Content Area */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="lg:col-span-8 bg-white rounded-xl shadow-lg border border-green-700 overflow-hidden hover:shadow-xl transition-all duration-300">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="lg:col-span-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-green-700 dark:border-green-500 overflow-hidden hover:shadow-xl transition-all duration-300">
                     <div className="p-6">
-                        <div className="flex space-x-6 border-b border-gray-200 mb-6">
-                            <NavLink to="/profile/projects" className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? "text-green-700 border-b-2 border-green-700" : "text-gray-500 hover:text-green-700"}`}>
+                        <div className="flex space-x-6 border-b border-gray-200 dark:border-gray-700 mb-6">
+                            <NavLink
+                                to="/profile/projects"
+                                className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? "text-green-700 dark:text-green-400 border-b-2 border-green-700 dark:border-green-400" : "text-gray-500 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400"}`}
+                            >
                                 Projects
                             </NavLink>
-                            <NavLink to="/profile/skills" className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? "text-green-700 border-b-2 border-green-700" : "text-gray-500 hover:text-green-700"}`}>
+                            <NavLink
+                                to="/profile/skills"
+                                className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? "text-green-700 dark:text-green-400 border-b-2 border-green-700 dark:border-green-400" : "text-gray-500 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400"}`}
+                            >
                                 Skills
                             </NavLink>
-                            <NavLink to="/profile/actions" className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? "text-green-700 border-b-2 border-green-700" : "text-gray-500 hover:text-green-700"}`}>
+                            <NavLink
+                                to="/profile/actions"
+                                className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? "text-green-700 dark:text-green-400 border-b-2 border-green-700 dark:border-green-400" : "text-gray-500 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400"}`}
+                            >
                                 News
                             </NavLink>
-                            <NavLink to="/profile/saved" className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? "text-green-700 border-b-2 border-green-700" : "text-gray-500 hover:text-green-700"}`}>
+                            <NavLink
+                                to="/profile/saved"
+                                className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? "text-green-700 dark:text-green-400 border-b-2 border-green-700 dark:border-green-400" : "text-gray-500 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400"}`}
+                            >
                                 Saved
                             </NavLink>
                         </div>

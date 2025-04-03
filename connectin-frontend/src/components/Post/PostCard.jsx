@@ -50,7 +50,7 @@ export const PostCard = ({ post, showReadButton = true, onLike, onSave, isLiked 
     };
 
     return (
-        <div className="bg-white dark:bg-zinc-800 border border-green-700 rounded-md shadow-md p-5 hover:shadow-lg transition-shadow">
+        <div className="bg-white dark:bg-gray-800 dark:text-gray-300 border border-green-700 rounded-md shadow-md p-5 hover:shadow-lg transition-shadow">
             <div className="flex items-center mb-4">
                 <img
                     src={author.avatar_url || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
@@ -79,17 +79,14 @@ export const PostCard = ({ post, showReadButton = true, onLike, onSave, isLiked 
                     <button onClick={handleLike} disabled={isLikeLoading} className="group relative text-gray-500 hover:text-red-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" title={isLikeLoading ? "Processing..." : "Like post"}>
                         <FontAwesomeIcon icon={isLiked ? faHeartSolid : faHeart} className={`${isLikeLoading ? "animate-pulse" : ""}`} style={isLiked ? { color: "#ff0000" } : {}} />
                         <span className="ml-1">{likes_count || ""}</span>
-                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{isLiked ? "Unlike" : "Like"}</span>
                     </button>
                     <button className="group relative text-gray-500 hover:text-gray-700 transition cursor-pointer" title="View comments">
                         <FontAwesomeIcon icon={faComment} />
                         <span className="ml-1">{comments_count || ""}</span>
-                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Comments</span>
                     </button>
                     <button onClick={handleSave} disabled={isSaveLoading} className="group relative text-gray-500 hover:text-yellow-400 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" title={isSaveLoading ? "Processing..." : "Save post"}>
                         <FontAwesomeIcon icon={isSaved ? faBookmarkSolid : faBookmarkRegular} className={`${isSaveLoading ? "animate-pulse" : ""}`} style={isSaved ? { color: "#facc15" } : {}} />
                         <span className="ml-1">{saves_count || ""}</span>
-                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{isSaved ? "Unsave" : "Save"}</span>
                     </button>
                 </div>
                 {showReadButton && (

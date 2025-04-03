@@ -243,24 +243,42 @@ const PublishPage = () => {
     }, [cloud, isLayoutReady]);
 
     return (
-        <div className="col-span-6 flex flex-col space-y-5 shadow-md rounded-md border border-green-700 bg-white p-5">
-            <p className="font-semibold text-xl">Create New Post</p>
+        <div className="col-span-6 flex flex-col space-y-5 shadow-md rounded-md border border-green-700 bg-white dark:bg-gray-800 p-5">
+            <p className="font-semibold text-xl dark:text-white">Create New Post</p>
 
             {/* Post Type Selection */}
-            <select className="w-full text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500" value={postType} onChange={(e) => setPostType(e.target.value)}>
-                <option value="news">News</option>
-                <option value="project">Project</option>
-                <option value="team">Team</option>
+            <select className="w-full text-sm px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-md shadow-sm focus:outline-none bg-white dark:bg-gray-700 dark:text-white" value={postType} onChange={(e) => setPostType(e.target.value)}>
+                <option value="news" className="dark:bg-gray-800">
+                    News
+                </option>
+                <option value="project" className="dark:bg-gray-800">
+                    Project
+                </option>
+                <option value="team" className="dark:bg-gray-800">
+                    Team
+                </option>
             </select>
 
             {/* Title Input */}
-            <input type="text" placeholder="Enter post title..." value={title} onChange={(e) => setTitle(e.target.value)} className="w-full text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+            <input
+                type="text"
+                placeholder="Enter post title..."
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full text-sm px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-md shadow-sm focus:outline-none bg-white dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+            />
 
             {/* Search Input for Tags and Skills */}
             {(postType === "project" || postType === "news") && (
                 <div className="relative">
-                    <input type="text" placeholder="Search tags and skills..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full text-sm px-3 py-2 pl-10 border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
-                    <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Search tags and skills..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full text-sm px-3 py-2 pl-10 border border-gray-200 dark:border-gray-600 rounded-md shadow-sm focus:outline-none bg-white dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                    />
+                    <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-300" />
                 </div>
             )}
 
@@ -268,18 +286,22 @@ const PublishPage = () => {
             {(postType === "project" || postType === "news") && (
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                        <p className="font-semibold text-sm">Tags (max 10):</p>
-                        <span className="text-sm text-gray-500">{selectedTags.length}/10</span>
+                        <p className="font-semibold text-sm dark:text-gray-300">Tags (max 10):</p>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{selectedTags.length}/10</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
                         {(showAllTags ? filteredTags : filteredTags.slice(0, 10)).map((tag) => (
-                            <button key={tag.id} onClick={() => handleTagSelection(tag.id)} className={`px-2 py-1 rounded-full text-xs shadow-sm transition-all duration-200 ${selectedTags.includes(tag.id) ? "bg-green-700 text-white hover:bg-green-600" : "bg-gray-100 hover:bg-gray-200"}`}>
+                            <button
+                                key={tag.id}
+                                onClick={() => handleTagSelection(tag.id)}
+                                className={`px-2 py-1 rounded-full text-xs shadow-sm transition-all duration-200 ${selectedTags.includes(tag.id) ? "bg-green-700 text-white hover:bg-green-600" : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300"}`}
+                            >
                                 {tag.name}
                             </button>
                         ))}
                     </div>
                     {filteredTags.length > 10 && (
-                        <button onClick={() => setShowAllTags(!showAllTags)} className="text-sm text-green-700 hover:text-green-800">
+                        <button onClick={() => setShowAllTags(!showAllTags)} className="text-sm text-green-700 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
                             {showAllTags ? "Show Less" : `Show More (${filteredTags.length - 10} more)`}
                         </button>
                     )}
@@ -289,16 +311,20 @@ const PublishPage = () => {
             {/* Skills Section (Only for Project Posts) */}
             {postType === "project" && (
                 <div className="space-y-2">
-                    <p className="font-semibold text-sm">Required Skills:</p>
+                    <p className="font-semibold text-sm dark:text-gray-300">Required Skills:</p>
                     <div className="flex flex-wrap gap-2">
                         {(showAllSkills ? filteredSkills : filteredSkills.slice(0, 10)).map((skill) => (
-                            <button key={skill.id} onClick={() => handleSkillSelection(skill.id)} className={`px-2 py-1 rounded-full text-xs shadow-sm transition-all duration-200 ${selectedSkills.includes(skill.id) ? "bg-blue-700 text-white hover:bg-blue-600" : "bg-gray-100 hover:bg-gray-200"}`}>
+                            <button
+                                key={skill.id}
+                                onClick={() => handleSkillSelection(skill.id)}
+                                className={`px-2 py-1 rounded-full text-xs shadow-sm transition-all duration-200 ${selectedSkills.includes(skill.id) ? "bg-blue-700 text-white hover:bg-blue-600" : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300"}`}
+                            >
                                 {skill.name}
                             </button>
                         ))}
                     </div>
                     {filteredSkills.length > 10 && (
-                        <button onClick={() => setShowAllSkills(!showAllSkills)} className="text-sm text-blue-700 hover:text-blue-800">
+                        <button onClick={() => setShowAllSkills(!showAllSkills)} className="text-sm text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
                             {showAllSkills ? "Show Less" : `Show More (${filteredSkills.length - 10} more)`}
                         </button>
                     )}
@@ -310,12 +336,12 @@ const PublishPage = () => {
                 <div className="space-y-2">
                     {selectedTags.length > 0 && (
                         <div className="flex flex-wrap gap-2">
-                            <p className="font-semibold text-sm">Selected Tags:</p>
+                            <p className="font-semibold text-sm dark:text-gray-300">Selected Tags:</p>
                             {selectedTags.map((tagId) => {
                                 const tag = tags.find((t) => t.id === tagId);
                                 return (
                                     tag && (
-                                        <span key={tag.id} className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
+                                        <span key={tag.id} className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200">
                                             {tag.name}
                                         </span>
                                     )
@@ -325,12 +351,12 @@ const PublishPage = () => {
                     )}
                     {selectedSkills.length > 0 && (
                         <div className="flex flex-wrap gap-2">
-                            <p className="font-semibold text-sm">Selected Skills:</p>
+                            <p className="font-semibold text-sm dark:text-gray-300">Selected Skills:</p>
                             {selectedSkills.map((skillId) => {
                                 const skill = skills.find((s) => s.id === skillId);
                                 return (
                                     skill && (
-                                        <span key={skill.id} className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
+                                        <span key={skill.id} className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200">
                                             {skill.name}
                                         </span>
                                     )
@@ -342,7 +368,7 @@ const PublishPage = () => {
             )}
 
             {/* CKEditor Content */}
-            <div className="w-full text-sm border border-gray-200 rounded-md shadow-sm">
+            <div className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-md shadow-sm">
                 {ClassicEditor && editorConfig && (
                     <CKEditor
                         editor={ClassicEditor}
@@ -357,7 +383,7 @@ const PublishPage = () => {
 
             {/* Error Display */}
             {error && (
-                <div className="flex items-center gap-2 text-red-500 text-sm">
+                <div className="flex items-center gap-2 text-red-500 dark:text-red-400 text-sm">
                     <FontAwesomeIcon icon={faExclamationCircle} />
                     <span>{error}</span>
                 </div>

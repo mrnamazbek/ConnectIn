@@ -14,7 +14,7 @@ const team = [
         telegram: "https://t.me/namazbekzhan",
     },
     {
-        name: "Ainur",
+        name: "Ainur Kurakbay",
         role: "UI/UX Designer, QA Engineer",
         photo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQPxSDzsnXtcd7kB5ayFdxVsgW2Bp0lIysj8g&s",
         linkedin: "https://www.linkedin.com/in/alice-johnson",

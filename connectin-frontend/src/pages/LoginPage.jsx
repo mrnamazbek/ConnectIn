@@ -25,7 +25,7 @@ const LoginPage = () => {
             password: "",
         },
         validationSchema,
-        validateOnBlur: true,
+        validateOnBlur: false,
         validateOnChange: true,
         onSubmit: async (values, { setSubmitting }) => {
             setLoading(true);

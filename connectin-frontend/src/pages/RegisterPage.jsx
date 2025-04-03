@@ -1,21 +1,11 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
 import { useNavigate } from "react-router";
 import { NavLink } from "react-router";
-import { faGoogle, faGithub } from "@fortawesome/free-brands-svg-icons";
 
 const RegisterPage = () => {
     const navigate = useNavigate();
-
-    const handleGoogleLogin = () => {
-        window.location.href = `${import.meta.env.VITE_API_URL}/auth/google/login`; // Redirect to Google OAuth
-    };
-
-    const handleGitHubLogin = () => {
-        window.location.href = `${import.meta.env.VITE_API_URL}/auth/github/login`; // Redirect to GitHub OAuth
-    };
 
     const validationSchema = Yup.object({
         username: Yup.string().min(3, "Username must be at least 3 characters").required("Username is required"),
@@ -64,94 +54,92 @@ const RegisterPage = () => {
     });
 
     return (
-        <div className="flex justify-center items-center min-h-screen -mt-13 px-4">
-            <div className="flex flex-wrap md:flex-nowrap border border-green-700 rounded-md bg-white shadow-lg w-full max-w-3xl">
+        <div className="flex justify-center items-center min-h-screen -mt-13 px-4 bg-gray-50 dark:bg-gray-900">
+            <div className="flex flex-wrap md:flex-nowrap border border-green-700 dark:border-green-600 rounded-md bg-white dark:bg-gray-800 shadow-lg dark:shadow-gray-700/50 w-full max-w-3xl">
                 {/* Left Side: Form */}
                 <div className="flex flex-col flex-1 p-6">
-                    <h1 className="text-lg font-semibold">Welcome!</h1>
-                    <p className="text-sm text-gray-500">Enter your username and password to continue</p>
+                    <h1 className="text-lg font-semibold dark:text-white">Welcome!</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Enter your username and password to continue</p>
 
                     <form onSubmit={formik.handleSubmit} className="mt-4">
                         <div className="flex flex-col space-y-3">
                             <div className="flex flex-col space-y-2">
-                                <label className="font-semibold text-sm" htmlFor="username">
+                                <label className="font-semibold text-sm dark:text-gray-300" htmlFor="username">
                                     Username
                                 </label>
                                 <input
                                     id="username"
                                     type="text"
-                                    className={`w-full text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none ${formik.touched.username && formik.errors.username ? "border-red-500" : ""}`}
+                                    className={`w-full text-sm px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600 bg-white dark:bg-gray-700 dark:text-white ${
+                                        formik.touched.username && formik.errors.username ? "border-red-500 dark:border-red-400" : ""
+                                    }`}
                                     placeholder="Enter your username"
                                     {...formik.getFieldProps("username")}
                                 />
-                                {formik.touched.username && formik.errors.username && <p className="text-red-500 text-sm">{formik.errors.username}</p>}
+                                {formik.touched.username && formik.errors.username && <p className="text-red-500 dark:text-red-400 text-sm">{formik.errors.username}</p>}
                             </div>
 
                             <div className="flex flex-col space-y-2">
-                                <label className="font-semibold text-sm" htmlFor="email">
+                                <label className="font-semibold text-sm dark:text-gray-300" htmlFor="email">
                                     Email
                                 </label>
                                 <input
                                     id="email"
                                     type="email"
-                                    className={`w-full text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none ${formik.touched.email && formik.errors.email ? "border-red-500" : ""}`}
+                                    className={`w-full text-sm px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600 bg-white dark:bg-gray-700 dark:text-white ${
+                                        formik.touched.email && formik.errors.email ? "border-red-500 dark:border-red-400" : ""
+                                    }`}
                                     placeholder="Enter your email"
                                     {...formik.getFieldProps("email")}
                                 />
-                                {formik.touched.email && formik.errors.email && <p className="text-red-500 text-sm">{formik.errors.email}</p>}
+                                {formik.touched.email && formik.errors.email && <p className="text-red-500 dark:text-red-400 text-sm">{formik.errors.email}</p>}
                             </div>
 
                             {/* Password Field */}
                             <div className="flex flex-col space-y-2">
-                                <label className="font-semibold text-sm" htmlFor="password">
+                                <label className="font-semibold text-sm dark:text-gray-300" htmlFor="password">
                                     Password
                                 </label>
                                 <input
                                     id="password"
                                     type="password"
-                                    className={`w-full text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none ${formik.touched.password && formik.errors.password ? "border-red-500" : ""}`}
+                                    className={`w-full text-sm px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600 bg-white dark:bg-gray-700 dark:text-white ${
+                                        formik.touched.password && formik.errors.password ? "border-red-500 dark:border-red-400" : ""
+                                    }`}
                                     placeholder="Enter your password"
                                     {...formik.getFieldProps("password")}
                                 />
-                                {formik.touched.password && formik.errors.password && <p className="text-red-500 text-sm">{formik.errors.password}</p>}
+                                {formik.touched.password && formik.errors.password && <p className="text-red-500 dark:text-red-400 text-sm">{formik.errors.password}</p>}
                             </div>
 
                             <div className="flex flex-col space-y-2">
-                                <label htmlFor="confirmPassword" className="font-semibold text-sm">
+                                <label htmlFor="confirmPassword" className="font-semibold text-sm dark:text-gray-300">
                                     Confirm Password
                                 </label>
                                 <input
                                     type="password"
                                     id="confirmPassword"
-                                    className={`w-full text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm focus:outline-none ${formik.touched.confirmPassword && formik.errors.confirmPassword ? "border-red-500" : ""}`}
+                                    className={`w-full text-sm px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600 bg-white dark:bg-gray-700 dark:text-white ${
+                                        formik.touched.confirmPassword && formik.errors.confirmPassword ? "border-red-500 dark:border-red-400" : ""
+                                    }`}
                                     placeholder="Confirm your password"
                                     {...formik.getFieldProps("confirmPassword")}
                                 />
-                                {formik.touched.confirmPassword && formik.errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{formik.errors.confirmPassword}</p>}
+                                {formik.touched.confirmPassword && formik.errors.confirmPassword && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{formik.errors.confirmPassword}</p>}
                             </div>
                         </div>
 
                         {/* Submit Button */}
                         <div className="mt-5">
-                            <button type="submit" disabled={formik.isSubmitting} className="w-full font-semibold bg-green-700 shadow-md text-white py-2 rounded-md hover:bg-green-600 transition cursor-pointer">
+                            <button type="submit" disabled={formik.isSubmitting} className="w-full font-semibold bg-green-700 dark:bg-green-600 shadow-md text-white py-2 rounded-md hover:bg-green-600 dark:hover:bg-green-500 transition cursor-pointer disabled:opacity-70">
                                 {formik.isSubmitting ? "Signing up..." : "Sign up"}
                             </button>
                         </div>
 
-                        {/* OAuth Buttons */}
-                        <div className="flex justify-between space-x-3 mt-4">
-                            <button onClick={handleGoogleLogin} type="button" className="w-full flex items-center justify-center border shadow-md border-gray-200 py-2 font-semibold rounded-md hover:bg-gray-100 transition cursor-pointer">
-                                <FontAwesomeIcon icon={faGoogle} className="mr-2" /> Google
-                            </button>
-                            <button onClick={handleGitHubLogin} type="button" className="w-full flex items-center justify-center border border-gray-200 shadow-md py-2 font-semibold rounded-md hover:bg-gray-100 transition cursor-pointer">
-                                <FontAwesomeIcon icon={faGithub} className="mr-2" /> Github
-                            </button>
-                        </div>
-
                         {/* Register Link */}
-                        <p className="text-sm text-center mt-4">
-                            <span className="text-gray-500">Already have an account?</span>
-                            <NavLink to="/login" className="font-semibold underline ml-1">
+                        <p className="text-sm text-center mt-4 dark:text-gray-400">
+                            <span>Already have an account?</span>
+                            <NavLink to="/login" className="font-semibold text-green-700 dark:text-green-400 hover:underline ml-1 hover:text-green-600 dark:hover:text-green-300">
                                 Sign in here
                             </NavLink>
                         </p>
@@ -159,7 +147,7 @@ const RegisterPage = () => {
                 </div>
 
                 {/* Right Side: Welcome Banner */}
-                <div className="bg-green-700 rounded-l-md shadow-md justify-center items-center px-6 hidden md:flex">
+                <div className="bg-green-700 dark:bg-green-800 rounded-r-md shadow-md justify-center items-center px-6 hidden md:flex">
                     <p className="text-white text-center font-semibold text-lg">
                         ConnectIn: Build Projects. <br /> Grow Skills. Find Your Team.
                     </p>

@@ -225,17 +225,21 @@ const PostsPage = () => {
         return (
             <div className="flex justify-center mt-6">
                 <nav className="flex items-center space-x-2">
-                    <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 rounded border border-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 cursor-pointer rounded hover:bg-green-700 hover:transition hover:duration-300 hover:ease-in-out border border-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
                         Previous
                     </button>
 
                     {pageNumbers.map((number) => (
-                        <button key={number} onClick={() => handlePageChange(number)} className={`px-3 py-1 rounded ${currentPage === number ? "bg-green-700 text-white" : "border border-green-700 hover:bg-green-50"}`}>
+                        <button
+                            key={number}
+                            onClick={() => handlePageChange(number)}
+                            className={`px-3 py-1 cursor-pointer rounded ${currentPage === number ? "bg-green-700 text-white" : "border border-green-700 hover:bg-green-700 hover:transition hover:duration-300 hover:ease-in-out hover:scale-110"}`}
+                        >
                             {number}
                         </button>
                     ))}
 
-                    <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="px-3 py-1 rounded border border-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="px-3 py-1 rounded cursor-pointer border border-green-700 hover:bg-green-700 hover:transition hover:ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">
                         Next
                     </button>
                 </nav>

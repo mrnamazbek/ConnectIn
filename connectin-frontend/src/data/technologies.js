@@ -80,12 +80,12 @@ const technologies = [
         description: "Manages background tasks and asynchronous operations.",
         category: "Backend",
     },
-    {
-        name: "NumPy",
-        logo: "https://cdn.worldvectorlogo.com/logos/numpy-1.svg",
-        description: "Supports numerical operations, especially for ML features.",
-        category: "Backend", // Re-categorized as primarily backend computation tool
-    },
+    // {
+    //     name: "NumPy",
+    //     logo: "https://cdn.worldvectorlogo.com/logos/numpy-1.svg",
+    //     description: "Supports numerical operations, especially for ML features.",
+    //     category: "Backend", // Re-categorized as primarily backend computation tool
+    // },
     {
         name: "Scikit-learn (Sklearn)", // Expanded name
         logo: "https://upload.wikimedia.org/wikipedia/commons/0/05/Scikit_learn_logo_small.svg",

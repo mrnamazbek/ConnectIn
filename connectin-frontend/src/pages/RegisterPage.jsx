@@ -3,6 +3,9 @@ import * as Yup from "yup";
 import axios from "axios";
 import { useNavigate } from "react-router";
 import { NavLink } from "react-router";
+import { ReactTyped } from "react-typed";
+import { faShareNodes, faGlobe, faArrowUpRightDots } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const RegisterPage = () => {
     const navigate = useNavigate();
@@ -147,10 +150,40 @@ const RegisterPage = () => {
                 </div>
 
                 {/* Right Side: Welcome Banner */}
-                <div className="bg-green-700 dark:bg-green-800 rounded-r-md shadow-md justify-center items-center px-6 hidden md:flex">
-                    <p className="text-white text-center font-semibold text-lg">
-                        ConnectIn: Build Projects. <br /> Grow Skills. Find Your Team.
-                    </p>
+                <div className="bg-gradient-to-br from-green-600 via-green-700 to-green-800 dark:from-green-800 dark:via-green-700 dark:to-green-600 rounded-l-2xl flex-col rounded-r-sm shadow-md justify-center items-center px-10 hidden md:flex">
+                    <p className="text-xl font-semibold text-white">Join ConnectIn</p>
+                    <div className="text-lg mb-5 text-white">
+                        <ReactTyped strings={["Create Your Profile.", "Showcase Your Skills.", "Connect with Teams.", "Start Your Journey!"]} typeSpeed={60} backSpeed={40} loop />
+                    </div>
+                    <div className="space-y-3 w-full max-w-xs">
+                        <div className="flex items-center gap-3">
+                            <div className="w-6 h-6 flex">
+                                <FontAwesomeIcon icon={faShareNodes} className="text-xl text-yellow-300" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-white">Share Ideas</h3>
+                                <p className="text-sm text-white/80">Contribute to innovative projects.</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-6 h-6 flex">
+                                <FontAwesomeIcon icon={faGlobe} className="text-xl text-blue-300" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-white">Network Easily</h3>
+                                <p className="text-sm text-white/80">Find collaborators and mentors.</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-6 h-6 flex">
+                                <FontAwesomeIcon icon={faArrowUpRightDots} className="text-xl text-red-300" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-white">Accelerate Growth</h3>
+                                <p className="text-sm text-white/80">Unlock new opportunities daily.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -7,6 +7,8 @@ import { Link, useNavigate, useLocation } from "react-router";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
+import { ReactTyped } from "react-typed";
+import { faLightbulb, faHandshakeSimple, faRocket } from "@fortawesome/free-solid-svg-icons";
 import TokenService from "../services/tokenService";
 
 const LoginPage = () => {
@@ -88,7 +90,7 @@ const LoginPage = () => {
                 {/* Left Side: Form */}
                 <div className="flex flex-col flex-1 p-6">
                     <h1 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">Welcome!</h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Enter your credentials to continue</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Sign in to continue your journey!</p>
 
                     <form onSubmit={formik.handleSubmit} className="space-y-4">
                         {/* Username Field */}
@@ -155,10 +157,40 @@ const LoginPage = () => {
                 </div>
 
                 {/* Right Side: Welcome Banner */}
-                <div className="bg-green-700 dark:bg-green-600 rounded-l-2xl rounded-r-sm flex-1 flex justify-center items-center px-6 md:flex">
-                    <p className="text-white text-center font-semibold text-xl leading-tight">
-                        ConnectIn: <br /> Build Projects. <br /> Grow Skills. <br /> Find Your Team.
-                    </p>
+                <div className="bg-gradient-to-br from-green-800 via-green-700 to-green-600 dark:from-green-800 dark:via-green-700 dark:to-green-600 rounded-l-2xl rounded-r-sm flex-1 flex-col justify-center items-center px-6 md:flex">
+                    <p className="text-xl font-semibold text-white">ConnectIn</p>
+                    <div className="text-lg mb-5 text-white">
+                        <ReactTyped strings={["Build Teams.", "Discover Projects.", "Grow Careers.", "Welcome Back!"]} typeSpeed={60} backSpeed={40} loop />
+                    </div>
+                    <div className="space-y-3 w-full max-w-xs text-white">
+                        <div className="flex items-center gap-3">
+                            <div className="w-6 flex">
+                                <FontAwesomeIcon icon={faLightbulb} className="text-xl text-yellow-300" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold">Innovate Together</h3>
+                                <p className="text-sm">Find projects that ignite your passion.</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-6 flex">
+                                <FontAwesomeIcon icon={faHandshakeSimple} className="text-xl text-blue-300" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold">Build Connections</h3>
+                                <p className="text-sm">Collaborate with skilled professionals.</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-6 flex">
+                                <FontAwesomeIcon icon={faRocket} className="text-xl text-red-300" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold">Launch Opportunities</h3>
+                                <p className="text-sm">Discover your next career move.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

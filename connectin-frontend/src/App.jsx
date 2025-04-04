@@ -14,9 +14,6 @@ import { ToastContainer } from "react-toastify";
 import AuthWrapper from "./components/AuthWrapper.jsx";
 import AboutUsV3 from "./pages/Theynotlikeus.jsx";
 
-import LoginPage2 from './pages/LoginPage2'; // Укажите правильный путь
-import RegisterPage2 from './pages/RegisterPage2'; // Укажите правильный путь
-
 function App() {
     return (
         <Router>
@@ -26,8 +23,6 @@ function App() {
                     <div className="flex-grow grid grid-cols-8">
                         <div className="col-start-2 col-span-6">
                             <Routes>
-                                <Route path="/login2" element={<LoginPage2 />} />
-                                <Route path="/register2" element={<RegisterPage2 />} />
                                 <Route path="/login" element={<LoginPage />} />
                                 <Route path="/register" element={<RegisterPage />} />
                                 <Route path="/profile/*" element={<UserProfile />} />

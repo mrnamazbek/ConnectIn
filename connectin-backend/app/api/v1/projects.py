@@ -29,6 +29,7 @@ from app.schemas.project import ApplicationDecisionRequest, ApplicationStatus
 from app.models.vote import ProjectVote
 from app.models.comment import ProjectComment
 from app.schemas.comment import CommentOut, CommentCreate
+from app.models.recommendation import ProjectRecommendation
 from app.utils import get_logger
 
 router = APIRouter()
@@ -301,6 +302,12 @@ def delete_project(
     if project.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Вы не можете удалить чужой проект")
 
+    # Delete project recommendations first
+    db.query(ProjectRecommendation).filter(
+        ProjectRecommendation.to_project_id == project_id
+    ).delete(synchronize_session=False)
+
+    # Now delete the project
     db.delete(project)
     db.commit()
     return {"detail": "Проект успешно удалён"}

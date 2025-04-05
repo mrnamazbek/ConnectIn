@@ -71,8 +71,7 @@ class S3Service:
                 self.bucket,
                 object_name,
                 ExtraArgs={
-                    'ContentType': 'image/jpeg',
-                    'ACL': 'public-read'
+                    'ContentType': 'image/jpeg'
                 }
             )
 

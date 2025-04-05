@@ -110,7 +110,11 @@ const NavBar = () => {
                         </NavLink>
 
                         {/* Chats - verify auth before navigating */}
-                        <button onClick={() => handleNavigation("/chats") && navigate("/chats")} className={({ isActive }) => (isActive ? "text-green-700 dark:text-green-700" : "hover:text-green-600 dark:text-white dark:hover:text-green-700")} aria-label="Chats">
+                        <button 
+                            onClick={() => handleNavigation("/chats") && navigate("/chats")} 
+                            className="hover:text-green-600 dark:text-white dark:hover:text-green-700" 
+                            aria-label="Chats"
+                        >
                             <FontAwesomeIcon icon={faComments} />
                         </button>
 

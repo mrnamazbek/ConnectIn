@@ -19,7 +19,9 @@ from app.schemas.skill import SkillOut
 from app.api.v1.auth import get_current_user, create_access_token
 from app.core.config import settings
 from app.utils.s3 import s3_service
+from app.utils.logger import get_logger
 
+logger = get_logger(__name__)
 router = APIRouter()
 
 @router.get("/", response_model=List[UserOut], summary="Получить список всех пользователей")
@@ -368,17 +370,34 @@ async def update_avatar(
         # Upload new avatar to S3
         avatar_url = await s3_service.upload_avatar(file, current_user.id)
         
+        # Store old avatar URL for cleanup
+        old_avatar_url = current_user.avatar_url
+        
         # Update user's avatar URL
         current_user.avatar_url = avatar_url
         db.commit()
         db.refresh(current_user)
         
+        # If there was an old avatar, try to delete it
+        if old_avatar_url:
+            try:
+                # Extract object name from URL
+                object_name = old_avatar_url.split(f"{settings.AWS_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/")[-1]
+                s3_service.delete_file(object_name)
+            except Exception as e:
+                logger.error(f"Failed to delete old avatar: {str(e)}")
+                # Don't raise error, as the new avatar is already uploaded
+        
         return current_user
+    except HTTPException as e:
+        db.rollback()
+        raise e
     except Exception as e:
         db.rollback()
+        logger.error(f"Unexpected error in avatar update: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update avatar: {str(e)}"
+            detail="Failed to update avatar"
         )
 
 @router.patch("/me/status", response_model=UserOut, summary="Обновить статус пользователя")

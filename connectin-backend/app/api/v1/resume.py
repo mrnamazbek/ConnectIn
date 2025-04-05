@@ -23,7 +23,6 @@ import markdown # Для конвертации Markdown -> HTML
 
 # --- Настройка ---
 logger = logging.getLogger(__name__)
-openai.api_key = settings.OPENAI_API_KEY # Устанавливаем ключ для библиотеки OpenAI
 
 # --- Роутер ---
 router = APIRouter()
@@ -130,14 +129,15 @@ Telegram: {profile_data['telegram']}
 # --- Хелпер: Вызов OpenAI API ---
 async def generate_text_via_openai(prompt: str) -> str:
     """Асинхронно вызывает OpenAI API для генерации текста."""
-    if not openai.api_key:
+    if not settings.OPENAI_API_KEY:
         logger.error("OpenAI API key is not configured.")
         raise HTTPException(status_code=500, detail="AI service is not configured (API key missing).")
 
     logger.info("Sending request to OpenAI API...")
     try:
-        response = await openai.ChatCompletion.acreate( # Асинхронный вызов
-            model="gpt-4o", # Или gpt-4o-mini, gpt-4o, если доступны
+        client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        response = await client.chat.completions.create(
+            model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=1500,
             temperature=0.6,
@@ -147,14 +147,14 @@ async def generate_text_via_openai(prompt: str) -> str:
         generated_text = response.choices[0].message.content.strip()
         logger.info("Received response from OpenAI API.")
         return generated_text
-    except openai.error.RateLimitError as e:
+    except openai.RateLimitError as e:
         logger.warning(f"OpenAI Rate Limit Exceeded: {e}")
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="AI service rate limit exceeded. Please try again later.")
-    except openai.error.AuthenticationError as e:
+    except openai.AuthenticationError as e:
         logger.error(f"OpenAI Authentication Error: {e}. Check API Key.")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="AI service authentication failed.")
     except Exception as e:
-        logger.exception(f"OpenAI API call failed: {e}") # Логгируем полный traceback
+        logger.exception(f"OpenAI API call failed: {e}")  # Логгируем полный traceback
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Failed to communicate with AI service.")
 
 # --- Основной API Эндпоинт ---

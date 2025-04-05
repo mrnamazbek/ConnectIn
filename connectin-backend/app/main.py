@@ -18,7 +18,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=["http://localhost:5173", "https://connect-in-production.vercel.app"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -51,8 +51,6 @@ def create_app() -> FastAPI:
     app.include_router(todos.router, prefix="/todos", tags=["Todos"])
     app.include_router(chats.router, prefix="/chats", tags=["Chats"])
     app.include_router(chat_ws.router, prefix="/chats/ws", tags=["Chat WebSocket"])
-
-    # Подключаем роутер для резюме
     app.include_router(resumes_v1.router, prefix="/resume", tags=["Resume Generator"])
 
     return app

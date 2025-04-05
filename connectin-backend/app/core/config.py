@@ -4,6 +4,9 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
+    # chatgpt API
+    OPENAI_API_KEY: str = Field(..., env="OPENAI_API_KEY")
+
     FRONTEND_URL: str = Field("http://localhost:8000/docs")
     # 🌍 Environment
     ENVIRONMENT: str = Field("development", env="ENVIRONMENT")

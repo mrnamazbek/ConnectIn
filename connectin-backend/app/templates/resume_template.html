@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Резюме {{ user.name }}</title>
+    <style>
+        /* Используем шрифт, поддерживающий кириллицу и доступный для WeasyPrint */
+        /* DejaVu Sans часто предустановлен, или можно подключить свой .ttf */
+        body {
+            font-family: "DejaVu Sans", sans-serif; /* Или ваш шрифт */
+            margin: 1.5cm;
+            line-height: 1.4;
+            color: #333;
+        }
+        h1, h2, h3 {
+            color: #2d6a4f; /* Зеленый цвет из вашей темы */
+            font-weight: bold;
+            margin-top: 1em;
+            margin-bottom: 0.5em;
+        }
+        h1 { font-size: 24pt; text-align: center; margin-bottom: 1em; }
+        h2 { font-size: 16pt; border-bottom: 1px solid # B5; padding-bottom: 0.2em; }
+        h3 { font-size: 12pt; color: #40916c; margin-bottom: 0.2em;}
+        p { margin-top: 0.3em; margin-bottom: 0.3em; }
+        a { color: #1b4332; text-decoration: none; }
+        ul { list-style: none; padding-left: 0; margin-top: 0.5em;}
+        li { margin-bottom: 0.8em; }
+        .section { margin-bottom: 1.5em; }
+        .contact-info { text-align: center; margin-bottom: 1.5em; }
+        .experience-item, .education-item { margin-bottom: 1em; }
+        .skills-list { column-count: 2; } /* Навыки в две колонки */
+        .skills-list li { margin-bottom: 0.3em; }
+
+        /* Водяной знак */
+        .watermark {
+            position: fixed; /* Фиксируем внизу страницы */
+            bottom: 0.5cm;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 8pt;
+            color: #aaa;
+        }
+         /* Стили для описания опыта/образования */
+        .description {
+            font-size: 10pt;
+            color: #555;
+            margin-top: 0.3em;
+            padding-left: 1em; /* Небольшой отступ для описания */
+        }
+         /* Даты */
+        .dates {
+            font-size: 10pt;
+            font-style: italic;
+            color: #777;
+        }
+
+    </style>
+</head>
+<body>
+    <h1>{{ user.name }}</h1>
+    <div class="contact-info">
+        <p>Email: <a href="mailto:{{ user.email }}">{{ user.email }}</a> | Местоположение: {{ user.location if user.location else 'Не указано' }}</p>
+        {% if user.headline %}
+        <p><strong>{{ user.headline }}</strong></p>
+        {% endif %}
+    </div>
+
+    {% if user.experience %}
+    <div class="section">
+        <h2>Опыт работы</h2>
+        <ul>
+            {% for exp in user.experience %}
+            <li class="experience-item">
+                <h3>{{ exp.title }} в {{ exp.company }}</h3>
+                <p class="dates">{{ exp.start_date.strftime('%Y-%m') if exp.start_date else '?' }} – {{ exp.end_date.strftime('%Y-%m') if exp.end_date else 'Настоящее время' }} | {{ exp.location if exp.location else 'Не указано' }}</p>
+                {% if exp.description %}
+                <div class="description">{{ exp.description }}</div>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if user.education %}
+    <div class="section">
+        <h2>Образование</h2>
+        <ul>
+            {% for edu in user.education %}
+            <li class="education-item">
+                 <h3>{{ edu.institution }} - {{ edu.degree }}</h3>
+                 <p class="dates">{{ edu.start_date.strftime('%Y-%m') if edu.start_date else '?' }} – {{ edu.end_date.strftime('%Y-%m') if edu.end_date else 'Настоящее время' }}</p>
+                 <p>{{ edu.field_of_study }}</p>
+                {% if edu.description %}
+                <div class="description">{{ edu.description }}</div>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+     {% if user.skills %}
+    <div class="section">
+        <h2>Навыки</h2>
+        <ul class="skills-list">
+            {% for skill in user.skills %}
+            <li>{{ skill.name }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="watermark">
+        Сгенерировано на сайте <a href="https://connectin.com">connectin.com</a>
+    </div>
+</body>
+</html>

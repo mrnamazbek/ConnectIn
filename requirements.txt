@@ -3,17 +3,17 @@ fastapi~=0.100.0
 uvicorn[standard]==0.23.1
 
 # Database and ORM
-sqlalchemy>=2.0,<3.0
+sqlalchemy~=1.4.54
 psycopg2-binary==2.9.7
 
 # Caching
 aioredis==2.0.1
 
 # Full-text search
-elasticsearch==8.17.1
+elasticsearch~=8.15.1
 
 # Authentication and security
-python-jose==3.3.0
+python-jose==3.4.0
 passlib[bcrypt]==1.7.4
 
 # Background tasks
@@ -33,19 +33,19 @@ docker==7.1.0
 
 app~=0.0.1
 auth~=0.5.3
-pydantic-settings~=2.7.1
+pydantic-settings~=2.5.2
 config~=0.5.1
 Authlib~=1.4.1
-alembic~=1.14.1
+alembic~=1.14.0
 python-dotenv~=1.0.1
-starlette<=0.27.0, <0.28.0
+starlette<=0.40.0, <0.28.0
 boto3~=1.35.76
-pillow~=11.1.0
+pillow~=10.4.0
 botocore~=1.35.76
 slowapi~=0.1.9
 itsdangerous==2.2.0
 email-validator>=2.0.0
-python-multipart==0.0.20
+python-multipart==0.0.19
 
 wsproto==1.2.0
 priority==2.0.0
@@ -53,3 +53,8 @@ hyperframe==6.1.0
 hpack==4.1.0
 h2==4.2.0
 Hypercorn==0.17.3
+
+Jinja2~=3.1.4
+weasyprint~=65.0
+openai~=1.70.0
+Markdown~=3.7

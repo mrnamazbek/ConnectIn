@@ -5,6 +5,8 @@ from app.api.v1 import todos, auth, chat_ws, projects, skills, teams, posts, use
 from app.core import settings
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from app.api.v1 import resume as resumes_v1 # Импортируем роутер резюме
+
 
 
 def create_app() -> FastAPI:
@@ -49,6 +51,9 @@ def create_app() -> FastAPI:
     app.include_router(todos.router, prefix="/todos", tags=["Todos"])
     app.include_router(chats.router, prefix="/chats", tags=["Chats"])
     app.include_router(chat_ws.router, prefix="/chats/ws", tags=["Chat WebSocket"])
+
+    # Подключаем роутер для резюме
+    app.include_router(resumes_v1.router, prefix="/resume", tags=["Resume Generator"])
 
     return app
 

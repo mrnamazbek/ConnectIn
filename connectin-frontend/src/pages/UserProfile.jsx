@@ -15,6 +15,12 @@ import AvatarUpload from "../components/User/AvatarUpload";
 
 const UserProfile = () => {
     const navigate = useNavigate();
+
+    //Resume Generator consts
+    const [loadingResume, setLoadingResume] = useState(false); // Загрузка AI резюме
+    const [resumeHtml, setResumeHtml] = useState(''); // Сгенерированный HTML резюме
+    const [errorResume, setErrorResume] = useState(''); // Ошибка генерации резюме
+
     const [user, setUser] = useState(null);
     const [skills, setSkills] = useState([]);
     const [availableSkills, setAvailableSkills] = useState([]);
@@ -123,6 +129,45 @@ const UserProfile = () => {
 
         fetchAllData();
     }, [navigate]);
+
+    //Resume Generator function
+
+    const handleGenerateAiResume = async () => {
+    setLoadingResume(true);
+    setErrorResume('');
+    setResumeHtml(''); // Очищаем предыдущий результат
+    try {
+        // Получаем токен (убедитесь, что он действителен)
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            toast.error("Authentication required.");
+            navigate("/login"); // Перенаправляем на логин, если токена нет
+            return;
+        }
+
+        const response = await axios.post(
+            `${import.meta.env.VITE_API_URL}/api/v1/resumes/generate-ai`,
+             {}, // Тело запроса пустое, т.к. ID пользователя берется из токена на бэкенде
+             { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (response.data && response.data.resume_html) {
+            setResumeHtml(response.data.resume_html);
+            toast.success("AI Resume generated successfully!");
+        } else {
+             throw new Error("Received invalid response from server.");
+        }
+    } catch (error) {
+        console.error("Failed to generate AI resume:", error.response?.data || error.message);
+        const message = error.response?.data?.detail || "Failed to generate AI resume. Please try again.";
+        setErrorResume(message);
+        toast.error(message);
+    } finally {
+        setLoadingResume(false);
+    }
+};
+
+    //end Resume Generator function
 
     const handleAddEducation = async () => {
         if (!newEducation.institution || !newEducation.degree || !newEducation.start_year || !newEducation.end_year) {
@@ -631,6 +676,109 @@ const UserProfile = () => {
                         </div>
                     </div>
                 </motion.div>
+
+                {/* === Начало Секции Генерации AI Резюме === */}
+<motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.2 }} // Небольшая задержка для красивого появления
+    className="lg:col-span-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-purple-400 dark:border-purple-600 overflow-hidden hover:shadow-xl transition-all duration-300" // Фиолетовая рамка для отличия
+>
+    <div className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+             <FontAwesomeIcon icon={faRobot} className="text-purple-600 dark:text-purple-400 text-xl" />
+             <h2 className="text-lg font-semibold text-gray-800 dark:text-white">AI Resume Generator</h2>
+        </div>
+
+        <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
+            Создайте профессиональное резюме на основе данных вашего профиля с помощью AI.
+            <br />
+            <span className="text-xs italic">(Совет: Чем полнее заполнены разделы Опыт и Образование (включая описания, если вы их добавите), тем лучше будет результат!)</span>
+        </p>
+
+        <button
+            onClick={handleGenerateAiResume}
+            disabled={loadingResume}
+            className="px-5 py-2 bg-purple-600 text-white font-semibold rounded-lg shadow-md hover:bg-purple-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+        >
+            {loadingResume ? (
+                <>
+                    <FontAwesomeIcon icon={faSpinner} spin className="mr-2" /> Generating...
+                </>
+            ) : (
+                 <>
+                    <FontAwesomeIcon icon={faRobot} className="mr-2" /> Generate with AI
+                </>
+            )}
+        </button>
+
+        {/* Область для отображения результата */}
+        <AnimatePresence>
+            {loadingResume && (
+                <motion.div
+                    key="loading"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-4 text-center"
+                 >
+                    <FontAwesomeIcon icon={faSpinner} spin size="2x" className="text-purple-500" />
+                </motion.div>
+            )}
+        </AnimatePresence>
+         <AnimatePresence>
+            {errorResume && !loadingResume && (
+                 <motion.div
+                    key="error"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="mt-4 p-4 bg-red-100 text-red-700 border border-red-300 rounded dark:bg-red-900 dark:text-red-200 dark:border-red-700"
+                >
+                    <p><strong>Ошибка:</strong> {errorResume}</p>
+                </motion.div>
+            )}
+         </AnimatePresence>
+         <AnimatePresence>
+            {resumeHtml && !errorResume && !loadingResume && (
+                <motion.div
+                    key="resume"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mt-6 border rounded-md p-4 dark:border-gray-600 prose dark:prose-invert max-w-none bg-gray-50 dark:bg-gray-700" // Добавил фон для читаемости
+                >
+                    <h3 className="text-lg font-semibold mb-3 dark:text-white">Сгенерированное Резюме:</h3>
+                    {/* Отображаем HTML. ВАЖНО: Осторожно с XSS! */}
+                    <div dangerouslySetInnerHTML={{ __html: resumeHtml }} />
+
+                    {/* Кнопки Копировать/Скачать */}
+                    <div className="mt-4 flex gap-2">
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(resumeHtml)
+                                toast.info("HTML скопирован в буфер обмена");
+                            }}
+                            className="px-3 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+                        >
+                            Копировать HTML
+                        </button>
+                        <a
+                           href={`data:text/html;charset=utf-8,${encodeURIComponent(
+                               // Оборачиваем в базовый HTML для корректного отображения при скачивании
+                               `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>AI Resume</title></head><body>${resumeHtml}</body></html>`
+                           )}`}
+                           download={`resume_${user?.username}_ai.html`} // Используем ? для безопасности, если user еще не загружен
+                           className="px-3 py-1 text-xs bg-blue-200 dark:bg-blue-800 rounded hover:bg-blue-300 dark:hover:bg-blue-700 transition"
+                         >
+                            Скачать HTML
+                         </a>
+                    </div>
+                </motion.div>
+            )}
+         </AnimatePresence>
+
+    </div>
+</motion.div>
 
                 {/* Main Content Area */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="lg:col-span-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-green-700 dark:border-green-500 overflow-hidden hover:shadow-xl transition-all duration-300">

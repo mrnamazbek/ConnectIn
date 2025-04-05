@@ -1,4 +1,4 @@
-# connectin-backend/app/api/v1/resumes.py
+# connectin-backend/app/api/v1/resume.py
 
 import os
 import logging
@@ -137,7 +137,7 @@ async def generate_text_via_openai(prompt: str) -> str:
     logger.info("Sending request to OpenAI API...")
     try:
         response = await openai.ChatCompletion.acreate( # Асинхронный вызов
-            model="gpt-3.5-turbo", # Или gpt-4o-mini, gpt-4o, если доступны
+            model="gpt-4o", # Или gpt-4o-mini, gpt-4o, если доступны
             messages=[{"role": "user", "content": prompt}],
             max_tokens=1500,
             temperature=0.6,

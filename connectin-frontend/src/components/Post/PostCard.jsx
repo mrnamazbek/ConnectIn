@@ -1,6 +1,6 @@
 import { NavLink } from "react-router";
 import { faBookmark as faBookmarkRegular, faComment, faHeart } from "@fortawesome/free-regular-svg-icons";
-import { faBookmark as faBookmarkSolid, faHeart as faHeartSolid } from "@fortawesome/free-solid-svg-icons";
+import { faBookmark as faBookmarkSolid, faHeart as faHeartSolid, faUser } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
 import { toast } from "react-toastify";
@@ -52,15 +52,19 @@ export const PostCard = ({ post, showReadButton = true, onLike, onSave, isLiked 
     return (
         <div className="bg-white dark:bg-gray-800 dark:text-gray-300 border border-green-700 rounded-md shadow-md p-5 hover:shadow-lg transition-shadow">
             <div className="flex items-center mb-4">
-                <div className="relative w-8 h-8">
-                    <img
-                        src={author.avatar_url || "https://via.placeholder.com/150"}
-                        alt={author.username || "User"}
-                        className="w-full h-full rounded-full object-cover border-2 border-green-700 dark:border-green-500"
-                        onError={(e) => {
-                            e.target.src = "https://via.placeholder.com/150";
-                        }}
-                    />
+                <div className="relative w-8 h-8 flex items-center justify-center rounded-full border-2 border-green-700 dark:border-green-500 bg-gray-100 dark:bg-gray-700">
+                    {author.avatar_url ? (
+                        <img
+                            src={author.avatar_url}
+                            alt={author.username || "User"}
+                            className="w-full h-full rounded-full object-cover"
+                            onError={(e) => {
+                                e.target.src = "";
+                            }}
+                        />
+                    ) : (
+                        <FontAwesomeIcon icon={faUser} className="text-gray-500 dark:text-gray-400" />
+                    )}
                 </div>
                 <p className="text-sm font-semibold ml-2">{author.username || "Unknown"}</p>
             </div>

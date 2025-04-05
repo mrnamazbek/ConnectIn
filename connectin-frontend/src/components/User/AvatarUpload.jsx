@@ -55,7 +55,7 @@ const AvatarUpload = ({ user, onAvatarUpdate }) => {
     return (
         <div className="relative group">
             <img
-                src={user.avatar_url || "https://via.placeholder.com/150"}
+                src={user.avatar_url || ""}
                 alt="Profile"
                 className="w-32 h-32 rounded-full object-cover border-4 border-green-700 dark:border-green-500 shadow-lg"
             />

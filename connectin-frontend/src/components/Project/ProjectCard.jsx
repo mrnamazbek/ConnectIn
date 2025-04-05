@@ -100,7 +100,7 @@ const ProjectCard = ({ project, currentUser, handleApply, handleUpvote, handleDo
             )}
 
             <h3 className="text-lg font-bold mb-2">{project.name || "Untitled Project"}</h3>
-            <p className="text-gray-700 dark:text-gray-300 mb-3">{project.description || "No description available."}</p>
+            <p className="text-gray-700 dark:text-gray-300 mb-3" dangerouslySetInnerHTML={{ __html: project.description || "No description available." }} />
 
             <div className="mt-3 flex flex-wrap gap-2 mb-4">
                 {project.skills?.length > 0 ? (

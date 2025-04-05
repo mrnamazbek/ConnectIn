@@ -16,7 +16,7 @@ from fastapi import Query, HTTPException
 from typing import List
 
 from app.database.connection import get_db
-from app.models import Tag
+from app.models import Tag, Skill
 from app.models.project import Project
 from app.models.user import User
 from app.schemas.project import ProjectCreate, ProjectOut, ProjectProfileOut, ProjectUpdate
@@ -64,21 +64,17 @@ def create_project(
 
     # Добавляем теги, если они переданы
     if project_data.tag_ids:
-        for tag_id in project_data.tag_ids:
-            db.execute(
-                project_tags_association.insert().values(
-                    project_id=new_project.id, tag_id=tag_id
-                )
-            )
+        selected_tags = db.query(Tag).filter(Tag.id.in_(project_data.tag_ids)).all()
+        if not selected_tags:
+            raise HTTPException(status_code=400, detail="Invalid tags selected.")
+        new_project.tags = selected_tags
 
     # Добавляем навыки, если они переданы
     if project_data.skill_ids:
-        for skill_id in project_data.skill_ids:
-            db.execute(
-                project_skills_association.insert().values(
-                    project_id=new_project.id, skill_id=skill_id
-                )
-            )
+        selected_skills = db.query(Skill).filter(Skill.id.in_(project_data.skill_ids)).all()
+        if not selected_skills:
+            raise HTTPException(status_code=400, detail="Invalid skills selected.")
+        new_project.skills = selected_skills
 
     db.commit()
     db.refresh(new_project)
@@ -89,8 +85,8 @@ def create_project(
         name=new_project.name,
         description=new_project.description,
         owner=UserOut.model_validate(new_project.owner) if new_project.owner else None,
-        tags=[TagOut.model_validate(tag) for tag in new_project.tags],
-        skills=[SkillOut.model_validate(skill) for skill in new_project.skills],
+        tags=[TagOut(id=tag.id, name=tag.name) for tag in new_project.tags],
+        skills=[SkillOut(id=skill.id, name=skill.name) for skill in new_project.skills],
         members=[UserOut.model_validate(user) for user in new_project.members],
         applicants=[UserOut.model_validate(user) for user in new_project.applicants],
         comments_count=len(new_project.comments),

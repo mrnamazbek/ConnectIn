@@ -11,8 +11,6 @@ const PublishPage = () => {
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [postType, setPostType] = useState("news");
-    const [projectId, setProjectId] = useState("");
-    const [teamId, setTeamId] = useState("");
     const [skills, setSkills] = useState([]);
     const [tags, setTags] = useState([]);
     const [selectedTags, setSelectedTags] = useState([]);
@@ -93,26 +91,33 @@ const PublishPage = () => {
                 return;
             }
 
-            const payload = {
-                title,
-                content,
-                post_type: postType,
-                project_id: projectId ? parseInt(projectId) : null,
-                team_id: teamId ? parseInt(teamId) : null,
-                tag_ids: selectedTags,
-                skill_ids: postType === "project" ? selectedSkills : [],
-            };
+            // Choose the appropriate endpoint and payload structure based on postType
+            const endpoint = postType === "project" 
+                ? `${import.meta.env.VITE_API_URL}/projects/`
+                : `${import.meta.env.VITE_API_URL}/posts/`;
 
-            await axios.post(`${import.meta.env.VITE_API_URL}/posts/`, payload, {
+            const payload = postType === "project" 
+                ? {
+                    name: title,
+                    description: content,
+                    tag_ids: selectedTags,
+                    skill_ids: selectedSkills,
+                }
+                : {
+                    title,
+                    content,
+                    tag_ids: selectedTags,
+                    skill_ids: postType === "project" ? selectedSkills : [],
+                };
+
+            await axios.post(endpoint, payload, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            toast.success("Post created successfully!");
+            toast.success("Created successfully!");
             setTitle("");
             setContent("");
             setPostType("news");
-            setProjectId("");
-            setTeamId("");
             setSelectedTags([]);
             setSelectedSkills([]);
         } catch (error) {

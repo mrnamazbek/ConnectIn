@@ -1,26 +1,30 @@
 # app/database/connection.py
 
 from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+import os
 from typing import Generator
 
 from app.core.config import settings
 
-# Создаём движок SQLAlchemy, используя настройки из config
 engine = create_engine(
-    str(settings.DATABASE_URL),  # из Settings
-    echo=False,             # echo=True для отладки, пишет SQL в консоль
-    future=True,            # API SQLAlchemy 2.0
-    pool_recycle=3600       # переподключение к базе каждый час
+    str(settings.DATABASE_URL),
+    pool_size=20,
+    max_overflow=30,
+    pool_timeout=60,
+    pool_recycle=1800,
+    pool_pre_ping=True
 )
 
-# создаём фабрику сессий
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
     bind=engine,
     future=True
 )
+
+Base = declarative_base()
 
 def get_db() -> Generator:
     """

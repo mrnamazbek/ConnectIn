@@ -5,7 +5,7 @@
 - Удаление своей учетной записи.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Union
 
@@ -18,6 +18,7 @@ from app.schemas.user import UserOut, UserUpdate, EducationCreate, ExperienceCre
 from app.schemas.skill import SkillOut
 from app.api.v1.auth import get_current_user, create_access_token
 from app.core.config import settings
+from app.utils.s3 import s3_service
 
 router = APIRouter()
 
@@ -354,27 +355,31 @@ def delete_own_profile(
     db.commit()
     return {"detail": "Ваш аккаунт был удалён"}
 
-@router.patch("/me/avatar", response_model=UserOut, summary="Обновить аватар профиля")
-def update_avatar(
-    avatar_data: AvatarUpdate,
+@router.patch("/me/avatar", response_model=UserOut)
+async def update_avatar(
+    file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Обновляет URL аватара для профиля пользователя.
-    Принимает JSON с полем avatar_url, содержащим URL изображения.
+    Update user avatar with file upload.
     """
-    # Валидация URL (простая проверка)
-    if not avatar_data.avatar_url.startswith(('http://', 'https://')):
+    try:
+        # Upload new avatar to S3
+        avatar_url = await s3_service.upload_avatar(file, current_user.id)
+        
+        # Update user's avatar URL
+        current_user.avatar_url = avatar_url
+        db.commit()
+        db.refresh(current_user)
+        
+        return current_user
+    except Exception as e:
+        db.rollback()
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="URL аватара должен начинаться с http:// или https://"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update avatar: {str(e)}"
         )
-    
-    current_user.avatar_url = avatar_data.avatar_url
-    db.commit()
-    db.refresh(current_user)
-    return current_user
 
 @router.patch("/me/status", response_model=UserOut, summary="Обновить статус пользователя")
 def update_status(

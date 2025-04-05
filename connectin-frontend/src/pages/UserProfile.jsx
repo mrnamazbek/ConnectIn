@@ -11,6 +11,7 @@ import SkillsSection from "./SkillsSection";
 import ActionsSection from "./ActionsSection";
 import SavedPostsSection from "./SavedPostsSection";
 import { motion, AnimatePresence } from "framer-motion";
+import AvatarUpload from "../components/User/AvatarUpload";
 
 const UserProfile = () => {
     const navigate = useNavigate();
@@ -251,6 +252,10 @@ const UserProfile = () => {
         }
     };
 
+    const handleAvatarUpdate = (newAvatarUrl) => {
+        setUser(prev => ({ ...prev, avatar_url: newAvatarUrl }));
+    };
+
     return (
         <div className="max-w-7xl mx-auto py-8">
             <div className="grid grid-cols-1 lg:grid-cols-8 gap-6">
@@ -267,12 +272,7 @@ const UserProfile = () => {
                                 <div className="flex flex-col md:flex-row gap-6">
                                     {/* Profile Image */}
                                     <motion.div whileHover={{ scale: 1.05 }} className="relative flex-shrink-0">
-                                        <img src={user.avatar_url || "https://media.tenor.com/HmFcGkSu58QAAAAM/silly.gif"} alt="Profile" className="w-32 h-32 rounded-full object-cover border-4 border-green-700 dark:border-green-500 shadow-lg" />
-                                        {editMode && (
-                                            <motion.button whileHover={{ scale: 1.1 }} className="absolute bottom-0 right-0 bg-green-700 dark:bg-green-600 text-white p-2 rounded-full shadow-lg hover:bg-green-600 dark:hover:bg-green-500 transition-colors">
-                                                <FontAwesomeIcon icon={faEdit} />
-                                            </motion.button>
-                                        )}
+                                        <AvatarUpload user={user} onAvatarUpdate={handleAvatarUpdate} />
                                     </motion.div>
 
                                     {/* Profile Info */}

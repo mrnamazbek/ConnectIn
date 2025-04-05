@@ -6,6 +6,8 @@ from app.core.config import settings
 from typing import Optional
 import uuid
 import logging
+from PIL import Image
+import io
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +19,7 @@ class S3Service:
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
             region_name=settings.AWS_REGION
         )
-        self.bucket = settings.AWS_S3_BUCKET_NAME
+        self.bucket = settings.AWS_BUCKET_NAME
 
     def generate_presigned_url(self, object_name: str, expiration: int = 3600) -> str:
         """Generate presigned URL for secure uploads/downloads"""
@@ -31,23 +33,53 @@ class S3Service:
             logger.error(f"S3 Presign Error: {str(e)}")
             raise HTTPException(500, "Failed to generate secure URL")
 
-    async def upload_file(self, file: UploadFile, prefix: str = "uploads") -> str:
-        """Upload file with content type detection and UUID filename"""
+    async def upload_avatar(self, file: UploadFile, user_id: int) -> str:
+        """Upload user avatar with validation and optimization"""
         try:
-            object_name = f"{prefix}/{uuid.uuid4()}{file.filename[-4:]}"
+            # Validate file type
+            if not file.content_type.startswith('image/'):
+                raise HTTPException(400, "File must be an image")
+
+            # Read file content
+            contents = await file.read()
+            
+            # Validate image
+            try:
+                image = Image.open(io.BytesIO(contents))
+                # Convert to RGB if necessary
+                if image.mode in ('RGBA', 'LA') or (image.mode == 'P' and 'transparency' in image.info):
+                    image = image.convert('RGB')
+                
+                # Resize if too large
+                max_size = (800, 800)
+                image.thumbnail(max_size, Image.Resampling.LANCZOS)
+                
+                # Convert back to bytes
+                output = io.BytesIO()
+                image.save(output, format='JPEG', quality=85)
+                contents = output.getvalue()
+            except Exception as e:
+                raise HTTPException(400, "Invalid image file")
+
+            # Generate unique filename
+            file_extension = '.jpg'
+            object_name = f"user-avatars/{user_id}/{uuid.uuid4()}{file_extension}"
+
+            # Upload to S3
             await self.client.upload_fileobj(
-                file.file,
+                io.BytesIO(contents),
                 self.bucket,
                 object_name,
                 ExtraArgs={
-                    'ContentType': file.content_type,
+                    'ContentType': 'image/jpeg',
                     'ACL': 'public-read'
                 }
             )
+
             return f"https://{self.bucket}.s3.amazonaws.com/{object_name}"
         except (NoCredentialsError, ClientError) as e:
             logger.error(f"S3 Upload Error: {str(e)}")
-            raise HTTPException(500, "File upload failed")
+            raise HTTPException(500, "Failed to upload avatar")
         finally:
             await file.close()
 

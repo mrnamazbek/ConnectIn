@@ -52,12 +52,16 @@ export const PostCard = ({ post, showReadButton = true, onLike, onSave, isLiked 
     return (
         <div className="bg-white dark:bg-gray-800 dark:text-gray-300 border border-green-700 rounded-md shadow-md p-5 hover:shadow-lg transition-shadow">
             <div className="flex items-center mb-4">
-                <img
-                    src={author.avatar_url || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
-                    alt={author.username || "User"}
-                    className="w-8 h-8 rounded-full border hover:ring-2 hover:ring-green-500 transition"
-                    onError={(e) => (e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png")}
-                />
+                <div className="relative w-8 h-8">
+                    <img
+                        src={author.avatar_url || "https://via.placeholder.com/150"}
+                        alt={author.username || "User"}
+                        className="w-full h-full rounded-full object-cover border-2 border-green-700 dark:border-green-500"
+                        onError={(e) => {
+                            e.target.src = "https://via.placeholder.com/150";
+                        }}
+                    />
+                </div>
                 <p className="text-sm font-semibold ml-2">{author.username || "Unknown"}</p>
             </div>
 

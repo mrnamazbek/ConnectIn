@@ -103,7 +103,7 @@ const PublishPage = () => {
                 skill_ids: postType === "project" ? selectedSkills : [],
             };
 
-            await axios.post(`${import.meta.env.VITE_API_URL}/posts`, payload, {
+            await axios.post(`${import.meta.env.VITE_API_URL}/posts/`, payload, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 

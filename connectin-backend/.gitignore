@@ -1,14 +1,92 @@
-alembic.ini
+# -----------------------------
+# Общие временные файлы ОС и редакторов
+# -----------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+*.bak
+*.orig
 
-# Ignore compiled Python files
-__pycache__/
-*.pyc
-*.pyo
+# -----------------------------
+# Python / Backend
+# -----------------------------
+# Кэш байт-кода
+**/__pycache__/
+**/*.py[cod]
+*$py.class
 
-# Ignore database credentials
+# Виртуальные окружения
+.venv/
+venv/
+env/
+ENV/
+
+# Пакеты и сборки
+*.egg-info/
+dist/
+build/
+pip-wheel-metadata/
+
+# Логи и БД для разработки
+*.log
+*.sqlite3
+*.db
+
+# Alembic
+alembic/versions/*.pyc
+
+# Тесты
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Конфиги окружения
 .env
-.env.local
+*.env
 
-# Ignore alembic cache (optional)
-alembic/versions/__pycache__/
-.env
+# -----------------------------
+# Frontend (Vite / React)
+# -----------------------------
+# Папка зависимостей
+connectin-frontend/node_modules/
+
+# Сборка / кеш
+connectin-frontend/dist/
+connectin-frontend/build/
+connectin-frontend/.vite/
+
+# Логи npm/yarn
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Конфиги окружения фронтенда
+connectin-frontend/.env*
+connectin-frontend/*.local
+
+# -----------------------------
+# ML / Data Science
+# -----------------------------
+ml_service/__pycache__/
+ml_service/*.pkl
+*.ipynb_checkpoints
+
+# -----------------------------
+# IDE / Editor
+# -----------------------------
+# PyCharm
+.idea/
+# VSCode
+.vscode/
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
+# -----------------------------
+# Прочие
+# -----------------------------
+# Docker
+docker-compose.override.yml
+# Файлы локальных настроек
+*.local

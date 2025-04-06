@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional, List
 
 from pydantic import BaseModel
@@ -26,8 +27,11 @@ class ProjectBase(BaseModel):
 class EducationBase(BaseModel):
     institution: str = Field(..., max_length=255)
     degree: str = Field(..., max_length=255)
-    start_year: int
-    end_year: Optional[int]  # ✅ May be empty if education is ongoing
+    start_year: date
+    end_year: Optional[date] = None # ✅ May be empty if education is ongoing
+    field_of_study: Optional[str] = Field(None, max_length=255)
+    relevant_courses: Optional[str] = None
+    description: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -40,15 +44,20 @@ class EducationUpdate(BaseModel):
     """Schema for updating an education entry."""
     institution: Optional[str] = Field(None, max_length=255)
     degree: Optional[str] = Field(None, max_length=255)
-    start_year: Optional[int] = None
-    end_year: Optional[int] = None
+    start_year: Optional[date] = None
+    end_year: Optional[date] = None
+    field_of_study: Optional[str] = Field(None, max_length=255)
+    relevant_courses: Optional[str] = None
+    description: Optional[str] = None
     
 class EducationOut(BaseModel):
     id: int  # ✅ Ensure `id` is included
     institution: str
     degree: str
-    start_year: int
-    end_year: Optional[int]
+    field_of_study: str
+    start_year: date
+    end_year: Optional[date] = None
+    description: Optional[str] = None
     
     class Config:
         from_attributes = True  # ✅ FIXED: Use `from_attributes` to support ORM conversion
@@ -57,8 +66,11 @@ class EducationOut(BaseModel):
 class ExperienceBase(BaseModel):
     company: str = Field(..., max_length=255)
     role: str = Field(..., max_length=255)
-    start_year: int
-    end_year: Optional[int]  # ✅ May be empty if job is ongoing
+    # 4. Заменяем _year на _date
+    start_year: date
+    end_year: Optional[date] = None # Дата может быть None, если работа продолжается
+    # 5. Добавляем новое поле
+    description: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -68,18 +80,19 @@ class ExperienceCreate(ExperienceBase):
     pass
 
 class ExperienceUpdate(BaseModel):
-    """Schema for updating an experience entry."""
+    """Схема для ОБНОВЛЕНИЯ записи об опыте (все поля опциональны)."""
     company: Optional[str] = Field(None, max_length=255)
     role: Optional[str] = Field(None, max_length=255)
-    start_year: Optional[int] = None
-    end_year: Optional[int] = None
+    start_year: Optional[date] = None
+    end_year: Optional[date] = None
+    description: Optional[str] = None
     
-class ExperienceOut(BaseModel):
+class ExperienceOut(ExperienceBase):
     id: int
-    company: str 
-    role: str 
-    start_year: int
-    end_year: Optional[int]  # ✅ May be empty if job is ongoing
+    # company: str
+    # role: str
+    # start_year: int
+    # end_year: Optional[int]  # ✅ May be empty if job is ongoing
 
     class Config:
         from_attributes = True  # ✅ FIXED: Use `from_attributes` to support ORM conversion

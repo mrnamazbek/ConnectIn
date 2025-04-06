@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, Text, Date
 from sqlalchemy.orm import relationship
 from .base import Base
 from .relations.associations import user_teams_association, project_members_association, project_applications, user_skills_association, conversation_participants, todo_watchers_association, todo_tags_association
@@ -68,8 +68,10 @@ class Education(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     institution = Column(String(255), nullable=False)
     degree = Column(String(255), nullable=False)
-    start_year = Column(Integer, nullable=False)
-    end_year = Column(Integer, nullable=True)
+    field_of_study = Column(String(255), nullable=True)
+    start_year = Column(Date, nullable=False)
+    end_year = Column(Date, nullable=True)
+    relevant_courses = Column(Text, nullable=True)
     
     user = relationship("User", back_populates="education")
 
@@ -79,7 +81,8 @@ class Experience(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     company = Column(String(255), nullable=False)
     role = Column(String(255), nullable=False)
-    start_year = Column(Integer, nullable=False)
-    end_year = Column(Integer, nullable=True)
-    
+    start_year = Column(Date, nullable=False)
+    end_year = Column(Date, nullable=True)
+    description = Column(Text, nullable=True)
+
     user = relationship("User", back_populates="experience")

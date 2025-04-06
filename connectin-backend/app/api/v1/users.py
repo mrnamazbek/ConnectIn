@@ -4,7 +4,7 @@
 - Просмотр и обновление профиля текущего пользователя.
 - Удаление своей учетной записи.
 """
-
+#fix
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Union
@@ -499,7 +499,7 @@ def update_contact_info(
                 detail="Этот email уже используется другим пользователем."
             )
         identity_changed = True
-    
+      ## fix
     # Проверка уникальности username
     if contact_info.username and contact_info.username != current_user.username:
         existing_user = db.query(User).filter(User.username == contact_info.username).first()

@@ -54,7 +54,7 @@ class EducationOut(BaseModel):
     id: int  # ✅ Ensure `id` is included
     institution: str
     degree: str
-    field_of_study: str
+    field_of_study: Optional[str] = None  # Make field_of_study optional
     start_year: date
     end_year: Optional[date] = None
     description: Optional[str] = None

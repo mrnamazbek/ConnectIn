@@ -15,12 +15,9 @@ import AvatarUpload from "../components/User/AvatarUpload";
 
 const UserProfile = () => {
     const navigate = useNavigate();
-
-    //Resume Generator consts
-    const [loadingResume, setLoadingResume] = useState(false); // Загрузка AI резюме
-    const [resumeHtml, setResumeHtml] = useState(""); // Сгенерированный HTML резюме
-    const [errorResume, setErrorResume] = useState(""); // Ошибка генерации резюме
-
+    const [loadingResume, setLoadingResume] = useState(false);
+    const [resumeHtml, setResumeHtml] = useState("");
+    const [errorResume, setErrorResume] = useState("");
     const [user, setUser] = useState(null);
     const [skills, setSkills] = useState([]);
     const [availableSkills, setAvailableSkills] = useState([]);
@@ -32,8 +29,22 @@ const UserProfile = () => {
     const [loadingPosts, setLoadingPosts] = useState(true);
     const [showEducationForm, setShowEducationForm] = useState(false);
     const [showExperienceForm, setShowExperienceForm] = useState(false);
-    const [newEducation, setNewEducation] = useState({ institution: "", degree: "", start_year: "", end_year: "" });
-    const [newExperience, setNewExperience] = useState({ company: "", role: "", start_year: "", end_year: "" });
+    const [newEducation, setNewEducation] = useState({
+        institution: "",
+        degree: "",
+        field_of_study: "",
+        relevant_courses: "",
+        start_year: "",
+        end_year: "",
+        description: "",
+    });
+    const [newExperience, setNewExperience] = useState({
+        company: "",
+        role: "",
+        start_year: "",
+        end_year: "",
+        description: "",
+    });
     const [editMode, setEditMode] = useState(false);
     const [updatedUser, setUpdatedUser] = useState({
         first_name: "",
@@ -50,8 +61,6 @@ const UserProfile = () => {
     const [loadingSavedPosts, setLoadingSavedPosts] = useState(true);
 
     const degreeOptions = ["High School Diploma", "Associate's Degree", "Bachelor's Degree", "Master's Degree", "PhD", "Other"];
-    const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
 
     useEffect(() => {
         const fetchAllData = async () => {
@@ -170,30 +179,39 @@ const UserProfile = () => {
     //end Resume Generator function
 
     const handleAddEducation = async () => {
-        if (!newEducation.institution || !newEducation.degree || !newEducation.start_year || !newEducation.end_year) {
-            toast.error("All fields are required");
+        if (!newEducation.institution || !newEducation.degree || !newEducation.start_year) {
+            toast.error("Required fields are missing");
             return;
         }
 
         try {
             const token = localStorage.getItem("access_token");
-            const response = await axios.post(
-                `${import.meta.env.VITE_API_URL}/users/me/education`,
-                {
-                    ...newEducation,
-                    start_year: parseInt(newEducation.start_year, 10),
-                    end_year: parseInt(newEducation.end_year, 10),
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const educationData = {
+                institution: newEducation.institution,
+                degree: newEducation.degree,
+                field_of_study: newEducation.field_of_study || null,
+                relevant_courses: newEducation.relevant_courses || null,
+                description: newEducation.description || null,
+                start_year: new Date(newEducation.start_year).toISOString(),
+                end_year: newEducation.end_year ? new Date(newEducation.end_year).toISOString() : null,
+            };
+
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/users/me/education`, educationData, { headers: { Authorization: `Bearer ${token}` } });
 
             setEducation([...education, response.data]);
-            setNewEducation({ institution: "", degree: "", start_year: "", end_year: "" });
+            setNewEducation({
+                institution: "",
+                degree: "",
+                field_of_study: "",
+                relevant_courses: "",
+                start_year: "",
+                end_year: "",
+            });
             setShowEducationForm(false);
             toast.success("Education added successfully");
         } catch (error) {
             console.error("Failed to add education:", error);
-            toast.error("Failed to add education. Please try again.");
+            toast.error(error.response?.data?.detail || "Failed to add education. Please try again.");
         }
     };
 
@@ -213,8 +231,8 @@ const UserProfile = () => {
     };
 
     const handleAddExperience = async () => {
-        if (!newExperience.company || !newExperience.role || !newExperience.start_year || !newExperience.end_year) {
-            toast.error("All fields are required");
+        if (!newExperience.company || !newExperience.role || !newExperience.start_year) {
+            toast.error("Required fields are missing");
             return;
         }
 
@@ -224,14 +242,20 @@ const UserProfile = () => {
                 `${import.meta.env.VITE_API_URL}/users/me/experience`,
                 {
                     ...newExperience,
-                    start_year: parseInt(newExperience.start_year, 10),
-                    end_year: parseInt(newExperience.end_year, 10),
+                    start_year: new Date(newExperience.start_year).toISOString(),
+                    end_year: newExperience.end_year ? new Date(newExperience.end_year).toISOString() : null,
                 },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
             setExperience([...experience, response.data]);
-            setNewExperience({ company: "", role: "", start_year: "", end_year: "" });
+            setNewExperience({
+                company: "",
+                role: "",
+                start_year: "",
+                end_year: "",
+                description: "",
+            });
             setShowExperienceForm(false);
             toast.success("Experience added successfully");
         } catch (error) {
@@ -523,10 +547,13 @@ const UserProfile = () => {
                                     <motion.div key={edu.id} whileHover={{ scale: 1.02 }} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
                                         <div className="flex justify-between items-start">
                                             <div className="min-w-0">
-                                                <h4 className="font-medium text-gray-800 dark:text-white truncate">{edu.institution}</h4>
-                                                <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{edu.degree}</p>
+                                                {edu.institution && <p className="font-medium text-gray-800 dark:text-white truncate">{edu.institution}</p>}
+                                                {edu.field_of_study && <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{edu.field_of_study}</p>}
+                                                {edu.degree && <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{edu.degree}</p>}
+                                                {edu.relevant_courses && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Courses: {edu.relevant_courses}</p>}
+                                                {edu.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{edu.description}</p>}
                                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                    {edu.start_year} - {edu.end_year}
+                                                    {new Date(edu.start_year).toLocaleDateString()} - {edu.end_year ? new Date(edu.end_year).toLocaleDateString() : "Present"}
                                                 </p>
                                             </div>
                                             <motion.button whileHover={{ scale: 1.1 }} onClick={() => handleDeleteEducation(edu.id)} className="text-red-500 cursor-pointer dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors flex-shrink-0 ml-2">
@@ -545,12 +572,7 @@ const UserProfile = () => {
                                             placeholder="Institution"
                                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                                             value={newEducation.institution}
-                                            onChange={(e) =>
-                                                setNewEducation({
-                                                    ...newEducation,
-                                                    institution: e.target.value,
-                                                })
-                                            }
+                                            onChange={(e) => setNewEducation({ ...newEducation, institution: e.target.value })}
                                         />
                                         <select
                                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -564,42 +586,39 @@ const UserProfile = () => {
                                                 </option>
                                             ))}
                                         </select>
+                                        <input
+                                            type="text"
+                                            placeholder="Field of Study"
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                                            value={newEducation.field_of_study}
+                                            onChange={(e) => setNewEducation({ ...newEducation, field_of_study: e.target.value })}
+                                        />
+                                        <textarea
+                                            placeholder="Relevant Courses"
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                                            value={newEducation.relevant_courses}
+                                            onChange={(e) => setNewEducation({ ...newEducation, relevant_courses: e.target.value })}
+                                        />
                                         <div className="grid grid-cols-2 gap-3">
-                                            <select
+                                            <input
+                                                type="date"
                                                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                                 value={newEducation.start_year}
-                                                onChange={(e) =>
-                                                    setNewEducation({
-                                                        ...newEducation,
-                                                        start_year: e.target.value,
-                                                    })
-                                                }
-                                            >
-                                                <option value="">Start Year</option>
-                                                {years.map((year) => (
-                                                    <option key={year} value={year}>
-                                                        {year}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <select
+                                                onChange={(e) => setNewEducation({ ...newEducation, start_year: e.target.value })}
+                                            />
+                                            <input
+                                                type="date"
                                                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                                 value={newEducation.end_year}
-                                                onChange={(e) =>
-                                                    setNewEducation({
-                                                        ...newEducation,
-                                                        end_year: e.target.value,
-                                                    })
-                                                }
-                                            >
-                                                <option value="">End Year</option>
-                                                {years.map((year) => (
-                                                    <option key={year} value={year}>
-                                                        {year}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                                onChange={(e) => setNewEducation({ ...newEducation, end_year: e.target.value })}
+                                            />
                                         </div>
+                                        <textarea
+                                            placeholder="Relevant Courses"
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                                            value={newEducation.description}
+                                            onChange={(e) => setNewEducation({ ...newEducation, description: e.target.value })}
+                                        />
                                         <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleAddEducation} className="w-full cursor-pointer px-4 py-2 bg-green-700 dark:bg-green-600 text-white rounded-lg hover:bg-green-600 dark:hover:bg-green-500 transition-colors">
                                             Add Education
                                         </motion.button>
@@ -627,8 +646,9 @@ const UserProfile = () => {
                                             <div className="min-w-0">
                                                 <h4 className="font-medium text-gray-800 dark:text-white truncate">{exp.company}</h4>
                                                 <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{exp.role}</p>
+                                                {exp.description && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{exp.description}</p>}
                                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                    {exp.start_year} - {exp.end_year}
+                                                    {new Date(exp.start_year).toLocaleDateString()} - {exp.end_year ? new Date(exp.end_year).toLocaleDateString() : "Present"}
                                                 </p>
                                             </div>
                                             <motion.button whileHover={{ scale: 1.1 }} onClick={() => handleDeleteExperience(exp.id)} className="text-red-500 cursor-pointer dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors flex-shrink-0 ml-2">
@@ -647,12 +667,7 @@ const UserProfile = () => {
                                             placeholder="Company"
                                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                                             value={newExperience.company}
-                                            onChange={(e) =>
-                                                setNewExperience({
-                                                    ...newExperience,
-                                                    company: e.target.value,
-                                                })
-                                            }
+                                            onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })}
                                         />
                                         <input
                                             type="text"
@@ -661,41 +676,25 @@ const UserProfile = () => {
                                             value={newExperience.role}
                                             onChange={(e) => setNewExperience({ ...newExperience, role: e.target.value })}
                                         />
+                                        <textarea
+                                            placeholder="Description"
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                                            value={newExperience.description}
+                                            onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
+                                        />
                                         <div className="grid grid-cols-2 gap-3">
-                                            <select
+                                            <input
+                                                type="date"
                                                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                                 value={newExperience.start_year}
-                                                onChange={(e) =>
-                                                    setNewExperience({
-                                                        ...newExperience,
-                                                        start_year: e.target.value,
-                                                    })
-                                                }
-                                            >
-                                                <option value="">Start Year</option>
-                                                {years.map((year) => (
-                                                    <option key={year} value={year}>
-                                                        {year}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <select
+                                                onChange={(e) => setNewExperience({ ...newExperience, start_year: e.target.value })}
+                                            />
+                                            <input
+                                                type="date"
                                                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                                 value={newExperience.end_year}
-                                                onChange={(e) =>
-                                                    setNewExperience({
-                                                        ...newExperience,
-                                                        end_year: e.target.value,
-                                                    })
-                                                }
-                                            >
-                                                <option value="">End Year</option>
-                                                {years.map((year) => (
-                                                    <option key={year} value={year}>
-                                                        {year}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                                onChange={(e) => setNewExperience({ ...newExperience, end_year: e.target.value })}
+                                            />
                                         </div>
                                         <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleAddExperience} className="w-full cursor-pointer px-4 py-2 bg-green-700 dark:bg-green-600 text-white rounded-lg hover:bg-green-600 dark:hover:bg-green-500 transition-colors">
                                             Add Experience

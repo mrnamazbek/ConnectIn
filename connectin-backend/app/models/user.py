@@ -72,6 +72,7 @@ class Education(Base):
     start_year = Column(Date, nullable=False)
     end_year = Column(Date, nullable=True)
     relevant_courses = Column(Text, nullable=True)
+    description = Column(Text, nullable=True)
     
     user = relationship("User", back_populates="education")
 

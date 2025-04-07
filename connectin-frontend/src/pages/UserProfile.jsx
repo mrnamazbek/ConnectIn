@@ -12,6 +12,8 @@ import ActionsSection from "./ActionsSection";
 import SavedPostsSection from "./SavedPostsSection";
 import { motion, AnimatePresence } from "framer-motion";
 import AvatarUpload from "../components/User/AvatarUpload";
+import '../index.css';
+
 
 const UserProfile = () => {
     const navigate = useNavigate();
@@ -706,93 +708,107 @@ const UserProfile = () => {
                     </div>
                 </motion.div>
 
-                {/* === Начало Секции Генерации AI Резюме === */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }} // Небольшая задержка для красивого появления
-                    className="lg:col-span-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-purple-400 dark:border-purple-600 overflow-hidden hover:shadow-xl transition-all duration-300" // Фиолетовая рамка для отличия
+                {/* ================================================================ */}
+        {/* === НАЧАЛО Обновленной Секции Генерации AI Резюме === */}
+        {/* ================================================================ */}
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            // Используем стандартную рамку, как у других карточек
+            className="lg:col-span-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300"
+        >
+            <div className="p-6">
+                <div className="flex items-center gap-3 mb-4"> {/* Увеличил gap */}
+                    {/* Используем основной зеленый цвет */}
+                    <FontAwesomeIcon icon={faRobot} className="text-green-600 dark:text-green-400 text-xl" />
+                    <h2 className="text-lg font-semibold text-gray-800 dark:text-white">AI Resume Generator</h2>
+                </div>
+
+                <p className="text-gray-600 dark:text-gray-400 mb-5 text-sm"> {/* Увеличил mb */}
+                    Create a professional resume based on your profile data using AI. The result will be in English.
+                    <br />
+                    <span className="text-xs opacity-70 italic">(Tip: The more complete your Experience and Education sections are (especially with descriptions!), the better the result.)</span>
+                </p>
+
+                {/* Кнопка генерации в стиле основной кнопки */}
+                <button
+                    onClick={handleGenerateAiResume}
+                    disabled={loadingResume}
+                    className="px-5 py-2.5 bg-green-700 text-white font-semibold cursor-pointer rounded-lg shadow-md hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-500 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                 >
-                    <div className="p-6">
-                        <div className="flex items-center gap-2 mb-4">
-                            <FontAwesomeIcon icon={faRobot} className="text-purple-600 dark:text-purple-400 text-xl" />
-                            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">AI Resume Generator</h2>
-                        </div>
+                    {loadingResume ? (
+                        <> <FontAwesomeIcon icon={faSpinner} spin className="mr-2" /> Generating... </>
+                    ) : (
+                        <> <FontAwesomeIcon icon={faRobot} className="mr-2" /> Generate with AI </>
+                    )}
+                </button>
 
-                        <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
-                            Создайте профессиональное резюме на основе данных вашего профиля с помощью AI.
-                            <br />
-                            <span className="text-xs opacity-70">Совет: Чем полнее заполнены разделы Опыт и Образование (включая описания, если вы их добавите), тем лучше будет результат!</span>
-                        </p>
+                {/* === Область для отображения результата === */}
+                {/* Индикатор загрузки */}
+                <AnimatePresence>
+                    {loadingResume && (
+                        <motion.div
+                            key="loading-ai"
+                            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                            className="mt-6 text-center p-4"
+                            aria-live="polite" // Для доступности
+                         >
+                            <FontAwesomeIcon icon={faSpinner} spin size="2x" className="text-green-500" />
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Generating your resume...</p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
-                        <button onClick={handleGenerateAiResume} disabled={loadingResume} className="px-5 py-2 bg-purple-600 text-white font-semibold cursor-pointer rounded-lg shadow-md hover:bg-purple-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                            {loadingResume ? (
-                                <>
-                                    <FontAwesomeIcon icon={faSpinner} spin className="mr-2" /> Generating...
-                                </>
-                            ) : (
-                                <>
-                                    <FontAwesomeIcon icon={faRobot} className="mr-2" /> Generate with AI
-                                </>
-                            )}
-                        </button>
+                {/* Сообщение об ошибке */}
+                 <AnimatePresence>
+                    {errorResume && !loadingResume && (
+                         <motion.div
+                            key="error-ai"
+                            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                            className="mt-6 p-4 bg-red-100 text-red-800 border border-red-300 rounded dark:bg-red-900/30 dark:text-red-300 dark:border-red-700"
+                            role="alert" // Для доступности
+                        >
+                            <p><strong>Error:</strong> {errorResume}</p>
+                        </motion.div>
+                     )}
+                 </AnimatePresence>
 
-                        {/* Область для отображения результата */}
-                        <AnimatePresence>
-                            {loadingResume && (
-                                <motion.div key="loading" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-4 text-center">
-                                    <FontAwesomeIcon icon={faSpinner} spin size="2x" className="text-purple-500" />
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                        <AnimatePresence>
-                            {errorResume && !loadingResume && (
-                                <motion.div key="error" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-4 p-4 bg-red-100 text-red-700 border border-red-300 rounded dark:bg-red-900 dark:text-red-200 dark:border-red-700">
-                                    <p>
-                                        <strong>Ошибка:</strong> {errorResume}
-                                    </p>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                        <AnimatePresence>
-                            {resumeHtml && !errorResume && !loadingResume && (
-                                <motion.div
-                                    key="resume"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="mt-6 border rounded-md p-4 dark:border-gray-600 prose dark:prose-invert max-w-none bg-gray-50 dark:bg-gray-700" // Добавил фон для читаемости
-                                >
-                                    <h3 className="text-lg font-semibold mb-3 dark:text-white">Generated Resume:</h3>
-                                    {/* Отображаем HTML. ВАЖНО: Осторожно с XSS! */}
-                                    <div dangerouslySetInnerHTML={{ __html: resumeHtml }} />
+                 {/* Отображение HTML результата */}
+                 <AnimatePresence>
+                     {resumeHtml && !errorResume && !loadingResume && (
+                         <motion.div
+                             key="resume-ai"
+                             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                             className="mt-6 border rounded-md p-5 dark:border-gray-600 max-w-none bg-gray-50 dark:bg-gray-900/50" // Фон для контраста
+                             aria-live="polite" // Для доступности
+                         >
+                             <h3 className="text-lg font-semibold mb-4 dark:text-white border-b pb-2 dark:border-gray-700">Generated AI Resume:</h3>
+                             {/* VVV УБРАЛИ классы prose, используем стили из index.css VVV */}
+                             <div className="resume-content" dangerouslySetInnerHTML={{ __html: resumeHtml }} />
 
-                                    {/* Кнопки Копировать/Скачать */}
-                                    <div className="mt-4 flex gap-2">
-                                        <button
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(resumeHtml);
-                                                toast.info("HTML скопирован в буфер обмена");
-                                            }}
-                                            className="px-3 py-1 bg-white dark:bg-gray-800 cursor-pointer text-green-700 dark:text-green-400 border border-green-700 dark:border-green-400 rounded hover:bg-green-50 dark:hover:bg-gray-700 transition"
-                                        >
-                                            <FontAwesomeIcon icon={faCopy} /> Copy HTML
-                                        </button>
-                                        <a
-                                            href={`data:text/html;charset=utf-8,${encodeURIComponent(
-                                                // Оборачиваем в базовый HTML для корректного отображения при скачивании
-                                                `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>AI Resume</title></head><body>${resumeHtml}</body></html>`
-                                            )}`}
-                                            download={`resume_${user?.username}_ai.html`}
-                                            className="px-3 py-1 bg-green-700 dark:bg-green-600 text-white rounded hover:bg-green-600 dark:hover:bg-green-500 transition"
-                                        >
-                                            <FontAwesomeIcon icon={faFileArrowDown} /> Download HTML
-                                        </a>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-                </motion.div>
+                             {/* Кнопки Копировать/Скачать */}
+                             <div className="mt-5 pt-4 border-t dark:border-gray-700 flex flex-wrap gap-3">
+                                 <button
+                                     onClick={() => { navigator.clipboard.writeText(resumeHtml); toast.info("HTML copied!"); }}
+                                     className="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition flex items-center gap-1.5 shadow-sm"
+                                 > <FontAwesomeIcon icon={faCopy} /> Copy HTML </button>
+                                 <a
+                                    href={`data:text/html;charset=utf-8,${encodeURIComponent( `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>AI Resume ${user?.username}</title><style>/* Basic styles for downloaded file */ body { font-family: sans-serif; line-height: 1.5; padding: 1em;} h2 { margin-top: 1.5em; border-bottom: 1px solid #eee; } ul { padding-left: 1.5em; list-style: disc;} </style></head><body><h1>Resume for ${user?.username}</h1>${resumeHtml}</body></html>` )}`}
+                                    download={`resume_${user?.username}_ai.html`}
+                                    className="px-3 py-1.5 text-xs border border-blue-600 dark:border-blue-500 rounded bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 transition flex items-center gap-1.5 shadow-sm"
+                                 > <FontAwesomeIcon icon={faFileArrowDown} /> Download HTML </a>
+                             </div>
+                         </motion.div>
+                    )}
+                 </AnimatePresence>
+                 {/* --- Конец Области отображения результата --- */}
+
+            </div>
+        </motion.div>
+        {/* ============================================================= */}
+        {/* === КОНЕЦ Обновленной Секции Генерации AI Резюме === */}
+        {/* ============================================================= */}
 
                 {/* Main Content Area */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="lg:col-span-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-green-700 dark:border-green-500 overflow-hidden hover:shadow-xl transition-all duration-300">

@@ -60,3 +60,168 @@
     color: var(--text-dark);
     background-color: var(--background-dark);
 }
+
+/* src/index.css (или другой ваш основной CSS файл) */
+
+/* Добавьте или замените стили для .resume-content */
+.resume-content {
+    /* font-family: 'Georgia', serif; */ /* Можно попробовать серифный шрифт */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* Стандартный системный шрифт */
+    line-height: 1.6; /* Немного увеличим межстрочный интервал */
+    color: #2d3748; /* dark:text-gray-700 */
+    font-size: 10.5pt; /* Базовый размер шрифта */
+}
+.dark .resume-content {
+    color: #cbd5e0; /* dark:text-gray-300 */
+}
+
+/* Имя (H1) */
+.resume-content h1 {
+    font-size: 22pt;
+    font-weight: 700;
+    text-align: center;
+    color: #1a3a2a; /* Темно-зеленый */
+    margin-bottom: 0.3em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.dark .resume-content h1 {
+    color: #9ae6b4; /* Светло-зеленый для темной темы */
+}
+
+/* Контактная информация под именем (P) */
+.resume-content h1 + p {
+    text-align: center;
+    font-size: 9.5pt;
+    color: #4a5568; /* dark:text-gray-400 */
+    margin-top: 0;
+    margin-bottom: 1.5em; /* Отступ после контактов */
+}
+.dark .resume-content h1 + p {
+    color: #a0aec0;
+}
+.resume-content h1 + p a {
+    color: #2d6a4f; /* Зеленый */
+    text-decoration: none;
+    margin: 0 0.4em;
+}
+.dark .resume-content h1 + p a {
+    color: #68d391; /* Светло-зеленый */
+}
+.resume-content h1 + p a:hover {
+    text-decoration: underline;
+}
+
+/* Заголовки Секций (H2 из Markdown ##) */
+.resume-content h2 {
+    font-size: 13pt;
+    font-weight: 600;
+    /* color: #0d47a1; */ /* Темно-синий, как вариант */
+    color: #2d6a4f; /* Или основной зеленый */
+    margin-top: 1.8em; /* Больше отступ сверху */
+    margin-bottom: 0.8em;
+    padding-bottom: 0.3em;
+    border-bottom: 1.5px solid #cbd5e0; /* Линия чуть толще, светлее */
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.dark .resume-content h2 {
+     /* color: #63b3ed; */ /* Светло-синий */
+     color: #9ae6b4; /* Светло-зеленый */
+     border-bottom-color: #4a5568; /* Темнее линия */
+}
+
+/* Подзаголовки внутри секций (H3 из Markdown ### - Должность/Университет) */
+.resume-content h3 {
+    font-size: 11pt;
+    font-weight: 700; /* Сделаем жирнее */
+    color: #1a3a2a; /* Темнее для акцента */
+    margin-top: 0.8em;
+    margin-bottom: 0.1em;
+}
+.dark .resume-content h3 {
+     color: #f0fff4; /* Очень светлый зеленый/белый */
+}
+
+/* Списки (UL) */
+.resume-content ul {
+    list-style: none;
+    padding-left: 0; /* Убираем стандартный отступ */
+    margin-top: 0.3em;
+}
+
+/* Элементы списка (LI) */
+.resume-content li {
+    margin-bottom: 0.7em;
+    padding-left: 0; /* Убираем отступ, если не нужны маркеры */
+}
+
+/* Описание внутри элемента списка (P внутри LI - для описания опыта/образования) */
+.resume-content li > p { /* Параграфы сразу внутри LI */
+    margin-top: 0.3em;
+    margin-bottom: 0.3em;
+    font-size: 10pt;
+    color: #4a5568;
+    padding-left: 1.5em; /* Добавляем отступ, если это описание */
+    position: relative;
+}
+/* Добавляем маркер для описаний */
+.resume-content li > p::before {
+    content: '*'; /* Используем звездочку как маркер */
+    position: absolute;
+    left: 0.5em;
+    top: 0.3em; /* Подберите позицию */
+    color: #4a5568;
+    font-weight: bold;
+}
+.dark .resume-content li > p {
+    color: #a0aec0;
+}
+.dark .resume-content li > p::before {
+     color: #a0aec0;
+}
+
+
+/* Даты (если AI выделяет их в *...*) */
+.resume-content em { /* Стилизуем курсив для дат */
+    font-size: 9pt;
+    font-style: italic;
+    color: #718096; /* dark:text-gray-500 */
+    display: block; /* На новой строке */
+    margin-bottom: 0.4em;
+    margin-top: 0.1em;
+}
+.dark .resume-content em {
+     color: #718096;
+}
+
+
+/* Жирный текст (strong из Markdown **) */
+.resume-content strong {
+    font-weight: 600; /* Уже жирный, можно увеличить */
+    color: #1a3a2a; /* Темно-зеленый */
+}
+.dark .resume-content strong {
+    color: #f0fff4;
+}
+
+/* Стили для навыков (можно оставить в одну строку или настроить) */
+/* Если AI вернет навыки просто текстом в параграфе */
+.resume-content h2 + p { /* Стили для параграфа сразу после H2 (возможно, там будут навыки) */
+   font-size: 10pt;
+   line-height: 1.6;
+}
+/* Если AI вернет навыки списком */
+.resume-content h2 + ul { /* Стили для списка сразу после H2 */
+    column-count: 2; /* Колонки для навыков */
+    column-gap: 2em;
+    margin-top: 0.5em;
+}
+.resume-content h2 + ul li {
+    font-size: 10pt;
+    margin-bottom: 0.3em;
+    padding-left: 0; /* Уберем отступ у навыков */
+}
+.resume-content h2 + ul li::before {
+    content: ''; /* Уберем маркер у навыков */
+}

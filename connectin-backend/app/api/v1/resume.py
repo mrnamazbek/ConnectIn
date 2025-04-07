@@ -89,41 +89,65 @@ def get_user_profile_data(user: User) -> dict:
     return profile_data
 
 # --- Хелпер: Формирование промпта ---
-def create_resume_prompt(profile_data: dict) -> str:
-    """Создает промпт для ChatGPT на основе данных профиля."""
-    # Можно использовать Jinja2 для более сложных шаблонов промпта
-    prompt = f"""
-Ты — профессиональный составитель резюме (CV writer) для IT-специалистов.
-Твоя задача - создать структурированное и профессиональное резюме на русском языке на основе предоставленных данных.
+def create_resume_prompt_en(profile_data: dict) -> str:
+    """Создает промпт для ChatGPT на основе данных профиля (на английском).
+       Использует безопасное формирование строки через .join().
+    """
+    # Используем .get() для безопасного доступа к словарю, если ключ может отсутствовать
+    name = profile_data.get('name', 'N/A')
+    position = profile_data.get('position', '')
+    city = profile_data.get('city', '')
+    email = profile_data.get('email', '')
+    linkedin = profile_data.get('linkedin', '')
+    github = profile_data.get('github', '')
+    telegram = profile_data.get('telegram', '')
+    about_me = profile_data.get('about_me', '')
+    experience_details = profile_data.get('experience_entries', "No professional experience listed.")
+    education_details = profile_data.get('education_entries', "No education listed.")
+    skills_list = profile_data.get('skills_list', "No skills listed.")
 
-Требования к резюме:
-1. Стиль: Профессиональный, современный, четкий и лаконичный. Используй сильные глаголы для описания опыта (если описание предоставлено).
-2. Структура: Обязательно включи разделы: Контактная информация, Краткая сводка (Summary/About - 1-3 предложения на основе должности и данных 'Обо мне'), Опыт работы, Образование, Навыки. Не выдумывай информацию, которой нет в данных.
-3. Формат вывода: Строго Markdown. Используй заголовки Markdown (##), списки (* или -) и выделение жирным (**текст**). Не добавляй никаких вступлений или заключений вне самого резюме.
-
-Данные пользователя:
----
-Имя: {profile_data['name']}
-Должность/Заголовок: {profile_data['position']}
-Город: {profile_data['city']}
-Email: {profile_data['email']}
-LinkedIn: {profile_data['linkedin']}
-GitHub: {profile_data['github']}
-Telegram: {profile_data['telegram']}
-Обо мне (для Summary): {profile_data['about_me']}
-
-Опыт работы (каждый пункт с новой строки):
-{profile_data['experience_details']}
-
-Образование (каждый пункт с новой строки):
-{profile_data['education_details']}
-
-Навыки (список через запятую):
-{profile_data['skills_list']}
----
-
-Сгенерируй текст резюме в формате Markdown. Начни с имени и контактной информации.
-"""
+    # Собираем промпт по строкам
+    prompt_lines = [
+        "Act as an expert technical CV writer. Your task is to generate a professional, modern, and concise resume **in English** based ONLY on the provided data.",
+        "",
+        "**Resume Requirements:**",
+        "1.  **Language:** English.",
+        "2.  **Style:** Professional, modern, clear, concise. Use strong action verbs for experience descriptions if available. Be factual.",
+        "3.  **Structure:** Strictly include the following sections in this order:",
+        "    * Contact Information (Name, City, Email, LinkedIn URL, GitHub URL - ONLY if provided)",
+        "    * Summary (Generate a brief, professional summary of 2-3 sentences based on the 'Position/Headline' and 'About Me' data provided below. If 'About Me' is empty, base it solely on the Position/Headline.)",
+        "    * Experience (List each entry chronologically, newest first. Use the exact Role, Company, and Dates provided. If descriptions were included in the data, incorporate them naturally using bullet points starting with action verbs.)",
+        "    * Education (List each entry chronologically, newest first. Include Institution, Degree, Dates, and Field of Study/Relevant Courses/Description if provided.)",
+        "    * Skills (List the provided skills. Try to categorize them logically if possible, e.g., Languages, Frameworks/Libraries, Databases, Cloud, Tools.)",
+        "4.  **Output Format:** **Strictly Markdown**. Use Markdown level 2 headings (##) for sections (Summary, Experience, Education, Skills). Use bullet points (* or -) for items within Experience and Education descriptions. Use bold text (**text**) for emphasis like job titles or degree names. Do not add any introductory or concluding text outside the resume structure.",
+        "",
+        "**User Data:**",
+        "---",
+        f"Name: {name}",
+        f"Position/Headline: {position}",
+        f"City/Location: {city}",
+        f"Email: {email}",
+        f"LinkedIn URL: {linkedin}",
+        f"GitHub URL: {github}",
+        f"Telegram: {telegram}",
+        f"About Me (for Summary): {about_me}",
+        "",
+        # Важно: символы \n здесь - это часть текста ИНСТРУКЦИИ для AI, а не форматирование Python
+        "Experience (Format: **Role** at Company (Start Date - End Date)\\n * Description line 1 \\n * Description line 2):",
+        experience_details,
+        "",
+        "Education (Format: **Institution** - Degree (Start Date - End Date)\\n * Field of Study: ... \\n * Relevant Courses: ... \\n * Description...):",
+        education_details,
+        "",
+        "Skills (Comma-separated list):",
+        skills_list,
+        "---",
+        "",
+        "Generate the resume text in English Markdown format. Start with Name and Contact Information. Do not invent information. Ensure Experience and Education are listed chronologically (most recent first). Structure the skills section logically."
+    ]
+    # Объединяем строки с переносом строки
+    prompt = "\n".join(prompt_lines)
+    # logger.debug(f"Generated Prompt:\n{prompt}") # Можно раскомментировать для отладки промпта
     return prompt
 
 # --- Хелпер: Вызов OpenAI API ---
@@ -176,7 +200,7 @@ async def generate_ai_resume_endpoint(
         profile_data = get_user_profile_data(current_user)
 
         # 2. Создать промпт
-        prompt = create_resume_prompt(profile_data)
+        prompt = create_resume_prompt_en(profile_data)
 
         # 3. Вызвать AI для генерации текста (Markdown)
         markdown_resume = await generate_text_via_openai(prompt)

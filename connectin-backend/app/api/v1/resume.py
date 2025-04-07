@@ -1,31 +1,35 @@
-# connectin-backend/app/api/v1/resume.py
-
 import os
 import logging
 from typing import Dict, Any
-from io import BytesIO
 from datetime import date
 
 # --- FastAPI & SQLAlchemy ---
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-# --- Проектные импорты ---
+# --- Project Imports ---
 from app.database.connection import get_db
-from app.models.user import User, Experience, Education # Модели из user.py
-from app.models.skill import Skill # Модель Skill
-from app.api.v1.auth import get_current_user # Ваша аутентификация
-from app.core.config import settings # Импорт настроек с ключом
+from app.models.user import User, Experience, Education
+from app.models.skill import Skill
+from app.api.v1.auth import get_current_user
+from app.core.config import settings
 
-# --- AI & Форматирование ---
+# --- AI & Formatting ---
 import openai
-import markdown # Для конвертации Markdown -> HTML
+import markdown
+from markdown.extensions import Extension
 
-# --- Настройка ---
+# --- Setup ---
 logger = logging.getLogger(__name__)
 
-# --- Роутер ---
+# --- Router ---
 router = APIRouter()
+
+class LaTeXStyleExtension(Extension):
+    def extendMarkdown(self, md):
+        md.registerExtension(self)
+        md.parser.blockprocessors.deregister('indent')
+        md.inlinePatterns.deregister('emphasis')
 
 # --- Хелпер: Сбор данных пользователя ---
 # (Эта функция может быть в сервисе или репозитории для чистоты кода)
@@ -88,66 +92,36 @@ def get_user_profile_data(user: User) -> dict:
     logger.debug(f"Profile data collected for {user.username}: {list(profile_data.keys())}")
     return profile_data
 
-# --- Хелпер: Формирование промпта ---
-def create_resume_prompt_en(profile_data: dict) -> str:
-    """Создает промпт для ChatGPT на основе данных профиля (на английском).
-       Использует безопасное формирование строки через .join().
-    """
-    # Используем .get() для безопасного доступа к словарю, если ключ может отсутствовать
-    name = profile_data.get('name', 'N/A')
-    position = profile_data.get('position', '')
-    city = profile_data.get('city', '')
-    email = profile_data.get('email', '')
-    linkedin = profile_data.get('linkedin', '')
-    github = profile_data.get('github', '')
-    telegram = profile_data.get('telegram', '')
-    about_me = profile_data.get('about_me', '')
-    experience_details = profile_data.get('experience_entries', "No professional experience listed.")
-    education_details = profile_data.get('education_entries', "No education listed.")
-    skills_list = profile_data.get('skills_list', "No skills listed.")
 
-    # Собираем промпт по строкам
-    prompt_lines = [
-        "Act as an expert technical CV writer. Your task is to generate a professional, modern, and concise resume **in English** based ONLY on the provided data.",
-        "",
-        "**Resume Requirements:**",
-        "1.  **Language:** English.",
-        "2.  **Style:** Professional, modern, clear, concise. Use strong action verbs for experience descriptions if available. Be factual.",
-        "3.  **Structure:** Strictly include the following sections in this order:",
-        "    * Contact Information (Name, City, Email, LinkedIn URL, GitHub URL - ONLY if provided)",
-        "    * Summary (Generate a brief, professional summary of 2-3 sentences based on the 'Position/Headline' and 'About Me' data provided below. If 'About Me' is empty, base it solely on the Position/Headline.)",
-        "    * Experience (List each entry chronologically, newest first. Use the exact Role, Company, and Dates provided. If descriptions were included in the data, incorporate them naturally using bullet points starting with action verbs.)",
-        "    * Education (List each entry chronologically, newest first. Include Institution, Degree, Dates, and Field of Study/Relevant Courses/Description if provided.)",
-        "    * Skills (List the provided skills. Try to categorize them logically if possible, e.g., Languages, Frameworks/Libraries, Databases, Cloud, Tools.)",
-        "4.  **Output Format:** **Strictly Markdown**. Use Markdown level 2 headings (##) for sections (Summary, Experience, Education, Skills). Use bullet points (* or -) for items within Experience and Education descriptions. Use bold text (**text**) for emphasis like job titles or degree names. Do not add any introductory or concluding text outside the resume structure.",
-        "",
-        "**User Data:**",
-        "---",
-        f"Name: {name}",
-        f"Position/Headline: {position}",
-        f"City/Location: {city}",
-        f"Email: {email}",
-        f"LinkedIn URL: {linkedin}",
-        f"GitHub URL: {github}",
-        f"Telegram: {telegram}",
-        f"About Me (for Summary): {about_me}",
-        "",
-        # Важно: символы \n здесь - это часть текста ИНСТРУКЦИИ для AI, а не форматирование Python
-        "Experience (Format: **Role** at Company (Start Date - End Date)\\n * Description line 1 \\n * Description line 2):",
-        experience_details,
-        "",
-        "Education (Format: **Institution** - Degree (Start Date - End Date)\\n * Field of Study: ... \\n * Relevant Courses: ... \\n * Description...):",
-        education_details,
-        "",
-        "Skills (Comma-separated list):",
-        skills_list,
-        "---",
-        "",
-        "Generate the resume text in English Markdown format. Start with Name and Contact Information. Do not invent information. Ensure Experience and Education are listed chronologically (most recent first). Structure the skills section logically."
-    ]
-    # Объединяем строки с переносом строки
-    prompt = "\n".join(prompt_lines)
-    # logger.debug(f"Generated Prompt:\n{prompt}") # Можно раскомментировать для отладки промпта
+
+def create_resume_prompt(profile_data: dict) -> str:
+    prompt = f"""
+Generate a professional resume in Russian using Markdown with this structure:
+
+# {profile_data['name']}
+**{profile_data['position']}**  
+📍 {profile_data['city']}  
+✉️ {profile_data['email']} | 🔗 LinkedIn: {profile_data['linkedin']} | 🐙 GitHub: {profile_data['github']} | 📨 Telegram: {profile_data['telegram']}
+
+## Professional Summary
+{profile_data['about_me'] or '[Provide professional summary]'}
+
+## Technical Skills
+{profile_data['skills_list'] or 'No skills listed'}
+
+## Professional Experience
+{profile_data['experience_details'] or 'No experience listed'}
+
+## Education
+{profile_data['education_details'] or 'No education listed'}
+
+Use:
+- ## for sections
+- **bold** for company names
+- *italic* for job titles
+- - for list items
+- Proper emojis
+"""
     return prompt
 
 # --- Хелпер: Вызов OpenAI API ---
@@ -181,47 +155,37 @@ async def generate_text_via_openai(prompt: str) -> str:
         logger.exception(f"OpenAI API call failed: {e}")  # Логгируем полный traceback
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Failed to communicate with AI service.")
 
+
+def convert_to_professional_html(markdown_text: str) -> str:
+    extensions = ['extra', 'smarty', LaTeXStyleExtension(), 'nl2br', 'tables']
+    html_content = markdown.markdown(markdown_text, extensions=extensions)
+
+    latex_style = """
+    <style>
+        body { font-family: 'Latin Modern Roman', Times, serif; line-height: 1.6; margin: 2cm; }
+        h1 { font-size: 22pt; border-bottom: 2pt solid #333; padding-bottom: 3pt; }
+        h2 { font-size: 16pt; margin-top: 18pt; }
+        ul { margin: 6pt 0; padding-left: 15pt; }
+        li { margin: 3pt 0; }
+        .contact-info { margin: 9pt 0; font-size: 10.5pt; }
+        .section { margin-bottom: 12pt; }
+    </style>
+    """
+    return f"<!DOCTYPE html><html><head>{latex_style}</head><body>{html_content}</body></html>"
+
+
 # --- Основной API Эндпоинт ---
-@router.post( # Используем POST, так как генерация - это действие
-    "/generate-ai",
-    summary="Сгенерировать резюме с помощью AI (возвращает HTML)",
-    response_model=Dict[str, str] # Ожидаемый формат ответа
-)
+@router.post("/generate-ai", response_model=Dict[str, str])
 async def generate_ai_resume_endpoint(
     current_user: User = Depends(get_current_user),
-    # db: Session = Depends(get_db) # db может понадобиться, если get_user_profile_data будет сложнее
+    db: Session = Depends(get_db)
 ):
-    """
-    Собирает данные профиля пользователя, генерирует текст резюме через OpenAI,
-    конвертирует результат в HTML и возвращает его.
-    """
     try:
-        # 1. Собрать данные профиля
         profile_data = get_user_profile_data(current_user)
-
-        # 2. Создать промпт
-        prompt = create_resume_prompt_en(profile_data)
-
-        # 3. Вызвать AI для генерации текста (Markdown)
+        prompt = create_resume_prompt(profile_data)
         markdown_resume = await generate_text_via_openai(prompt)
-
-        # 4. Конвертировать Markdown в HTML
-        try:
-             # Используем расширения для лучшего форматирования (таблицы, переносы строк и т.д.)
-            html_resume = markdown.markdown(markdown_resume, extensions=['extra', 'nl2br', 'tables', 'fenced_code'])
-        except Exception as e:
-             logger.exception(f"Markdown to HTML conversion failed for user {current_user.username}: {e}")
-             # Если конвертация не удалась, можно вернуть сам Markdown или ошибку
-             # raise HTTPException(status_code=500, detail="Failed to format generated resume.")
-             # Пока вернем Markdown как запасной вариант
-             html_resume = f"<pre>{markdown_resume}</pre>" # Обернем в <pre> для сохранения форматирования
-
-        # 5. Вернуть результат
+        html_resume = convert_to_professional_html(markdown_resume)
         return {"resume_html": html_resume}
-
-    except HTTPException as e:
-        # Перебрасываем известные HTTP ошибки
-        raise e
     except Exception as e:
-        logger.exception(f"Error in generate_ai_resume_endpoint for user {current_user.username}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to generate AI resume.")
+        logger.error(f"Resume generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Resume generation failed")

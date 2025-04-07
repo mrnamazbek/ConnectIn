@@ -178,7 +178,10 @@ const UserProfile = () => {
         }
     };
 
+
     //end Resume Generator function
+
+
 
     const handleAddEducation = async () => {
         if (!newEducation.institution || !newEducation.degree || !newEducation.start_year) {

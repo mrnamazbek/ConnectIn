@@ -13,6 +13,8 @@ import SavedPostsSection from "./SavedPostsSection";
 import { motion, AnimatePresence } from "framer-motion";
 import AvatarUpload from "../components/User/AvatarUpload";
 import '../index.css';
+import ReactMarkdown from 'react-markdown';
+
 
 
 const UserProfile = () => {

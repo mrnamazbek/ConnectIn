@@ -2,6 +2,14 @@
 # ConnectIn Project Dependencies
 # ======================================
 
+# ========new libraries================
+authlib==1.5.2
+cffi==1.17.1
+cryptography==44.0.2
+pycparser==2.22
+
+
+
 # ---------- Core Web Framework ----------
 fastapi==0.100.1
 starlette==0.27.0

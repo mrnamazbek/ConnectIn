@@ -26,10 +26,7 @@ logger = logging.getLogger(__name__)
 # logging.basicConfig(level=logging.INFO) # Настройте логгирование в main.py
 
 # --- Роутер ---
-router = APIRouter(
-    prefix="/resumes",
-    tags=["AI Resumes"]
-)
+router = APIRouter()
 
 # --- Хелпер: Сбор данных пользователя (ОБНОВЛЕННЫЙ) ---
 def get_user_profile_data(user: User, db: Session) -> dict:

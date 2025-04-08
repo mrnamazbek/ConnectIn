@@ -1,282 +1,166 @@
 # ===============================================
-#  ConnectIn Backend Dependencies
+# ConnectIn Backend Dependencies
 # ===============================================
 #
-# Этот файл сгенерирован или обновлен [Текущая Дата - например, 2025-04-07].
-# Используйте 'pip install -r requirements.txt' для установки.
-# Важно: Версии зафиксированы, не изменяйте их без необходимости и тестирования.
+# This file was generated or updated on 2025-04-08.
+# Use 'pip install -r requirements.txt' to install dependencies.
+# Important: Versions are pinned; do not modify them without thorough testing.
 
-# --- Core Web Framework & API (FastAPI & Starlette) ---
-fastapi==0.100.1
-starlette==0.27.0
-python-multipart==0.0.20 # Для обработки форм/файлов в FastAPI
+# --- Core Web Framework & API ---
+fastapi==0.100.1                # Core framework for building APIs
+starlette==0.27.0               # ASGI framework (dependency of FastAPI)
+python-multipart==0.0.20        # Form/file handling in FastAPI
 
 # --- ASGI Servers & Deployment ---
-uvicorn==0.23.1         # ASGI сервер, отлично подходит для FastAPI
-gunicorn==23.0.0        # WSGI сервер (может использоваться с Uvicorn воркерами)
-Hypercorn==0.17.3       # Другой ASGI сервер (возможно, альтернатива или зависимость)
+uvicorn==0.23.1                 # ASGI server, ideal for FastAPI
+gunicorn==23.0.0                # WSGI server (can be used with Uvicorn workers)
+hypercorn==0.17.3               # Alternative ASGI server
 
 # --- Async & Networking ---
-anyio==4.8.0            # Основная библиотека для async I/O в FastAPI/HTTPX
-async-timeout==5.0.1    # Утилита для async таймаутов
-aiofiles==24.1.0        # Асинхронная работа с файлами
-aiohappyeyeballs==2.6.1 # Утилита для установления соединений
-aiohttp==3.11.16        # Асинхронный HTTP клиент/сервер (Проверьте, нужен ли он наряду с FastAPI/HTTPX)
-aioitertools==0.12.0    # Асинхронные аналоги itertools
-aiosignal==1.3.2        # Управление асинхронными сигналами
-attrs==25.3.0           # Зависимость для aiohttp и др.
-eventlet==0.39.0        # Альтернативная библиотека для конкурентности (часто используется Celery)
-exceptiongroup==1.2.2   # Зависимость для anyio
-frozenlist==1.5.0       # Зависимость для aiohttp
-greenlet==3.1.1         # Низкоуровневые корутины (зависимость eventlet/SQLAlchemy async)
-h11==0.14.0             # HTTP/1.1 реализация
-h2==4.2.0               # HTTP/2 реализация
-hpack==4.1.0            # Зависимость для h2
-httpcore==0.17.3        # Низкоуровневый async HTTP клиент/сервер (основа для HTTPX)
-httptools==0.6.4        # Быстрый HTTP парсер
-hyperframe==6.1.0       # Зависимость для h2
-multidict==6.3.2        # Зависимость для aiohttp/yarl
-priority==2.0.0         # Зависимость для h2
-sniffio==1.3.1          # Определение текущей async библиотеки
-urllib3==1.26.20        # HTTP клиент (основа для requests, boto)
-uvloop==0.21.0          # Быстрая реализация event loop для asyncio (опционально, но рекомендуется)
-websockets==15.0        # Библиотека для работы с WebSocket
-wsproto==1.2.0          # Протокол WebSocket (зависимость)
-yarl==1.18.3            # Утилита для URL (зависимость aiohttp)
+anyio==4.8.0                    # Core async I/O library for FastAPI/HTTPX
+async-timeout==5.0.1            # Utility for async timeouts
+aiofiles==24.1.0                # Asynchronous file handling
+aiohappyeyeballs==2.6.1         # Connection establishment utility
+aiohttp==3.11.16                # Async HTTP client/server
+aioitertools==0.12.0            # Async equivalents of itertools
+aiosignal==1.3.2                # Async signal management
+attrs==25.3.0                   # Dependency for aiohttp and others
+eventlet==0.39.0                # Concurrency library (often used with Celery)
+exceptiongroup==1.2.2           # Dependency for anyio
+frozenlist==1.5.0               # Dependency for aiohttp
+greenlet==3.1.1                 # Low-level coroutines (dependency for eventlet/SQLAlchemy async)
+h11==0.14.0                     # HTTP/1.1 implementation
+h2==4.2.0                       # HTTP/2 implementation
+hpack==4.1.0                    # Dependency for h2
+httpcore==0.17.3                # Low-level async HTTP client/server (base for HTTPX)
+httptools==0.6.4                # Fast HTTP parser
+hyperframe==6.1.0               # Dependency for h2
+multidict==6.3.2                # Dependency for aiohttp/yarl
+priority==2.0.0                 # Dependency for h2
+sniffio==1.3.1                  # Detects current async library
+urllib3==1.26.20                # HTTP client (base for requests, boto)
+uvloop==0.21.0                  # Fast asyncio event loop (optional but recommended)
+websockets==15.0                # WebSocket library
+wsproto==1.2.0                  # WebSocket protocol (dependency)
+yarl==1.18.3                    # URL utility (dependency for aiohttp)
 
 # --- Database ---
 #   --- ORM & PostgreSQL ---
-SQLAlchemy==2.0.38      # Основная ORM
-psycopg2-binary==2.9.7  # Драйвер для PostgreSQL (бинарная версия)
-#   --- NoSQL (MongoDB) - ВНИМАНИЕ: Используется ли MongoDB наряду с PostgreSQL? ---
-mongoengine==0.29.1     # ODM для MongoDB
-pymongo==4.11.1         # Драйвер для MongoDB
+sqlalchemy==2.0.38              # Core ORM
+psycopg2-binary==2.9.7          # PostgreSQL driver (binary version)
+#   --- NoSQL (MongoDB) ---
+mongoengine==0.29.1             # ODM for MongoDB (Note: Confirm if used alongside PostgreSQL)
+pymongo==4.11.1                 # MongoDB driver
 #   --- Caching (Redis) ---
-redis==4.6.0            # Синхронный клиент Redis
-aioredis==2.0.1         # Асинхронный клиент Redis
+redis==4.6.0                    # Synchronous Redis client
+aioredis==2.0.1                 # Asynchronous Redis client
 #   --- Search (Elasticsearch) ---
-elasticsearch==8.17.1   # Клиент Elasticsearch
-elastic-transport==8.17.0 # Транспорт для клиента Elasticsearch
+elasticsearch==8.17.1           # Elasticsearch client
+elastic-transport==8.17.0       # Transport for Elasticsearch client
 #   --- Migrations ---
-alembic==1.14.1         # Инструмент для миграций базы данных
-Mako==1.3.9             # Шаблонизатор для Alembic
+alembic==1.14.1                 # Database migration tool
+mako==1.3.9                     # Templating engine for Alembic
 
-# --- Task Queues & Messaging (Celery) ---
-celery==5.3.0           # Система распределенных очередей задач
-kombu==5.4.2            # Библиотека обмена сообщениями для Celery
-amqp==5.3.1             # Протокол AMQP (для RabbitMQ/Redis как брокеров Celery)
-billiard==4.2.1         # Форк multiprocessing для Celery
-vine==5.1.0             # Зависимость для Celery/Kombu
+# --- Task Queues & Messaging ---
+celery==5.3.0                   # Distributed task queue system
+kombu==5.4.2                    # Messaging library for Celery
+amqp==5.3.1                     # AMQP protocol (for RabbitMQ/Redis as Celery brokers)
+billiard==4.2.1                 # Fork of multiprocessing for Celery
+vine==5.1.0                     # Dependency for Celery/Kombu
 
 # --- Authentication & Security ---
-Authlib==1.4.1          # OAuth, OpenID Connect, JWT и др.
-bcrypt==4.2.1           # Хеширование паролей
-cryptography==44.0.1    # Криптографические примитивы
-ecdsa==0.19.0           # Алгоритм ECDSA (зависимость)
-passlib==1.7.4          # Набор схем хеширования паролей (включая bcrypt)
-python-jose==3.3.0      # Реализация JOSE (JWT, JWS, JWE)
-rsa==4.9                # Алгоритм RSA (зависимость)
-pyasn1==0.6.1           # Зависимость для криптографии
-# auth==0.5.3             # Неоднозначное имя, возможно, кастомная или старая библиотека?
+authlib==1.4.1                  # OAuth, OpenID Connect, JWT, etc.
+bcrypt==4.2.1                   # Password hashing
+cryptography==44.0.1            # Cryptographic primitives
+ecdsa==0.19.0                   # ECDSA algorithm (dependency)
+passlib==1.7.4                  # Password hashing schemes (includes bcrypt)
+python-jose==3.3.0              # JOSE implementation (JWT, JWS, JWE)
+rsa==4.9                        # RSA algorithm (dependency)
+pyasn1==0.6.1                   # Dependency for cryptography
 
 # --- Data Validation & Settings ---
-pydantic==2.10.6        # Валидация данных и парсинг
-pydantic-settings==2.7.1 # Управление настройками через Pydantic
-pydantic_core==2.27.2   # Ядро Pydantic V2
-annotated-types==0.7.0  # Зависимость Pydantic
-email_validator==2.2.0  # Валидация email адресов
+pydantic==2.10.6                # Data validation and parsing
+pydantic-settings==2.7.1        # Settings management with Pydantic
+pydantic_core==2.27.2           # Core of Pydantic V2
+annotated-types==0.7.0          # Dependency for Pydantic
+email_validator==2.2.0          # Email address validation
 
 # --- AI / External APIs ---
-openai==1.70.0          # Клиент для OpenAI API (ChatGPT)
+openai==1.70.0                  # Client for OpenAI API (e.g., ChatGPT)
 
 # --- Cloud / AWS ---
-boto3==1.37.1           # Основной SDK AWS для Python (синхронный)
-botocore==1.37.1        # Низкоуровневое ядро для boto3/aioboto3
-aioboto3==14.1.0        # Асинхронный SDK AWS
-aiobotocore==2.21.1     # Асинхронное ядро для aioboto3
-s3transfer==0.11.3      # Утилита для передачи файлов в S3 (зависимость boto3)
-jmespath==1.0.1         # Запрос данных из JSON (зависимость botocore)
+boto3==1.37.1                   # AWS SDK for Python (synchronous)
+botocore==1.37.1                # Low-level core for boto3/aioboto3
+aioboto3==14.1.0                # Asynchronous AWS SDK
+aiobotocore==2.21.1             # Async core for aioboto3
+s3transfer==0.11.3              # File transfer utility for S3 (dependency for boto3)
+jmespath==1.0.1                 # JSON query language (dependency for botocore)
 
 # --- Development & Testing ---
-pytest==7.4.2           # Фреймворк для тестирования
-pluggy==1.5.0           # Система плагинов для pytest
-iniconfig==2.0.0        # Парсер ini-файлов для pytest
-watchfiles==1.0.4       # Отслеживание изменений файлов (для --reload)
-click==8.1.8            # Создание CLI (зависимость Alembic, Celery, Flask)
-click-didyoumean==0.3.1 # Расширение Click
-click-plugins==1.1.1    # Расширение Click
-click-repl==0.3.0       # Расширение Click
-prompt_toolkit==3.0.50  # Создание интерактивных CLI (зависимость click-repl)
-wcwidth==0.2.13         # Определение ширины символов в терминале (зависимость)
-tqdm==4.67.1            # Индикаторы прогресса (обычно для скриптов/ML, не всегда нужен в бэкенде)
+pytest==7.4.2                   # Testing framework
+pluggy==1.5.0                   # Plugin system for pytest
+iniconfig==2.0.0                # INI file parser for pytest
+watchfiles==1.0.4               # File change tracking (for --reload)
+click==8.1.8                    # CLI creation (dependency for Alembic, Celery)
+click-didyoumean==0.3.1         # Click extension
+click-plugins==1.1.1            # Click extension
+click-repl==0.3.0               # Click extension
+prompt_toolkit==3.0.50          # Interactive CLI creation (dependency for click-repl)
+wcwidth==0.2.13                 # Terminal character width detection (dependency)
+tqdm==4.67.1                    # Progress bars (typically for scripts/ML)
 
 # --- Utilities ---
 #   --- General ---
-python-dateutil==2.9.0.post0 # Расширенные утилиты для дат и времени
-typing_extensions==4.12.2 # Дополнительные типы для Python
-tzdata==2025.1           # База данных часовых поясов
-blinker==1.9.0          # Библиотека сигналов/событий
-Deprecated==1.2.18      # Декоратор для пометки устаревшего кода
-packaging==24.2         # Утилиты для работы с пакетами Python
-six==1.17.0             # Совместимость Python 2/3 (может быть не нужна для чистого Python 3)
-wrapt==1.17.2           # Утилиты для декораторов и оберток
-propcache==0.3.1        # Кэширование свойств
-distro==1.9.0           # Определение дистрибутива Linux
-jiter==0.9.0            # Быстрый итератор JSON (возможно, зависимость?)
+python-dateutil==2.9.0.post0    # Extended date/time utilities
+typing_extensions==4.12.2       # Additional Python type hints
+tzdata==2025.1                  # Timezone database
+blinker==1.9.0                  # Signal/event library
+deprecated==1.2.18              # Decorator for marking deprecated code
+packaging==24.2                 # Package handling utilities
+six==1.17.0                     # Python 2/3 compatibility (may not be needed for pure Python 3)
+wrapt==1.17.2                   # Decorator and wrapper utilities
+propcache==0.3.1                # Property caching
+distro==1.9.0                   # Linux distribution detection
+jiter==0.9.0                    # Fast JSON iterator
 #   --- HTTP Clients ---
-requests==2.32.3        # Синхронный HTTP клиент
-httpx==0.24.1           # Асинхронный HTTP клиент
+requests==2.32.3                # Synchronous HTTP client
+httpx==0.24.1                   # Asynchronous HTTP client
 #   --- Configuration ---
-python-dotenv==1.0.1    # Загрузка переменных окружения из .env файлов
-PyYAML==6.0.2           # Работа с YAML файлами
-tomli==2.2.1            # Парсер TOML файлов
-# config==0.5.1           # Неоднозначное имя, возможно, кастомная или для конкретной цели?
+python-dotenv==1.0.1            # Load environment variables from .env files
+pyyaml==6.0.2                   # YAML file handling
+tomli==2.2.1                    # TOML file parser
 #   --- Media ---
-pillow==11.1.0          # Обработка изображений
-weasyprint==65.0
-Pillow==11.1.0
-Pyphen==0.17.2
-brotli==1.1.0
-cssselect2==0.8.0
-fonttools==4.57.0
-pydyf==0.11.0
-tinycss2==1.4.0
-tinyhtml5==2.0.0
-weasyprint==65.0
-webencodings==0.5.1
-zopfli==0.2.3.post1
-
+pillow==11.1.0                  # Image processing
+weasyprint==65.0                # HTML/CSS to PDF conversion
+pyphen==0.17.2                  # Hyphenation (dependency for weasyprint)
+brotli==1.1.0                   # Compression (dependency for weasyprint)
+cssselect2==0.8.0               # CSS selectors (dependency for weasyprint)
+fonttools==4.57.0               # Font utilities (dependency for weasyprint)
+pydyf==0.11.0                   # PDF generation (dependency for weasyprint)
+tinycss2==1.4.0                 # CSS parsing (dependency for weasyprint)
+tinyhtml5==2.0.0                # HTML5 parsing (dependency for weasyprint)
+webencodings==0.5.1             # Character encodings (dependency for weasyprint)
+zopfli==0.2.3.post1             # Compression (dependency for weasyprint)
 #   --- Templating/Markup ---
-MarkupSafe==3.0.2       # Безопасная работа с HTML/XML строками (зависимость Jinja2/Mako)
-markdown==3.7           # Конвертация Markdown в HTML
+markupsafe==3.0.2               # Safe HTML/XML string handling (dependency for Jinja2/Mako)
+markdown==3.7                   # Markdown to HTML conversion
 #   --- Other/Low-Level ---
-certifi==2025.1.31      # Корневые SSL сертификаты
-cffi==1.17.1            # Интерфейс к C коду (зависимость cryptography)
-charset-normalizer==3.4.1 # Определение кодировки (зависимость requests)
-dnspython==2.7.0        # Работа с DNS (зависимость email_validator)
-idna==3.10              # Поддержка интернациональных доменных имен (зависимость)
-pycparser==2.22         # Парсер C кода (зависимость cffi)
-limits==4.0.1           # Реализация rate limiting (альтернатива/дополнение к slowapi?)
-slowapi==0.1.9          # Rate limiting для FastAPI/Starlette
+certifi==2025.1.31              # Root SSL certificates
+cffi==1.17.1                    # C code interface (dependency for cryptography)
+charset-normalizer==3.4.1       # Charset detection (dependency for requests)
+dnspython==2.7.0                # DNS utilities (dependency for email_validator)
+idna==3.10                      # Internationalized domain name support (dependency)
+pycparser==2.22                 # C code parser (dependency for cffi)
+limits==4.0.1                   # Rate limiting implementation
+slowapi==0.1.9                  # Rate limiting for FastAPI/Starlette
 
 # --- DevOps / Infrastructure ---
-docker==7.1.0           # Python SDK для Docker API
+docker==7.1.0                   # Python SDK for Docker API
 
-# --- Project Specific ---
-# app==0.0.1              # Скорее всего, пакет вашего собственного приложения, обычно не включается сюда
+# --- Notes ---
+# Removed ambiguous packages like 'auth==0.5.3' and 'config==0.5.1' - clarify if custom or required.
+# 'app==0.0.1' is likely your app package and typically not included in requirements.txt.
+# Duplicate 'pillow==11.1.0' and 'weasyprint==65.0' entries consolidated.
+# Falcon and Werkzeug were listed but not in the original; removed unless explicitly needed.
 
 # ===============================================
-
-aioredis==2.0.1
-alembic==1.14.1
-amqp==5.3.1
-#fix
-annotated-types==0.7.0
-anyio==4.8.0
-app==0.0.1
-async-timeout==5.0.1
-auth==0.5.3
-Authlib==1.4.1
-bcrypt==4.2.1
-billiard==4.2.1
-blinker==1.9.0
-celery==5.3.0
-certifi==2025.1.31
-cffi==1.17.1
-charset-normalizer==3.4.1
-click==8.1.8
-click-didyoumean==0.3.1
-click-plugins==1.1.1
-click-repl==0.3.0
-config==0.5.1
-cryptography==44.0.1
-Deprecated==1.2.18
-dnspython==2.7.0
-docker==7.1.0
-ecdsa==0.19.0
-elastic-transport==8.17.0
-elasticsearch==8.17.1
-email_validator==2.2.0
-eventlet==0.39.0
-exceptiongroup==1.2.2
-falcon==4.0.2
-fastapi==0.100.1
-greenlet==3.1.1
-gunicorn==23.0.0
-h11==0.14.0
-h2==4.2.0
-hpack==4.1.0
-httpcore==0.17.3
-httptools==0.6.4
-httpx==0.24.1
-Hypercorn==0.17.3
-hyperframe==6.1.0
-idna==3.10
-iniconfig==2.0.0
-itsdangerous==2.2.0
-jmespath==1.0.1
-kombu==5.4.2
-limits==4.0.1
-Mako==1.3.9
-MarkupSafe==3.0.2
-mongoengine==0.29.1
-packaging==24.2
-passlib==1.7.4
-pillow==11.1.0
-pluggy==1.5.0
-priority==2.0.0
-prompt_toolkit==3.0.50
-psycopg2-binary==2.9.7
-pyasn1==0.6.1
-pycparser==2.22
-pydantic==2.10.6
-pydantic-settings==2.7.1
-pydantic_core==2.27.2
-pymongo==4.11.1
-pytest==7.4.2
-python-dateutil==2.9.0.post0
-python-dotenv==1.0.1
-python-jose==3.3.0
-python-multipart==0.0.20
-PyYAML==6.0.2
-redis==4.6.0
-requests==2.32.3
-rsa==4.9
-six==1.17.0
-slowapi==0.1.9
-sniffio==1.3.1
-SQLAlchemy==2.0.38
-starlette==0.27.0
-tomli==2.2.1
-typing_extensions==4.12.2
-tzdata==2025.1
-urllib3==1.26.20
-uvicorn==0.23.1
-uvloop==0.21.0
-vine==5.1.0
-watchfiles==1.0.4
-wcwidth==0.2.13
-websockets==15.0
-Werkzeug==3.1.3
-wrapt==1.17.2
-wsproto==1.2.0
-distro==1.9.0
-jiter==0.9.0
-openai==1.70.0
-tqdm==4.67.1
-markdown==3.7
-aioboto3==14.1.0
-aiobotocore==2.21.1
-aiofiles==24.1.0
-aiohappyeyeballs==2.6.1
-aiohttp==3.11.16
-aioitertools==0.12.0
-aiosignal==1.3.2
-attrs==25.3.0
-boto3==1.37.1
-botocore==1.37.1
-frozenlist==1.5.0
-multidict==6.3.2
-propcache==0.3.1
-s3transfer==0.11.3
-yarl==1.18.3

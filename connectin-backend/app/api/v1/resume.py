@@ -42,8 +42,8 @@ def get_user_profile_data(user: User, db: Session) -> dict:
         db.refresh(user)
         # Явно подгружаем связи, если они не загружаются автоматически
         # или если использовалась другая сессия для добавления данных
-        user_exp = db.query(Experience).filter(Experience.user_id == user.id).order_by(Experience.start_date.desc()).all()
-        user_edu = db.query(Education).filter(Education.user_id == user.id).order_by(Education.start_date.desc()).all()
+        user_exp = db.query(Experience).filter(Experience.user_id == user.id).order_by(Experience.start_year.desc()).all()
+        user_edu = db.query(Education).filter(Education.user_id == user.id).order_by(Education.start_year.desc()).all()
         user_skills = db.query(Skill).join(User.skills).filter(User.id == user.id).order_by(Skill.name).all() # Пример явной загрузки с join
     except Exception as e:
          logger.exception(f"Failed to load relationships for user {user.username}")
@@ -63,8 +63,8 @@ def get_user_profile_data(user: User, db: Session) -> dict:
     # --- Форматируем Опыт (с новыми полями) ---
     experience_list_str: List[str] = []
     for exp in user_exp: # Используем явно загруженные данные
-        if not exp.start_date: continue # Пропускаем, если нет даты начала
-        date_str = f"{exp.start_date.strftime('%B %Y')} - {exp.end_date.strftime('%B %Y') if exp.end_date else 'Present'}"
+        if not exp.start_year: continue # Пропускаем, если нет даты начала
+        date_str = f"{exp.start_year.strftime('%B %Y')} - {exp.end_year.strftime('%B %Y') if exp.end_year else 'Present'}"
         exp_str = f"* **{exp.role}** at **{exp.company}** ({date_str})"
         # Используем поле description, если оно есть
         if exp.description:
@@ -76,8 +76,8 @@ def get_user_profile_data(user: User, db: Session) -> dict:
     # --- Форматируем Образование (с новыми полями) ---
     education_list_str: List[str] = []
     for edu in user_edu: # Используем явно загруженные данные
-        if not edu.start_date: continue
-        date_str = f"{edu.start_date.strftime('%B %Y')} - {edu.end_date.strftime('%B %Y') if edu.end_date else 'Present'}"
+        if not edu.start_year: continue
+        date_str = f"{edu.start_year.strftime('%B %Y')} - {edu.end_year.strftime('%B %Y') if edu.end_year else 'Present'}"
         edu_str = f"* **{edu.institution}** - {edu.degree} ({date_str})"
         if edu.field_of_study:
             edu_str += f"\n    * *Field of Study:* {edu.field_of_study}"

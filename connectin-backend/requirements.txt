@@ -134,6 +134,18 @@ tomli==2.2.1            # Парсер TOML файлов
 #   --- Media ---
 pillow==11.1.0          # Обработка изображений
 weasyprint==65.0
+Pillow==11.1.0
+Pyphen==0.17.2
+brotli==1.1.0
+cssselect2==0.8.0
+fonttools==4.57.0
+pydyf==0.11.0
+tinycss2==1.4.0
+tinyhtml5==2.0.0
+weasyprint==65.0
+webencodings==0.5.1
+zopfli==0.2.3.post1
+
 #   --- Templating/Markup ---
 MarkupSafe==3.0.2       # Безопасная работа с HTML/XML строками (зависимость Jinja2/Mako)
 markdown==3.7           # Конвертация Markdown в HTML

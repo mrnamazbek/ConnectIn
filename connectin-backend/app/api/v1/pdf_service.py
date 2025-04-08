@@ -1,8 +1,10 @@
 # connectin-backend/app/services/pdf_service.py
 import logging
 from io import BytesIO
+
+#from starlette import status
 from weasyprint import HTML, CSS # Импортируем CSS для возможной стилизации
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 
 logger = logging.getLogger(__name__)
 

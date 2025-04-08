@@ -133,6 +133,7 @@ tomli==2.2.1            # Парсер TOML файлов
 # config==0.5.1           # Неоднозначное имя, возможно, кастомная или для конкретной цели?
 #   --- Media ---
 pillow==11.1.0          # Обработка изображений
+weasyprint==65.0
 #   --- Templating/Markup ---
 MarkupSafe==3.0.2       # Безопасная работа с HTML/XML строками (зависимость Jinja2/Mako)
 markdown==3.7           # Конвертация Markdown в HTML

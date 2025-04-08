@@ -18,6 +18,7 @@ from app.models.user import User, Experience, Education # Модели из user
 from app.models.skill import Skill
 from app.api.v1.auth import get_current_user
 from app.core.config import settings
+from weasyprint import HTML, CSS
 
 # --- AI & Форматирование ---
 import openai

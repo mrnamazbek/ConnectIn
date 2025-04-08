@@ -44,6 +44,7 @@ const UserProfile = () => {
     const [loadingPosts, setLoadingPosts] = useState(true);
     const [showEducationForm, setShowEducationForm] = useState(false);
     const [showExperienceForm, setShowExperienceForm] = useState(false);
+    const [loadingPdf, setLoadingPdf] = useState(false); // <--- Новое состояние
     const [newEducation, setNewEducation] = useState({
         institution: "",
         degree: "",
@@ -194,6 +195,69 @@ const UserProfile = () => {
 
     //end Resume Generator function
 
+
+    // starting PDF download generator
+    // Внутри const UserProfile = () => { ... }
+// ... handleGenerateAiResume ...
+
+    const handleDownloadAiPdf = async () => {
+        setLoadingPdf(true); // <--- Устанавливаем новый лоадер
+        toast.info("Generating PDF... this may take a moment.", {autoClose: 2000});
+        try {
+            const token = localStorage.getItem("access_token");
+            if (!token) {
+                toast.error("Authentication required.");
+                navigate("/login");
+                return;
+            }
+
+            const response = await axios.post(
+                // ===> URL нового эндпоинта для PDF <===
+                `${import.meta.env.VITE_API_URL}/api/v1/resumes/generate-ai-pdf`,
+                {},
+                {
+                    headers: {Authorization: `Bearer ${token}`},
+                    responseType: 'blob', // <--- ВАЖНО: Указываем, что ожидаем файл (blob)
+                }
+            );
+
+            // Создаем ссылку для скачивания blob
+            const blob = new Blob([response.data], {type: 'application/pdf'});
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            // Формируем имя файла (можно извлечь из заголовка Content-Disposition, если бэк его отдает надежно)
+            const filename = `resume_${user?.username}_ai.pdf`;
+            link.setAttribute('download', filename); // Имя файла при скачивании
+            document.body.appendChild(link);
+            link.click();
+
+            // Очистка
+            link.parentNode.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            toast.success("PDF download started!");
+
+        } catch (error) {
+            console.error("Failed to download AI resume PDF:", error.response?.data || error.message);
+            // Попытка прочитать ошибку из blob, если сервер вернул JSON ошибку вместо PDF
+            let errorDetail = "Failed to download PDF.";
+            if (error.response && error.response.data && error.response.data instanceof Blob && error.response.data.type === "application/json") {
+                try {
+                    const errorJson = JSON.parse(await error.response.data.text());
+                    errorDetail = errorJson.detail || errorDetail;
+                } catch (parseError) {
+                    console.error("Could not parse error blob:", parseError);
+                }
+            } else if (error.response?.data?.detail) {
+                errorDetail = error.response.data.detail;
+            }
+            toast.error(errorDetail);
+        } finally {
+            setLoadingPdf(false); // <--- Снимаем новый лоадер
+        }
+    };
+
+    // end pdf generator
 
     const handleAddEducation = async () => {
         if (!newEducation.institution || !newEducation.degree || !newEducation.start_year) {
@@ -906,11 +970,26 @@ const UserProfile = () => {
                                             download={`resume_${user?.username}_ai.html`}
                                             className="px-3 py-1.5 text-xs border border-blue-600 dark:border-blue-500 rounded bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 transition flex items-center gap-1.5 shadow-sm"
                                         > <FontAwesomeIcon icon={faFileArrowDown}/> Download HTML </a>
+                                        {/* === НОВАЯ КНОПКА Download PDF === */}
+                                        <button
+                                            onClick={handleDownloadAiPdf}
+                                            disabled={loadingPdf || loadingResume} // Блокируем, если идет любая загрузка
+                                            className="px-3 py-1.5 text-xs border border-red-600 dark:border-red-500 rounded bg-red-50 dark:bg-red-900/50 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900 transition flex items-center gap-1.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {loadingPdf ? (
+                                                <FontAwesomeIcon icon={faSpinner} spin className="mr-1.5"/>
+                                            ) : (
+                                                <FontAwesomeIcon icon={faFileArrowDown} className="mr-1"/>
+                                            )}
+                                            Download PDF
+                                        </button>
+                                        {/* === КОНЕЦ НОВОЙ КНОПКИ === */}
                                     </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                         {/* --- Конец Области отображения результата --- */}
+
                     </div>
                 </motion.div>
                 {/* ============================================================= */}

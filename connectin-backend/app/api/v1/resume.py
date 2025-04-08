@@ -9,7 +9,9 @@ from datetime import date # Убедитесь, что date импортиров
 # --- FastAPI & SQLAlchemy ---
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session # Убрали joinedload, будем использовать refresh
+from starlette.responses import StreamingResponse
 
+from app.api.v1.pdf_service import PDFService
 # --- Проектные импорты ---
 from app.database.connection import get_db
 from app.models.user import User, Experience, Education # Модели из user.py (с обновленными полями Date, description и т.д.)
@@ -251,6 +253,69 @@ async def generate_ai_resume_endpoint(
 
 # --- /Основной API Эндпоинт ---
 
-# Не забудьте подключить router в app/main.py:
-# from app.api.v1 import resumes as resumes_v1
-# app.include_router(resumes_v1.router, prefix="/api/v1")
+# --- НОВЫЙ ЭНДПОИНТ (Generate PDF) ---
+@router.post( # Используем POST, т.к. это запускает генерацию
+    "/generate-ai-pdf",
+    summary="Generate AI Resume and return as PDF download",
+    response_class=StreamingResponse # Важно указать класс ответа
+)
+async def generate_ai_resume_pdf_endpoint(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Генерирует AI резюме (Markdown -> HTML), затем конвертирует HTML в PDF
+    и возвращает PDF для скачивания.
+    """
+    logger.info(f"Received request to generate AI resume PDF for user: {current_user.username}")
+    try:
+        # 1. Собрать данные профиля
+        profile_data = get_user_profile_data(current_user, db)
+
+        # 2. Создать промпт на английском
+        prompt = create_resume_prompt_en(profile_data)
+
+        # 3. Вызвать AI для генерации текста (Markdown)
+        markdown_resume = await generate_text_via_openai(prompt)
+
+        # 4. Конвертировать Markdown в HTML
+        try:
+            # Используем те же расширения для консистентности
+            html_resume = markdown.markdown(markdown_resume, extensions=['extra', 'nl2br', 'tables', 'fenced_code'])
+            # Добавим базовую HTML структуру для PDF
+            full_html_content = f"""
+            <!DOCTYPE html>
+            <html lang="en">
+            <head><meta charset="UTF-8"><title>Resume {profile_data['name']}</title></head>
+            <body>{html_resume}</body>
+            </html>
+            """
+        except Exception as e:
+            logger.exception(f"Markdown to HTML conversion failed for PDF generation (user: {current_user.username}): {e}")
+            raise HTTPException(status_code=500, detail="Failed to format resume content for PDF.")
+
+        # 5. Конвертировать HTML в PDF с помощью сервиса
+        # base_url может быть полезен, если в HTML есть относительные ссылки на изображения/стили
+        pdf_bytes = PDFService.generate_pdf(html_content=full_html_content, base_url=str(settings.SERVER_HOST) if hasattr(settings, 'SERVER_HOST') else None)
+
+        # 6. Подготовить ответ для скачивания PDF
+        buffer = BytesIO(pdf_bytes)
+        filename = f"resume_{current_user.username}_ai.pdf" # Имя файла для скачивания
+        headers = {
+            'Content-Disposition': f'attachment; filename="{filename}"'
+        }
+
+        logger.info(f"Successfully generated PDF for user {current_user.username}. Filename: {filename}")
+        # Возвращаем StreamingResponse для файла
+        return StreamingResponse(buffer, media_type="application/pdf", headers=headers)
+
+    except HTTPException as e:
+        # Логгируем и перебрасываем известные ошибки
+        logger.error(f"HTTP error during AI PDF resume generation for {current_user.username}: {e.detail}")
+        raise e
+    except Exception as e:
+        # Логгируем другие ошибки
+        logger.exception(f"Unexpected error generating AI PDF resume for user {current_user.username}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to generate AI resume PDF.")
+
+# --- /НОВЫЙ ЭНДПОИНТ ---

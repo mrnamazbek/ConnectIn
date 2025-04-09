@@ -4,11 +4,10 @@ nixPkgs = [
     "gcc",
     "python3",
     "poetry",
-    "libgobject-2.0-0",
-    "libcairo2",
-    "libpango-1.0-0",
-    "libpangocairo-1.0-0",
-    "libgdk-pixbuf2.0-0",
-    "libffi-dev",
+    "glib",
+    "cairo",
+    "pango",
+    "gdk-pixbuf",
+    "libffi",
     "shared-mime-info"
 ]

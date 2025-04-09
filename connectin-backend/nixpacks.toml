@@ -1,4 +1,14 @@
 # nixpacks.toml
 [phases.setup]
-nixPkgs = ["...", "glib", "pango", "cairo", "gdk-pixbuf", "libffi", "pkg-config"] # Добавлены зависимости WeasyPrint + libpq для psycopg2
-# Замените "..." на другие системные пакеты, если они вам нужны
+nixPkgs = [
+    "gcc",
+    "python3",
+    "poetry",
+    "libgobject-2.0-0",
+    "libcairo2",
+    "libpango-1.0-0",
+    "libpangocairo-1.0-0",
+    "libgdk-pixbuf2.0-0",
+    "libffi-dev",
+    "shared-mime-info"
+]

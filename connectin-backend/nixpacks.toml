@@ -9,5 +9,6 @@ nixPkgs = [
     "pango",
     "gdk-pixbuf",
     "libffi",
-    "shared-mime-info"
+    "shared-mime-info",
+    "postgresql"
 ]

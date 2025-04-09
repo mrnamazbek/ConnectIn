@@ -1,24 +1,19 @@
-# connectin-backend/app/api/v1/resumes.py
-
-import os
 import logging
-from typing import Dict, Any, List
+from typing import Dict, List
 from io import BytesIO
-from datetime import date # Убедитесь, что date импортирован
 
 # --- FastAPI & SQLAlchemy ---
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session # Убрали joinedload, будем использовать refresh
+from sqlalchemy.orm import Session
 from starlette.responses import StreamingResponse
 
 from app.api.v1.pdf_service import PDFService
 # --- Проектные импорты ---
 from app.database.connection import get_db
-from app.models.user import User, Experience, Education # Модели из user.py (с обновленными полями Date, description и т.д.)
+from app.models.user import User, Experience, Education
 from app.models.skill import Skill
 from app.api.v1.auth import get_current_user
 from app.core.config import settings
-from weasyprint import HTML, CSS
 
 # --- AI & Форматирование ---
 import openai
@@ -26,17 +21,13 @@ import markdown
 
 # --- Настройка ---
 logger = logging.getLogger(__name__)
-# logging.basicConfig(level=logging.INFO) # Настройте логгирование в main.py
 
 # --- Роутер ---
-router = APIRouter()
+router = APIRouter(prefix="/resume", tags=["resume"])
 
 # --- Хелпер: Сбор данных пользователя (ОБНОВЛЕННЫЙ) ---
 def get_user_profile_data(user: User, db: Session) -> dict:
-    """
-    Собирает и форматирует данные профиля пользователя для AI.
-    Использует обновленные модели с Date и новыми полями.
-    """
+    """Collects and formats user profile data for AI processing."""
     logger.debug(f"Collecting profile data for user: {user.username}")
 
     # Принудительно обновляем user и его связи в текущей сессии,
@@ -114,7 +105,7 @@ def get_user_profile_data(user: User, db: Session) -> dict:
 
 # --- Хелпер: Формирование промпта (Английский, ОБНОВЛЕННЫЙ) ---
 def create_resume_prompt_en(profile_data: dict) -> str:
-    """Создает промпт для ChatGPT на английском, используя обновленные данные."""
+    """Creates an English prompt for ChatGPT using the provided profile data."""
     # Формируем строку с контактами, только если они есть
     contact_parts = [profile_data['email']] # Email обязателен
     if profile_data['city']: contact_parts.insert(0, profile_data['city'])
@@ -214,10 +205,7 @@ async def generate_ai_resume_endpoint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db) # Передаем сессию для сбора данных
 ):
-    """
-    Собирает обновленные данные профиля, генерирует текст резюме через OpenAI
-    (на английском в Markdown), конвертирует в HTML и возвращает.
-    """
+    """Generates an AI resume in English and returns it as HTML."""
     try:
         # 1. Собрать обновленные данные профиля
         profile_data = get_user_profile_data(current_user, db)
@@ -256,7 +244,7 @@ async def generate_ai_resume_endpoint(
 
 # --- НОВЫЙ ЭНДПОИНТ (Generate PDF) ---
 @router.post( # Используем POST, т.к. это запускает генерацию
-    "/generate-ai-pdf",
+    "/generate-pdf",
     summary="Generate AI Resume and return as PDF download",
     response_class=StreamingResponse # Важно указать класс ответа
 )
@@ -264,10 +252,7 @@ async def generate_ai_resume_pdf_endpoint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    Генерирует AI резюме (Markdown -> HTML), затем конвертирует HTML в PDF
-    и возвращает PDF для скачивания.
-    """
+    """Generates an AI resume and returns it as a downloadable PDF."""
     logger.info(f"Received request to generate AI resume PDF for user: {current_user.username}")
     try:
         # 1. Собрать данные профиля

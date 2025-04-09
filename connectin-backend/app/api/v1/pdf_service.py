@@ -1,15 +1,11 @@
-# connectin-backend/app/services/pdf_service.py
 import logging
 from io import BytesIO
-
-#from starlette import status
-from weasyprint import HTML, CSS # Импортируем CSS для возможной стилизации
+from weasyprint import HTML, CSS
 from fastapi import HTTPException, status
 
 logger = logging.getLogger(__name__)
 
-# Базовые CSS стили, чтобы PDF выглядел хоть немного лучше без внешнего CSS
-# Вы можете расширить их или передавать CSS из другого источника
+# Base CSS styles for PDF generation
 DEFAULT_PDF_CSS = """
     @page { margin: 1.5cm; } /* Поля страницы */
     body { font-family: sans-serif; line-height: 1.5; font-size: 10pt; }
@@ -29,12 +25,10 @@ DEFAULT_PDF_CSS = """
 class PDFService:
     @staticmethod
     def generate_pdf(html_content: str, base_url: str | None = None) -> bytes:
-        """Конвертирует HTML строку в PDF байты с базовыми стилями."""
+        """Converts HTML string to PDF bytes with basic styling."""
         try:
             logger.info("Starting PDF generation with WeasyPrint...")
-            # Добавляем CSS к HTML (или можно передавать отдельно)
-            html = HTML(string=html_content, base_url=base_url) # base_url важен для относительных путей (картинки и т.д.)
-            # Применяем CSS
+            html = HTML(string=html_content, base_url=base_url)
             css = CSS(string=DEFAULT_PDF_CSS)
             pdf_bytes = html.write_pdf(stylesheets=[css])
             logger.info(f"PDF generated successfully, size: {len(pdf_bytes)} bytes")
@@ -45,5 +39,3 @@ class PDFService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to generate PDF document: {e}"
             )
-
-    # Метод create_pdf_response можно убрать, так как мы будем использовать StreamingResponse прямо в эндпоинте

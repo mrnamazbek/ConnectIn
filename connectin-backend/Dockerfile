@@ -9,16 +9,16 @@ RUN apt-get update && \
     python3-pip \
     python3-setuptools \
     python3-wheel \
-    libcairo2 \
     libpango-1.0-0 \
-    libpangocairo-1.0-0 \
-    libgdk-pixbuf2.0-0 \
+    libharfbuzz0b \
+    libpangoft2-1.0-0 \
+    libharfbuzz-subset0 \
     libffi-dev \
-    shared-mime-info \
-    pango1.0-tools \
-    libpango1.0-dev \
-    libharfbuzz-dev \
-    libpangoft2-1.0-0
+    libjpeg-dev \
+    libopenjp2-7-dev
+
+# Install fonts
+RUN fc-cache -f -v
 
 # Set working directory
 WORKDIR /app

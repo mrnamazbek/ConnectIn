@@ -16,7 +16,7 @@
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, Union, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Body
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
@@ -222,7 +222,7 @@ def login_user(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
-) -> dict[str, str | UserOut]:
+) -> Dict[str, Union[str, UserOut]]:
     """
     Аутентифицирует пользователя по логину и паролю, возвращая JWT-токены.
     """

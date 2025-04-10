@@ -21,7 +21,7 @@ pydantic_settings~=2.8.1 # Settings management
 
 # Databases
 SQLAlchemy~=2.0.38       # SQL ORM (PostgreSQL/MySQL/etc.)
-psycopg2~=2.9.10         # PostgreSQL adapter (for SQLAlchemy)
+psycopg2-binary~=2.9.9   # PostgreSQL adapter (for SQLAlchemy)
 aioredis~=2.0.1          # Async Redis client (caching/queues)
 
 # Search

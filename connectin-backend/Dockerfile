@@ -1,33 +1,32 @@
-# Use the official Python image as a parent image
-FROM python:3.11-slim
+# Use an official Python runtime as a parent image
+FROM python:3.9-slim-buster
 
-# Install system dependencies required by WeasyPrint
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpango-1.0-0 \
-    libpangoft2-1.0-0 \
-    libjpeg62-turbo-dev \
-    libopenjp2-7-dev \
-    libffi-dev \
-    libglib2.0-dev \
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y \
     build-essential \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    python3-dev \
+    python3-pip \
+    python3-setuptools \
+    python3-wheel \
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
+    shared-mime-info
 
-# Set the working directory in the container
+# Set working directory
 WORKDIR /app
 
-# Copy the requirements file into the container
+# Copy requirements first to leverage Docker cache
 COPY requirements.txt .
 
-# Upgrade pip to the latest version
-RUN pip install --no-cache-dir --upgrade pip
-
 # Install Python dependencies
-RUN pip install --no-cache-dir wheel
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of your application code into the container
+# Copy application code
 COPY . .
 
-# Command to run the application
+# Run the application
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

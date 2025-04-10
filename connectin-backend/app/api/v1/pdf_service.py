@@ -1,5 +1,4 @@
 import logging
-from io import BytesIO
 from weasyprint import HTML, CSS
 from fastapi import HTTPException, status
 

@@ -12,33 +12,36 @@ import ProjectProfile from "./pages/ProjectProfile";
 import AboutPage from "./pages/AboutPage.jsx";
 import { ToastContainer } from "react-toastify";
 import AuthWrapper from "./components/AuthWrapper.jsx";
+import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
     return (
-        <Router>
-            <AuthWrapper>
-                <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-                    <NavBar />
-                    <div className="flex-grow grid grid-cols-8">
-                        <div className="col-start-2 col-span-6">
-                            <Routes>
-                                <Route path="/login" element={<LoginPage />} />
-                                <Route path="/register" element={<RegisterPage />} />
-                                <Route path="/profile/*" element={<UserProfile />} />
-                                <Route path="/*" element={<FeedPage />} />
-                                <Route path="/search" element={<SearchPage />} />
-                                <Route path="/chats" element={<ChatPage />} />
-                                <Route path="*" element={<NotFoundPage />} />
-                                <Route path="project/:projectId/profile" element={<ProjectProfile />} />
-                                <Route path="/about" element={<AboutPage />} />
-                            </Routes>
+        <AuthProvider>
+            <Router>
+                <AuthWrapper>
+                    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+                        <NavBar />
+                        <div className="flex-grow grid grid-cols-8">
+                            <div className="col-start-2 col-span-6">
+                                <Routes>
+                                    <Route path="/login" element={<LoginPage />} />
+                                    <Route path="/register" element={<RegisterPage />} />
+                                    <Route path="/profile/*" element={<UserProfile />} />
+                                    <Route path="/*" element={<FeedPage />} />
+                                    <Route path="/search" element={<SearchPage />} />
+                                    <Route path="/chats" element={<ChatPage />} />
+                                    <Route path="*" element={<NotFoundPage />} />
+                                    <Route path="project/:projectId/profile" element={<ProjectProfile />} />
+                                    <Route path="/about" element={<AboutPage />} />
+                                </Routes>
+                            </div>
+                            <ToastContainer autoClose={5000} position="bottom-left" />
                         </div>
-                        <ToastContainer autoClose={5000} position="bottom-left" />
+                        <ConditionalFooter />
                     </div>
-                    <ConditionalFooter />
-                </div>
-            </AuthWrapper>
-        </Router>
+                </AuthWrapper>
+            </Router>
+        </AuthProvider>
     );
 }
 

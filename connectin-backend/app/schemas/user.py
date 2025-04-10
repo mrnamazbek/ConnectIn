@@ -55,6 +55,7 @@ class EducationOut(BaseModel):
     institution: str
     degree: str
     field_of_study: Optional[str] = None  # Make field_of_study optional
+    relevant_courses: Optional[str] = None  # Add relevant_courses field
     start_year: date
     end_year: Optional[date] = None
     description: Optional[str] = None

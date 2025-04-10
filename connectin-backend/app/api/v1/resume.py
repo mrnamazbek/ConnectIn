@@ -23,7 +23,7 @@ import markdown
 logger = logging.getLogger(__name__)
 
 # --- Роутер ---
-router = APIRouter(prefix="/resume", tags=["resume"])
+router = APIRouter(tags=["resume"])
 
 # --- Хелпер: Сбор данных пользователя (ОБНОВЛЕННЫЙ) ---
 def get_user_profile_data(user: User, db: Session) -> dict:

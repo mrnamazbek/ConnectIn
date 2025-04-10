@@ -6,19 +6,23 @@ import Logo from "../assets/images/connectin-logo-png.png";
 import axios from "axios";
 import TokenService from "../services/tokenService";
 import { toast } from "react-toastify";
+import { useAuth } from '../contexts/AuthContext';
 
 const NavBar = () => {
-    const location = useLocation();
+    const { isAuthenticated, updateAuthState } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const noStickyRoutes = ["/news", "/projects", "/teams", "/post", "/search"];
     const isSticky = !noStickyRoutes.includes(location.pathname);
 
-    const [isDark, setIsDark] = useState(localStorage.getItem("theme") === "dark");
-    const [showMenu, setShowMenu] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState(TokenService.isUserLoggedIn());
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+    const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
+    const [user, setUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (isDark) {
+        if (isDarkMode) {
             document.documentElement.classList.add("dark");
             localStorage.setItem("theme", "dark");
         } else {
@@ -27,48 +31,50 @@ const NavBar = () => {
         }
 
         // Check auth status on mount and when token changes
-        setIsAuthenticated(TokenService.isUserLoggedIn());
+        updateAuthState(TokenService.isUserLoggedIn());
 
         // Close dropdown when clicking outside
         const handleClickOutside = (event) => {
-            if (showMenu && !event.target.closest(".user-button")) {
-                setShowMenu(false);
+            if (isMenuOpen && !event.target.closest(".user-button")) {
+                setIsMenuOpen(false);
             }
         };
         document.addEventListener("click", handleClickOutside);
         return () => document.removeEventListener("click", handleClickOutside);
-    }, [isDark, showMenu]);
+    }, [isDarkMode, isMenuOpen, updateAuthState]);
 
-    const handleLogout = async () => {
-        try {
-            const token = TokenService.getAccessToken();
-            if (!token) {
-                // Already logged out
-                TokenService.clearTokens();
-                setIsAuthenticated(false);
-                navigate("/login");
-                return;
-            }
-
-            await axios.post(
-                `${import.meta.env.VITE_API_URL}/auth/logout`,
-                {},
-                {
-                    headers: { Authorization: `Bearer ${token}` },
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
+                    headers: {
+                        Authorization: `Bearer ${TokenService.getAccessToken()}`
+                    }
+                });
+                setUser(response.data);
+                updateAuthState(true);
+            } catch (error) {
+                if (error.response?.status === 401) {
+                    updateAuthState(false);
+                    TokenService.clearTokens();
+                    navigate('/login');
                 }
-            );
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-            TokenService.clearTokens();
-            setIsAuthenticated(false);
-            navigate("/login");
-            toast.success("You have been logged out successfully");
-        } catch (error) {
-            console.error("Logout failed:", error);
-            // Clear tokens even if the logout request fails
-            TokenService.clearTokens();
-            setIsAuthenticated(false);
-            navigate("/login");
+        if (TokenService.isUserLoggedIn()) {
+            checkAuth();
+        } else {
+            setIsLoading(false);
         }
+    }, [navigate, updateAuthState]);
+
+    const handleLogout = () => {
+        TokenService.clearTokens();
+        updateAuthState(false);
+        navigate('/login');
     };
 
     const handleNavigation = (path) => {
@@ -90,8 +96,8 @@ const NavBar = () => {
                     </NavLink>
                     <div className="space-x-5 font-semibold flex items-center">
                         {/* Theme Toggle */}
-                        <button onClick={() => setIsDark(!isDark)} aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}>
-                            <FontAwesomeIcon icon={isDark ? faSun : faMoon} className="cursor-pointer text-gray-600 dark:text-white hover:text-green-700" />
+                        <button onClick={() => setIsDarkMode(!isDarkMode)} aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}>
+                            <FontAwesomeIcon icon={isDarkMode ? faSun : faMoon} className="cursor-pointer text-gray-600 dark:text-white hover:text-green-700" />
                         </button>
 
                         {/* Search */}
@@ -123,23 +129,23 @@ const NavBar = () => {
                                 <div
                                     role="button"
                                     tabIndex={0}
-                                    onClick={() => setShowMenu(!showMenu)}
+                                    onClick={() => setIsMenuOpen(!isMenuOpen)}
                                     onKeyDown={(e) => {
                                         if (e.key === "Enter" || e.key === " ") {
-                                            setShowMenu(!showMenu);
+                                            setIsMenuOpen(!isMenuOpen);
                                         }
                                     }}
                                     className="dark:text-white hover:cursor-pointer"
-                                    aria-expanded={showMenu}
+                                    aria-expanded={isMenuOpen}
                                     aria-label="User menu"
                                 >
                                     <FontAwesomeIcon icon={faUser} />
                                 </div>
-                                {showMenu && (
+                                {isMenuOpen && (
                                     <div className="absolute z-20 top-6 right-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 shadow-md p-2">
                                         <button
                                             onClick={() => {
-                                                setShowMenu(false);
+                                                setIsMenuOpen(false);
                                                 handleNavigation("/profile") && navigate("/profile");
                                             }}
                                             className="block cursor-pointer py-2 px-4 text-sm text-gray-700 dark:text-white dark:hover:bg-gray-700 text-left w-full"
@@ -149,7 +155,7 @@ const NavBar = () => {
                                         <button
                                             className="block cursor-pointer py-2 px-4 text-sm text-gray-700 dark:text-white dark:hover:bg-gray-700 text-left w-full"
                                             onClick={() => {
-                                                setShowMenu(false);
+                                                setIsMenuOpen(false);
                                                 handleLogout();
                                             }}
                                         >

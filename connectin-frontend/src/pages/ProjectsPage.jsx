@@ -6,6 +6,7 @@ import qs from "qs";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
+import { useSearchParams } from "react-router";
 
 const ProjectsPage = () => {
     const [projects, setProjects] = useState([]);
@@ -15,9 +16,11 @@ const ProjectsPage = () => {
     const [filterLoading, setFilterLoading] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
     const [error, setError] = useState(null);
-    const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const pageSize = 10;
+
+    const [searchParams, setSearchParams] = useSearchParams();
+    const currentPage = parseInt(searchParams.get("page") || "1");
 
     const fetchAllData = useCallback(async () => {
         try {
@@ -50,14 +53,11 @@ const ProjectsPage = () => {
                 }
             });
             
-            setProjects(projectsRes.data.items || projectsRes.data);
+            setProjects(projectsRes.data.items);
+            setTotalPages(projectsRes.data.total_pages);
             
-            // Set total pages if available in response
-            if (projectsRes.data.total_pages) {
-                setTotalPages(projectsRes.data.total_pages);
-            } else if (projectsRes.data.total) {
-                setTotalPages(Math.ceil(projectsRes.data.total / pageSize));
-            }
+            // Update URL with current page
+            setSearchParams({ page: page.toString() });
         } catch (error) {
             console.error("Error fetching projects:", error);
             throw error;
@@ -105,15 +105,9 @@ const ProjectsPage = () => {
                 },
             });
             
-            setProjects(response.data.items || response.data);
-            setCurrentPage(1);
-            
-            // Set total pages if available in response
-            if (response.data.total_pages) {
-                setTotalPages(response.data.total_pages);
-            } else if (response.data.total) {
-                setTotalPages(Math.ceil(response.data.total / pageSize));
-            }
+            setProjects(response.data.items);
+            setTotalPages(response.data.total_pages);
+            setSearchParams({ page: "1" }); // Reset to page 1 in URL
         } catch (error) {
             console.error("Error filtering projects:", error);
             toast.error("Failed to filter projects");
@@ -211,12 +205,20 @@ const ProjectsPage = () => {
     };
 
     const handlePageChange = (page) => {
-        setCurrentPage(page);
+        setSearchParams({ page: page.toString() });
     };
 
     const renderPagination = () => {
         const pageNumbers = [];
-        for (let i = 1; i <= totalPages; i++) {
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
             pageNumbers.push(i);
         }
 
@@ -231,6 +233,18 @@ const ProjectsPage = () => {
                         Previous
                     </button>
                     
+                    {startPage > 1 && (
+                        <>
+                            <button
+                                onClick={() => handlePageChange(1)}
+                                className="px-3 py-1 rounded border border-green-700 hover:bg-green-50"
+                            >
+                                1
+                            </button>
+                            {startPage > 2 && <span className="px-2">...</span>}
+                        </>
+                    )}
+                    
                     {pageNumbers.map(number => (
                         <button
                             key={number}
@@ -244,6 +258,18 @@ const ProjectsPage = () => {
                             {number}
                         </button>
                     ))}
+                    
+                    {endPage < totalPages && (
+                        <>
+                            {endPage < totalPages - 1 && <span className="px-2">...</span>}
+                            <button
+                                onClick={() => handlePageChange(totalPages)}
+                                className="px-3 py-1 rounded border border-green-700 hover:bg-green-50"
+                            >
+                                {totalPages}
+                            </button>
+                        </>
+                    )}
                     
                     <button
                         onClick={() => handlePageChange(currentPage + 1)}

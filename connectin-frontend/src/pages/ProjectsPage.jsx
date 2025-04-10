@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
 import { useSearchParams } from "react-router";
+import { motion, AnimatePresence } from "framer-motion";
 
 const ProjectsPage = () => {
     const [projects, setProjects] = useState([]);
@@ -25,14 +26,11 @@ const ProjectsPage = () => {
     const fetchAllData = useCallback(async () => {
         try {
             setLoading(true);
-            const [tagsRes, userRes] = await Promise.all([
-                axios.get(`${import.meta.env.VITE_API_URL}/tags/`), 
-                fetchCurrentUser()
-            ]);
-            
+            const [tagsRes, userRes] = await Promise.all([axios.get(`${import.meta.env.VITE_API_URL}/tags/`), fetchCurrentUser()]);
+
             // Fetch projects with pagination
             await fetchProjects(currentPage);
-            
+
             setAllTags(tagsRes.data);
             setCurrentUser(userRes);
         } catch (error) {
@@ -47,15 +45,15 @@ const ProjectsPage = () => {
     const fetchProjects = async (page) => {
         try {
             const projectsRes = await axios.get(`${import.meta.env.VITE_API_URL}/projects/`, {
-                params: { 
+                params: {
                     page: page,
-                    page_size: pageSize
-                }
+                    page_size: pageSize,
+                },
             });
-            
+
             setProjects(projectsRes.data.items);
             setTotalPages(projectsRes.data.total_pages);
-            
+
             // Update URL with current page
             setSearchParams({ page: page.toString() });
         } catch (error) {
@@ -95,16 +93,16 @@ const ProjectsPage = () => {
         setFilterLoading(true);
         try {
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/filter_by_tags`, {
-                params: { 
+                params: {
                     tag_ids: tags,
                     page: 1, // Reset to page 1 when filtering
-                    page_size: pageSize
+                    page_size: pageSize,
                 },
                 paramsSerializer: (params) => {
                     return qs.stringify(params, { arrayFormat: "repeat" });
                 },
             });
-            
+
             setProjects(response.data.items);
             setTotalPages(response.data.total_pages);
             setSearchParams({ page: "1" }); // Reset to page 1 in URL
@@ -225,62 +223,71 @@ const ProjectsPage = () => {
         return (
             <div className="flex justify-center mt-6">
                 <nav className="flex items-center space-x-2">
-                    <button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className="px-3 py-1 rounded border border-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                    <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 rounded border border-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
                         Previous
                     </button>
-                    
+
                     {startPage > 1 && (
                         <>
-                            <button
-                                onClick={() => handlePageChange(1)}
-                                className="px-3 py-1 rounded border border-green-700 hover:bg-green-50"
-                            >
+                            <button onClick={() => handlePageChange(1)} className="px-3 py-1 rounded border border-green-700 hover:bg-green-50">
                                 1
                             </button>
                             {startPage > 2 && <span className="px-2">...</span>}
                         </>
                     )}
-                    
-                    {pageNumbers.map(number => (
-                        <button
-                            key={number}
-                            onClick={() => handlePageChange(number)}
-                            className={`px-3 py-1 rounded ${
-                                currentPage === number 
-                                    ? 'bg-green-700 text-white' 
-                                    : 'border border-green-700 hover:bg-green-50'
-                            }`}
-                        >
+
+                    {pageNumbers.map((number) => (
+                        <button key={number} onClick={() => handlePageChange(number)} className={`px-3 py-1 rounded ${currentPage === number ? "bg-green-700 text-white" : "border border-green-700 hover:bg-green-50"}`}>
                             {number}
                         </button>
                     ))}
-                    
+
                     {endPage < totalPages && (
                         <>
                             {endPage < totalPages - 1 && <span className="px-2">...</span>}
-                            <button
-                                onClick={() => handlePageChange(totalPages)}
-                                className="px-3 py-1 rounded border border-green-700 hover:bg-green-50"
-                            >
+                            <button onClick={() => handlePageChange(totalPages)} className="px-3 py-1 rounded border border-green-700 hover:bg-green-50">
                                 {totalPages}
                             </button>
                         </>
                     )}
-                    
-                    <button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className="px-3 py-1 rounded border border-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+
+                    <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="px-3 py-1 rounded border border-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
                         Next
                     </button>
                 </nav>
             </div>
         );
+    };
+
+    const containerVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                duration: 0.3,
+                when: "beforeChildren",
+                staggerChildren: 0.1,
+            },
+        },
+        exit: {
+            opacity: 0,
+            y: -20,
+            transition: {
+                duration: 0.2,
+            },
+        },
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                duration: 0.3,
+            },
+        },
     };
 
     return (
@@ -289,34 +296,44 @@ const ProjectsPage = () => {
 
             {/* Projects List */}
             {loading ? (
-                <div className="flex justify-center items-center min-h-[400px]">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-center items-center min-h-[400px]">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700"></div>
-                </div>
+                </motion.div>
             ) : error ? (
-                <div className="text-center py-8">
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8">
                     <FontAwesomeIcon icon={faExclamationCircle} className="text-red-500 text-4xl mb-4" />
                     <p className="text-red-500">{error}</p>
                     <button onClick={() => window.location.reload()} className="mt-4 text-sm text-green-700 hover:text-green-800 underline">
                         Try again
                     </button>
-                </div>
+                </motion.div>
             ) : filterLoading ? (
-                <div className="flex justify-center items-center min-h-[200px]">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-center items-center min-h-[200px]">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700"></div>
-                </div>
+                </motion.div>
             ) : projects.length > 0 ? (
-                <div className="space-y-4">
-                    {projects.map((project) => (
-                        <ProjectCard key={project.id} project={project} currentUser={currentUser} handleApply={handleApply} handleUpvote={handleUpvote} handleDownvote={handleDownvote} showViewProject={true} showCommentsLink={true} />
-                    ))}
-                    
-                    {/* Pagination controls */}
-                    {totalPages > 1 && renderPagination()}
-                </div>
+                <AnimatePresence mode="wait">
+                    <motion.div key={currentPage} variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
+                        <div className="grid grid-cols-1 gap-4">
+                            {projects.map((project) => (
+                                <motion.div key={project.id} variants={itemVariants}>
+                                    <ProjectCard key={project.id} project={project} currentUser={currentUser} handleApply={handleApply} handleUpvote={handleUpvote} handleDownvote={handleDownvote} showViewProject={true} showCommentsLink={true} />
+                                </motion.div>
+                            ))}
+                        </div>
+
+                        {/* Pagination controls */}
+                        {totalPages > 1 && (
+                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                                {renderPagination()}
+                            </motion.div>
+                        )}
+                    </motion.div>
+                </AnimatePresence>
             ) : (
-                <div className="text-center py-8 border border-dashed rounded-md">
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8 border border-dashed rounded-md">
                     <p className="text-gray-500">No projects found.</p>
-                </div>
+                </motion.div>
             )}
         </div>
     );

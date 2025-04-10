@@ -365,75 +365,100 @@ const UserProfile = () => {
     };
 
     return (
-        <div className="max-w-7xl mx-auto py-8">
-            <div className="grid grid-cols-1 lg:grid-cols-8 gap-6">
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-green-700 dark:border-green-500 overflow-hidden hover:shadow-xl transition-all duration-300">
-                    <div className="p-6">
+        <div className="max-w-7xl mx-auto py-4 sm:py-6 lg:py-8 px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-8 gap-4 sm:gap-6">
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    className="lg:col-span-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-green-700 dark:border-green-500 overflow-hidden hover:shadow-xl transition-all duration-300"
+                >
+                    <div className="p-4 sm:p-6">
                         {loadingUser ? (
-                            <div className="flex justify-center items-center py-12">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700 dark:border-green-500"></div>
+                            <div className="flex justify-center items-center py-8 sm:py-12">
+                                <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-green-700 dark:border-green-500"></div>
                             </div>
                         ) : user ? (
-                            <div className="space-y-6">
-                                <div className="flex flex-col md:flex-row gap-6">
-                                    <motion.div whileHover={{ scale: 1.05 }} className="relative flex-shrink-0">
+                            <div className="space-y-4 sm:space-y-6">
+                                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                                    <motion.div 
+                                        whileHover={{ scale: 1.02 }} 
+                                        className="relative flex-shrink-0 mx-auto sm:mx-0"
+                                    >
                                         <AvatarUpload user={user} onAvatarUpdate={handleAvatarUpdate} />
                                     </motion.div>
 
                                     <div className="flex-1 min-w-0">
                                         {!editMode ? (
-                                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-                                                <div className="flex items-center gap-2">
-                                                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white truncate">
+                                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2 sm:space-y-3">
+                                                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                                    <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white truncate">
                                                         {user.first_name} {user.last_name}
                                                     </h1>
-                                                    <span className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full whitespace-nowrap">{user.username}</span>
+                                                    <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full whitespace-nowrap">
+                                                        {user.username}
+                                                    </span>
                                                 </div>
 
-                                                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                                                    <FontAwesomeIcon icon={faUser} className="text-green-700 dark:text-green-400 flex-shrink-0" />
-                                                    <span className="truncate">{user.position || "Role not specified"}</span>
+                                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                                                    <div className="flex items-center gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                                                        <FontAwesomeIcon icon={faUser} className="text-green-700 dark:text-green-400 flex-shrink-0" />
+                                                        <span className="truncate">{user.position || "Role not specified"}</span>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                                                        <FontAwesomeIcon icon={faCode} className="text-green-700 dark:text-green-400 flex-shrink-0" />
+                                                        <span className="truncate">{user.city || "Location not specified"}</span>
+                                                    </div>
                                                 </div>
 
-                                                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                                                    <FontAwesomeIcon icon={faCode} className="text-green-700 dark:text-green-400 flex-shrink-0" />
-                                                    <span className="truncate">{user.city || "Location not specified"}</span>
-                                                </div>
+                                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                                                    <a href={`mailto:${user.email}`} className="flex items-center gap-2 text-sm sm:text-base text-green-700 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors">
+                                                        <FontAwesomeIcon icon={faUser} className="flex-shrink-0" />
+                                                        <span className="truncate">{user.email}</span>
+                                                    </a>
 
-                                                <a href={`mailto:${user.email}`} className="flex items-center gap-2 text-green-700 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors">
-                                                    <FontAwesomeIcon icon={faUser} className="flex-shrink-0" />
-                                                    <span className="truncate">{user.email}</span>
-                                                </a>
-
-                                                <div className="flex gap-4 pt-2">
-                                                    {user.github && (
-                                                        <motion.a whileHover={{ scale: 1.1 }} href={user.github} target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 transition-colors">
-                                                            <FontAwesomeIcon icon={faGithub} size="lg" />
-                                                        </motion.a>
-                                                    )}
-                                                    {user.linkedin && (
-                                                        <motion.a whileHover={{ scale: 1.1 }} href={user.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 transition-colors">
-                                                            <FontAwesomeIcon icon={faLinkedin} size="lg" />
-                                                        </motion.a>
-                                                    )}
-                                                    {user.telegram && (
-                                                        <motion.a
-                                                            whileHover={{ scale: 1.1 }}
-                                                            href={user.telegram.startsWith("http") ? user.telegram : `https://t.me/${user.telegram}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-gray-600 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 transition-colors"
-                                                        >
-                                                            <FontAwesomeIcon icon={faTelegram} size="lg" />
-                                                        </motion.a>
-                                                    )}
+                                                    <div className="flex gap-3 sm:gap-4 pt-1">
+                                                        {user.github && (
+                                                            <motion.a 
+                                                                whileHover={{ scale: 1.1 }} 
+                                                                href={user.github} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer" 
+                                                                className="text-gray-600 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 transition-colors"
+                                                            >
+                                                                <FontAwesomeIcon icon={faGithub} size="lg" />
+                                                            </motion.a>
+                                                        )}
+                                                        {user.linkedin && (
+                                                            <motion.a 
+                                                                whileHover={{ scale: 1.1 }} 
+                                                                href={user.linkedin} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer" 
+                                                                className="text-gray-600 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 transition-colors"
+                                                            >
+                                                                <FontAwesomeIcon icon={faLinkedin} size="lg" />
+                                                            </motion.a>
+                                                        )}
+                                                        {user.telegram && (
+                                                            <motion.a
+                                                                whileHover={{ scale: 1.1 }}
+                                                                href={user.telegram.startsWith("http") ? user.telegram : `https://t.me/${user.telegram}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-gray-600 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 transition-colors"
+                                                            >
+                                                                <FontAwesomeIcon icon={faTelegram} size="lg" />
+                                                            </motion.a>
+                                                        )}
+                                                    </div>
                                                 </div>
 
                                                 <motion.button
                                                     whileHover={{ scale: 1.02 }}
                                                     whileTap={{ scale: 0.98 }}
                                                     onClick={() => setEditMode(true)}
-                                                    className="mt-4 px-4 py-2 cursor-pointer bg-green-700 dark:bg-green-600 text-white rounded-lg hover:bg-green-600 dark:hover:bg-green-500 transition-colors flex items-center gap-2"
+                                                    className="mt-4 px-4 py-2 cursor-pointer bg-green-700 dark:bg-green-600 text-white rounded-lg hover:bg-green-600 dark:hover:bg-green-500 transition-colors flex items-center gap-2 text-sm sm:text-base"
                                                 >
                                                     <FontAwesomeIcon icon={faEdit} />
                                                     Edit Profile
@@ -441,7 +466,7 @@ const UserProfile = () => {
                                             </motion.div>
                                         ) : (
                                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                     <div>
                                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>
                                                         <input
@@ -530,12 +555,12 @@ const UserProfile = () => {
                                                     </div>
                                                 </div>
 
-                                                <div className="flex gap-3 mt-4">
+                                                <div className="flex flex-col sm:flex-row gap-3 mt-4">
                                                     <motion.button
                                                         whileHover={{ scale: 1.02 }}
                                                         whileTap={{ scale: 0.98 }}
                                                         onClick={handleSave}
-                                                        className="px-4 py-2 bg-green-700 dark:bg-green-600 text-white rounded-lg hover:bg-green-600 dark:hover:bg-green-500 transition-colors flex items-center gap-2"
+                                                        className="px-4 py-2 bg-green-700 dark:bg-green-600 text-white rounded-lg hover:bg-green-600 dark:hover:bg-green-500 transition-colors flex items-center gap-2 text-sm sm:text-base"
                                                     >
                                                         <FontAwesomeIcon icon={faCheck} />
                                                         Save Changes
@@ -544,7 +569,7 @@ const UserProfile = () => {
                                                         whileHover={{ scale: 1.02 }}
                                                         whileTap={{ scale: 0.98 }}
                                                         onClick={() => setEditMode(false)}
-                                                        className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
+                                                        className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center gap-2 text-sm sm:text-base"
                                                     >
                                                         <FontAwesomeIcon icon={faTimes} />
                                                         Cancel
@@ -561,8 +586,12 @@ const UserProfile = () => {
                     </div>
                 </motion.div>
 
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-green-700 dark:border-green-500 overflow-hidden hover:shadow-xl transition-all duration-300">
-                    <div className="p-6">
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    className="lg:col-span-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-green-700 dark:border-green-500 overflow-hidden hover:shadow-xl transition-all duration-300"
+                >
+                    <div className="p-4 sm:p-6">
                         <div className="mb-8">
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
@@ -787,8 +816,13 @@ const UserProfile = () => {
                     </div>
                 </motion.div>
 
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="lg:col-span-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-green-700 dark:border-green-500 overflow-hidden hover:shadow-xl transition-all duration-300">
-                    <div className="p-6">
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    transition={{ delay: 0.2 }} 
+                    className="lg:col-span-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-green-700 dark:border-green-500 overflow-hidden hover:shadow-xl transition-all duration-300"
+                >
+                    <div className="p-4 sm:p-6">
                         <div className="flex items-center gap-3 mb-4">
                             <FontAwesomeIcon icon={faRobot} className="text-green-600 dark:text-green-400 text-xl" />
                             <h2 className="text-lg font-semibold text-gray-800 dark:text-white">AI Resume Generator</h2>
@@ -871,30 +905,35 @@ const UserProfile = () => {
                     </div>
                 </motion.div>
 
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="lg:col-span-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-green-700 dark:border-green-500 overflow-hidden hover:shadow-xl transition-all duration-300">
-                    <div className="p-6">
-                        <div className="flex space-x-6 border-b border-gray-200 dark:border-gray-700 mb-6">
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    transition={{ delay: 0.4 }} 
+                    className="lg:col-span-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-green-700 dark:border-green-500 overflow-hidden hover:shadow-xl transition-all duration-300"
+                >
+                    <div className="p-4 sm:p-6">
+                        <div className="flex flex-wrap gap-2 sm:gap-6 border-b border-gray-200 dark:border-gray-700 mb-4 sm:mb-6">
                             <NavLink
                                 to="/profile/projects"
-                                className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? "text-green-700 dark:text-green-400 border-b-2 border-green-700 dark:border-green-400" : "text-gray-500 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400"}`}
+                                className={({ isActive }) => `px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${isActive ? "text-green-700 dark:text-green-400 border-b-2 border-green-700 dark:border-green-400" : "text-gray-500 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400"}`}
                             >
                                 Projects
                             </NavLink>
                             <NavLink
                                 to="/profile/skills"
-                                className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? "text-green-700 dark:text-green-400 border-b-2 border-green-700 dark:border-green-400" : "text-gray-500 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400"}`}
+                                className={({ isActive }) => `px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${isActive ? "text-green-700 dark:text-green-400 border-b-2 border-green-700 dark:border-green-400" : "text-gray-500 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400"}`}
                             >
                                 Skills
                             </NavLink>
                             <NavLink
                                 to="/profile/actions"
-                                className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? "text-green-700 dark:text-green-400 border-b-2 border-green-700 dark:border-green-400" : "text-gray-500 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400"}`}
+                                className={({ isActive }) => `px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${isActive ? "text-green-700 dark:text-green-400 border-b-2 border-green-700 dark:border-green-400" : "text-gray-500 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400"}`}
                             >
                                 News
                             </NavLink>
                             <NavLink
                                 to="/profile/saved"
-                                className={({ isActive }) => `px-4 py-2 text-sm font-medium transition-colors ${isActive ? "text-green-700 dark:text-green-400 border-b-2 border-green-700 dark:border-green-400" : "text-gray-500 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400"}`}
+                                className={({ isActive }) => `px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${isActive ? "text-green-700 dark:text-green-400 border-b-2 border-green-700 dark:border-green-400" : "text-gray-500 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400"}`}
                             >
                                 Saved
                             </NavLink>

@@ -14,10 +14,10 @@ const SubNav = () => {
                     Projects
                 </NavLink>
 
-                {/* Teams Link */}
+                {/* Teams Link
                 <NavLink to="/teams" className={({ isActive }) => (isActive ? "text-green-700 dark:text-green-400" : "hover:text-green-700")}>
                     Teams
-                </NavLink>
+                </NavLink> */}
             </nav>
         </div>
     );

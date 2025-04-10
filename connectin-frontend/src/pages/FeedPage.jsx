@@ -14,8 +14,8 @@ const Feed = () => {
     return (
         <>
             <SubNav />
-            <div className="grid grid-cols-8 gap-5 my-5 min-h-screen">
-                <div className="col-span-6">
+            <div className="grid grid-cols-1 md:grid-cols-8 gap-5 my-5 min-h-screen">
+                <div className="md:col-span-6">
                     <Routes>
                         <Route index element={<Navigate to="news" />} />
                         <Route path="news" element={<PostsPage />} />
@@ -26,7 +26,7 @@ const Feed = () => {
                         <Route path="project/:projectId" element={<ProjectPage />} />
                     </Routes>
                 </div>
-                <div className="col-span-2 flex-col space-y-5">
+                <div className="md:col-span-2 flex-col space-y-5">
                     <PopularNews />
                     <PopularProjects fakePopularProjects={fakePopularProjects} />
                 </div>

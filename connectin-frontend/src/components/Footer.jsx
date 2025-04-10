@@ -21,13 +21,6 @@ const Footer = () => {
                         <NavLink to="/about" className="transition hover:text-green-700 dark:hover:text-green-400 text-gray-800 dark:text-gray-300">
                             About Us
                         </NavLink>
-                        <NavLink to="/aboutus" className="transition hover:text-green-700 dark:hover:text-green-400 text-gray-800 dark:text-gray-300">
-                            About Us more details
-                        </NavLink>
-                        <NavLink to="/theynotlikeus" className="transition hover:text-green-700 dark:hover:text-green-400 text-gray-800 dark:text-gray-300">
-                            They not like us
-                        </NavLink>
-
                         {/* Right Section: Social Media Links */}
                         <a href="https://github.com/ded-r/ConnectIn" target="_blank" rel="noopener noreferrer" className="text-gray-800 dark:text-gray-300 hover:text-green-700 dark:hover:text-green-400 transition">
                             <FontAwesomeIcon icon={faGithub} />

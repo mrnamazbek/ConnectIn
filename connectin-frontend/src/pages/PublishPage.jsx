@@ -93,36 +93,45 @@ const PublishPage = () => {
 
             // Choose the appropriate endpoint and payload structure based on postType
             const endpoint = postType === "project" 
-                ? `${import.meta.env.VITE_API_URL}/projects/`
+                ? `${import.meta.env.VITE_API_URL}/projects/` 
                 : `${import.meta.env.VITE_API_URL}/posts/`;
 
-            const payload = postType === "project" 
+            const payload = postType === "project"
                 ? {
-                    name: title,
-                    description: content,
+                    name: title.trim(),
+                    description: content.trim(),
                     tag_ids: selectedTags,
-                    skill_ids: selectedSkills,
+                    skill_ids: selectedSkills
                 }
                 : {
-                    title,
-                    content,
+                    title: title.trim(),
+                    content: content.trim(),
+                    post_type: postType,
                     tag_ids: selectedTags,
-                    skill_ids: postType === "project" ? selectedSkills : [],
+                    skill_ids: postType === "project" ? selectedSkills : []
                 };
 
-            await axios.post(endpoint, payload, {
-                headers: { Authorization: `Bearer ${token}` },
+            const response = await axios.post(endpoint, payload, {
+                headers: { 
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             });
 
-            toast.success("Created successfully!");
-            setTitle("");
-            setContent("");
-            setPostType("news");
-            setSelectedTags([]);
-            setSelectedSkills([]);
+            if (response.status === 200 || response.status === 201) {
+                toast.success("Created successfully!");
+                // Reset form
+                setTitle("");
+                setContent("");
+                setPostType("news");
+                setSelectedTags([]);
+                setSelectedSkills([]);
+                setSearchQuery("");
+            }
         } catch (error) {
             console.error("Failed to create post:", error);
-            toast.error(error.response?.data?.message || "Failed to create post");
+            const errorMessage = error.response?.data?.detail || "Failed to create post. Please try again.";
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }

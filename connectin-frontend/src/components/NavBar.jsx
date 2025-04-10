@@ -1,12 +1,12 @@
 import { NavLink, useLocation, useNavigate } from "react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSun, faMoon, faMagnifyingGlass, faUser, faComments, faNewspaper, faPen } from "@fortawesome/free-solid-svg-icons";
+import { faSun, faMoon, faMagnifyingGlass, faUser, faComments, faNewspaper, faPen, faBars, faTimes } from "@fortawesome/free-solid-svg-icons";
 import Logo from "../assets/images/connectin-logo-png.png";
 import axios from "axios";
 import TokenService from "../services/tokenService";
 import { toast } from "react-toastify";
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from "../contexts/AuthContext";
 
 const NavBar = () => {
     const { isAuthenticated, updateAuthState } = useAuth();
@@ -16,10 +16,9 @@ const NavBar = () => {
     const isSticky = !noStickyRoutes.includes(location.pathname);
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
-    const [user, setUser] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const mobileMenuRef = useRef(null);
 
     useEffect(() => {
         if (isDarkMode) {
@@ -30,51 +29,48 @@ const NavBar = () => {
             localStorage.setItem("theme", "light");
         }
 
-        // Check auth status on mount and when token changes
         updateAuthState(TokenService.isUserLoggedIn());
 
-        // Close dropdown when clicking outside
         const handleClickOutside = (event) => {
             if (isMenuOpen && !event.target.closest(".user-button")) {
                 setIsMenuOpen(false);
             }
+            if (isMobileMenuOpen && mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+                setIsMobileMenuOpen(false);
+            }
         };
-        document.addEventListener("click", handleClickOutside);
-        return () => document.removeEventListener("click", handleClickOutside);
-    }, [isDarkMode, isMenuOpen, updateAuthState]);
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isDarkMode, isMenuOpen, isMobileMenuOpen, updateAuthState]);
 
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
+                await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
                     headers: {
-                        Authorization: `Bearer ${TokenService.getAccessToken()}`
-                    }
+                        Authorization: `Bearer ${TokenService.getAccessToken()}`,
+                    },
                 });
-                setUser(response.data);
                 updateAuthState(true);
             } catch (error) {
                 if (error.response?.status === 401) {
                     updateAuthState(false);
                     TokenService.clearTokens();
-                    navigate('/login');
+                    navigate("/login");
                 }
-            } finally {
-                setIsLoading(false);
             }
         };
 
         if (TokenService.isUserLoggedIn()) {
             checkAuth();
-        } else {
-            setIsLoading(false);
         }
     }, [navigate, updateAuthState]);
 
     const handleLogout = () => {
         TokenService.clearTokens();
         updateAuthState(false);
-        navigate('/login');
+        navigate("/login");
     };
 
     const handleNavigation = (path) => {
@@ -83,81 +79,79 @@ const NavBar = () => {
             navigate("/login");
             return false;
         }
+        setIsMobileMenuOpen(false);
         return true;
     };
 
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(prev => !prev);
+    };
+
+    const handleMobileMenuClick = (e) => {
+        e.stopPropagation();
+        toggleMobileMenu();
+    };
+
+    const NavItem = ({ to, icon, label, onClick }) => (
+        <NavLink
+            to={to}
+            onClick={onClick}
+            className={({ isActive }) => `
+                flex items-center space-x-2 px-4 py-2 text-sm
+                ${isActive ? "text-green-700 dark:text-green-400" : "text-gray-700 dark:text-gray-300 hover:text-green-700 dark:hover:text-green-400"}
+            `}
+        >
+            <FontAwesomeIcon icon={icon} className="w-4 h-4" />
+            <span>{label}</span>
+        </NavLink>
+    );
+
     return (
-        <nav className={`grid grid-cols-8 bg-white dark:bg-gray-800 text-sm border-b border-green-700 shadow-md ${isSticky ? "sticky top-0" : ""} z-20`}>
-            <div className="col-start-2 col-span-6">
-                <div className="flex justify-between items-center py-3">
+        <nav className={`bg-white dark:bg-gray-800 border-b border-green-700 shadow-md ${isSticky ? "sticky top-0" : ""} z-20`}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-between items-center h-16">
+                    {/* Logo */}
                     <NavLink to="/" className="flex items-center space-x-2 font-semibold text-green-700 dark:text-green-400">
                         <img src={Logo} alt="Logo" width={24} height={24} />
-                        <p>ConnectIn</p>
+                        <span className="hidden sm:inline">ConnectIn</span>
                     </NavLink>
-                    <div className="space-x-5 font-semibold flex items-center">
+
+                    {/* Desktop Navigation */}
+                    <div className="hidden md:flex items-center space-x-4">
                         {/* Theme Toggle */}
-                        <button onClick={() => setIsDarkMode(!isDarkMode)} aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}>
-                            <FontAwesomeIcon icon={isDarkMode ? faSun : faMoon} className="cursor-pointer text-gray-600 dark:text-white hover:text-green-700" />
+                        <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}>
+                            <FontAwesomeIcon icon={isDarkMode ? faSun : faMoon} className="w-4 h-4 text-gray-600 dark:text-white" />
                         </button>
-
-                        {/* Search */}
-                        <NavLink to="/search" className={({ isActive }) => (isActive ? "text-green-700 dark:text-green-700" : "hover:text-green-600 dark:text-white dark:hover:text-green-700")}>
-                            <FontAwesomeIcon icon={faMagnifyingGlass} />
-                        </NavLink>
-
-                        {/* New Post */}
-                        <NavLink to="/post" className={({ isActive }) => (isActive ? "text-green-700 dark:text-green-700" : "hover:text-green-600 dark:text-white dark:hover:text-green-700")}>
-                            <FontAwesomeIcon icon={faPen} />
-                        </NavLink>
 
                         {/* Navigation Links */}
-                        <NavLink to="/" className={({ isActive }) => (isActive ? "text-green-700 dark:text-green-700" : "hover:text-green-600 dark:text-white dark:hover:text-green-700")}>
-                            <FontAwesomeIcon icon={faNewspaper} />
-                        </NavLink>
+                        <NavItem to="/search" icon={faMagnifyingGlass} label="Search" />
+                        <NavItem to="/post" icon={faPen} label="New Post" />
+                        <NavItem to="/" icon={faNewspaper} label="Feed" />
+                        <NavItem to="/chats" icon={faComments} label="Chats" onClick={() => handleNavigation("/chats")} />
 
-                        {/* Chats - verify auth before navigating */}
-                        <button 
-                            onClick={() => handleNavigation("/chats") && navigate("/chats")} 
-                            className="hover:text-green-600 dark:text-white dark:hover:text-green-700" 
-                            aria-label="Chats"
-                        >
-                            <FontAwesomeIcon icon={faComments} />
-                        </button>
-
+                        {/* User Menu */}
                         {isAuthenticated ? (
                             <div className="relative user-button">
-                                <div
-                                    role="button"
-                                    tabIndex={0}
-                                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter" || e.key === " ") {
-                                            setIsMenuOpen(!isMenuOpen);
-                                        }
-                                    }}
-                                    className="dark:text-white hover:cursor-pointer"
-                                    aria-expanded={isMenuOpen}
-                                    aria-label="User menu"
-                                >
-                                    <FontAwesomeIcon icon={faUser} />
-                                </div>
+                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <FontAwesomeIcon icon={faUser} className="w-4 h-4 text-gray-600 dark:text-white" />
+                                </button>
                                 {isMenuOpen && (
-                                    <div className="absolute z-20 top-6 right-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 shadow-md p-2">
+                                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 border border-gray-200 dark:border-gray-700">
                                         <button
                                             onClick={() => {
                                                 setIsMenuOpen(false);
                                                 handleNavigation("/profile") && navigate("/profile");
                                             }}
-                                            className="block cursor-pointer py-2 px-4 text-sm text-gray-700 dark:text-white dark:hover:bg-gray-700 text-left w-full"
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
                                         >
                                             Profile
                                         </button>
                                         <button
-                                            className="block cursor-pointer py-2 px-4 text-sm text-gray-700 dark:text-white dark:hover:bg-gray-700 text-left w-full"
                                             onClick={() => {
                                                 setIsMenuOpen(false);
                                                 handleLogout();
                                             }}
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
                                         >
                                             Logout
                                         </button>
@@ -165,13 +159,73 @@ const NavBar = () => {
                                 )}
                             </div>
                         ) : (
-                            <>
-                                <button onClick={() => navigate("/login")} className="text-green-700 dark:text-white hover:underline" aria-label="Sign in">
-                                    <FontAwesomeIcon icon={faUser} />
-                                </button>
-                            </>
+                            <NavItem to="/login" icon={faUser} label="Sign In" />
                         )}
                     </div>
+
+                    {/* Mobile menu button */}
+                    <div className="md:hidden flex items-center space-x-4">
+                        <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}>
+                            <FontAwesomeIcon icon={isDarkMode ? faSun : faMoon} className="w-4 h-4 text-gray-600 dark:text-white" />
+                        </button>
+                        <button 
+                            onClick={handleMobileMenuClick}
+                            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" 
+                            aria-label="Toggle menu"
+                            aria-expanded={isMobileMenuOpen}
+                        >
+                            <FontAwesomeIcon icon={isMobileMenuOpen ? faTimes : faBars} className="w-4 h-4 text-gray-600 dark:text-white" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile menu */}
+            <div 
+                ref={mobileMenuRef} 
+                className={`mobile-menu md:hidden transition-all duration-200 ease-in-out ${
+                    isMobileMenuOpen ? "block" : "hidden"
+                }`}
+            >
+                <div className="px-2 pt-2 pb-3 space-y-1 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+                    <NavItem to="/search" icon={faMagnifyingGlass} label="Search" onClick={handleMobileMenuClick} />
+                    <NavItem to="/post" icon={faPen} label="New Post" onClick={handleMobileMenuClick} />
+                    <NavItem to="/" icon={faNewspaper} label="Feed" onClick={handleMobileMenuClick} />
+                    <NavItem
+                        to="/chats"
+                        icon={faComments}
+                        label="Chats"
+                        onClick={() => {
+                            handleMobileMenuClick();
+                            handleNavigation("/chats");
+                        }}
+                    />
+                    
+                    {isAuthenticated ? (
+                        <>
+                            <NavItem
+                                to="/profile"
+                                icon={faUser}
+                                label="Profile"
+                                onClick={() => {
+                                    handleMobileMenuClick();
+                                    handleNavigation("/profile");
+                                }}
+                            />
+                            <button
+                                onClick={() => {
+                                    handleMobileMenuClick();
+                                    handleLogout();
+                                }}
+                                className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                                <FontAwesomeIcon icon={faUser} className="w-4 h-4" />
+                                <span>Logout</span>
+                            </button>
+                        </>
+                    ) : (
+                        <NavItem to="/login" icon={faUser} label="Sign In" onClick={handleMobileMenuClick} />
+                    )}
                 </div>
             </div>
         </nav>

@@ -1,6 +1,8 @@
 # Use an official Python runtime as a parent image
 FROM python:3.9-slim-buster
 
+ENV PORT 8080
+
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y \

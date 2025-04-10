@@ -14,7 +14,11 @@ RUN apt-get update && \
     libpangocairo-1.0-0 \
     libgdk-pixbuf2.0-0 \
     libffi-dev \
-    shared-mime-info
+    shared-mime-info \
+    pango1.0-tools \
+    libpango1.0-dev \
+    libharfbuzz-dev \
+    libpangoft2-1.0-0
 
 # Set working directory
 WORKDIR /app

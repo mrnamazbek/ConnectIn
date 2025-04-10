@@ -1,5 +1,5 @@
-# Use an official Python runtime as a parent image
-FROM python:3.11-slim-buster
+# Use a newer Debian version with updated Pango
+FROM python:3.11-bullseye
 
 # Install system dependencies
 RUN apt-get update && \
@@ -12,7 +12,7 @@ RUN apt-get update && \
     libpango-1.0-0 \
     libharfbuzz0b \
     libpangoft2-1.0-0 \
-    libharfbuzz-gobject0 \
+    libharfbuzz-subset0 \
     libffi-dev \
     libjpeg-dev \
     libopenjp2-7-dev

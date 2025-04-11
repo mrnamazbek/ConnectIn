@@ -92,30 +92,29 @@ const PublishPage = () => {
             }
 
             // Choose the appropriate endpoint and payload structure based on postType
-            const endpoint = postType === "project" 
-                ? `${import.meta.env.VITE_API_URL}/projects/` 
-                : `${import.meta.env.VITE_API_URL}/posts/`;
+            const endpoint = postType === "project" ? `${import.meta.env.VITE_API_URL}/projects/` : `${import.meta.env.VITE_API_URL}/posts/`;
 
-            const payload = postType === "project"
-                ? {
-                    name: title.trim(),
-                    description: content.trim(),
-                    tag_ids: selectedTags,
-                    skill_ids: selectedSkills
-                }
-                : {
-                    title: title.trim(),
-                    content: content.trim(),
-                    post_type: postType,
-                    tag_ids: selectedTags,
-                    skill_ids: postType === "project" ? selectedSkills : []
-                };
+            const payload =
+                postType === "project"
+                    ? {
+                          name: title.trim(),
+                          description: content.trim(),
+                          tag_ids: selectedTags,
+                          skill_ids: selectedSkills,
+                      }
+                    : {
+                          title: title.trim(),
+                          content: content.trim(),
+                          post_type: postType,
+                          tag_ids: selectedTags,
+                          skill_ids: postType === "project" ? selectedSkills : [],
+                      };
 
             const response = await axios.post(endpoint, payload, {
-                headers: { 
+                headers: {
                     Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+                    "Content-Type": "application/json",
+                },
             });
 
             if (response.status === 200 || response.status === 201) {
@@ -267,9 +266,6 @@ const PublishPage = () => {
                 </option>
                 <option value="project" className="dark:bg-gray-800">
                     Project
-                </option>
-                <option value="team" className="dark:bg-gray-800">
-                    Team
                 </option>
             </select>
 

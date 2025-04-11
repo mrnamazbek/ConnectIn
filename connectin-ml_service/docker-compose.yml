@@ -1,0 +1,9 @@
+services:
+  ml_service:
+    build: .
+    ports:
+      - "8001:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:connectinamazon123@connectin-core-eu-db.cx4gaywwm3rk.eu-north-1.rds.amazonaws.com:5432/connectin
+    volumes:
+      - .:/app

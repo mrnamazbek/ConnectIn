@@ -1,3 +1,11 @@
+"""
+logger.py:
+Фабрика для получения сконфигурированного логгера.
+Может выводить логи в консоль, в файл, или куда захотите (Logstash, Graylog).
+"""
+
+
+
 import logging
 from logging import Logger
 import os

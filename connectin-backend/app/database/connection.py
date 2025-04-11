@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 import os
 from typing import Generator
 
-from app.core.settings.config import settings
+from app.core.config import settings
 
 engine = create_engine(
     str(settings.DATABASE_URL),

@@ -5,11 +5,7 @@ from sqlalchemy.sql import func
 from app.database import get_db
 from app.models import User, Conversation, Message
 from app.schemas.chat import MessageCreate, MessageOut, ConversationCreate, ConversationOut
-<<<<<<< HEAD:connectin-backend/app/api/v1/chat_router.py
-from app.api.v1.auth_router import get_current_user
-=======
 from app.api.v1.auth import get_current_user
->>>>>>> backup_before_reset:connectin-backend/app/api/v1/chats.py
 from app.models.relations.associations import conversation_participants
 
 router = APIRouter()

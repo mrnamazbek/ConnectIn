@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from starlette.responses import StreamingResponse
 
-from app.api.v1.pdf_service import PDFService
+from app.services.pdf_service import PDFService
 # --- Проектные импорты ---
 from app.database.connection import get_db
 from app.models.user import User, Experience, Education

@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import todos, auth, chat_ws, projects, skills, teams, posts, users, tags, chats
-from app.core import settings
+from app.core.config import settings
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from app.api.v1 import resume as resumes_v1 # Импортируем роутер резюме

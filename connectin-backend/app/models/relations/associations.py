@@ -1,12 +1,3 @@
-<<<<<<< HEAD:connectin-backend/app/models/relations/associations.py
-from sqlalchemy import Column, Integer, ForeignKey, Table
-from app.models.base import Base  # Make sure this is imported first
-
-from sqlalchemy import Column, Integer, Boolean, ForeignKey, Table
-from app.models.base import Base
-
-# ✅ Many-to-Many: User ↔ Teams
-=======
 from sqlalchemy import Column, Integer, Boolean, ForeignKey, Table
 from app.models.base import Base
 
@@ -20,17 +11,12 @@ skill_mappings = Table(
 )
 
 # ✅ Many-to-Many: User ↔ Teams (with admin role)
->>>>>>> backup_before_reset:connectin-backend/app/models/associations.py
 user_teams_association = Table(
     "user_teams",
     Base.metadata,
     Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
     Column("team_id", Integer, ForeignKey("teams.id"), primary_key=True),
-<<<<<<< HEAD:connectin-backend/app/models/relations/associations.py
-    Column("is_admin", Boolean, default=False, nullable=False),  # Добавляем поле для роли
-=======
     Column("is_admin", Boolean, default=False, nullable=False),
->>>>>>> backup_before_reset:connectin-backend/app/models/associations.py
     extend_existing=True
 )
 
@@ -70,17 +56,6 @@ project_applications = Table(
     extend_existing=True
 )
 
-<<<<<<< HEAD:connectin-backend/app/models/relations/associations.py
-# user_teams_association = Table(
-#     "user_teams",
-#     Base.metadata,
-#     Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
-#     Column("team_id", Integer, ForeignKey("teams.id", ondelete="CASCADE"), primary_key=True),
-#     extend_existing=True
-# )
-
-=======
->>>>>>> backup_before_reset:connectin-backend/app/models/associations.py
 # ✅ Many-to-Many: User ↔ Skills
 user_skills_association = Table(
     "user_skills",

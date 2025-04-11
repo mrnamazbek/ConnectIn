@@ -520,16 +520,21 @@ const UserProfile = () => {
                                                             placeholder="https://linkedin.com/in/username"
                                                         />
                                                     </div>
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telegram Username</label>
+                                                    <div className="mb-4">
+                                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Telegram
+                                                        </label>
                                                         <input
                                                             type="text"
                                                             name="telegram"
-                                                            value={updatedUser.telegram || ""}
+                                                            value={updatedUser.telegram?.replace('https://t.me/', '') || ''}
                                                             onChange={handleChange}
-                                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                                            placeholder="@username or URL"
+                                                            placeholder="username"
+                                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
                                                         />
+                                                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                            Enter your Telegram username without @ or https://
+                                                        </p>
                                                     </div>
                                                 </div>
 

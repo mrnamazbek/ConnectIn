@@ -501,12 +501,17 @@ def update_social_links(
             setattr(current_user, field, None)
         # Если поле не пустое, проверяем что это валидный URL
         elif value:
-            if not value.startswith(('http://', 'https://')):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"URL для {field} должен начинаться с http:// или https://"
-                )
-            setattr(current_user, field, value)
+            if field == 'telegram':
+                # Для Telegram, убираем @ и https:// если они есть
+                telegram_username = value.replace('@', '').replace('https://', '').replace('http://', '').replace('t.me/', '')
+                setattr(current_user, field, f"https://t.me/{telegram_username}")
+            else:
+                if not value.startswith(('http://', 'https://')):
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"URL для {field} должен начинаться с http:// или https://"
+                    )
+                setattr(current_user, field, value)
     
     db.commit()
     db.refresh(current_user)

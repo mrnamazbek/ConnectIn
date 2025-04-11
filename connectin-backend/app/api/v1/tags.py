@@ -11,11 +11,7 @@ from typing import List
 from app.database.connection import get_db
 from app.models.tag import Tag
 from app.schemas.tag import TagCreate, TagOut
-<<<<<<< HEAD:connectin-backend/app/api/v1/tag_routes.py
-from app.api.v1.auth_router import get_current_user
-=======
 from app.api.v1.auth import get_current_user
->>>>>>> backup_before_reset:connectin-backend/app/api/v1/tags.py
 
 router = APIRouter()
 

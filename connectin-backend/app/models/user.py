@@ -1,7 +1,10 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, Text, Date
 from sqlalchemy.orm import relationship
 from .base import Base
-from .relations.associations import user_teams_association, project_members_association, project_applications, user_skills_association, conversation_participants
+from .relations.associations import user_teams_association, project_members_association, project_applications, user_skills_association, conversation_participants, todo_watchers_association, todo_tags_association
+from sqlalchemy import Column, DateTime
+from datetime import datetime
+
 
 class User(Base):
     __tablename__ = "users"
@@ -20,6 +23,10 @@ class User(Base):
     avatar_url = Column(String, nullable=True) 
     google_id = Column(String(255), unique=True)
     google_refresh_token = Column(String(255))
+
+    status = Column(String, default="in progress")
+    #last active
+    last_active = Column(DateTime, default=datetime.now(), onupdate=datetime.now(), nullable=True)
     
     teams = relationship("Team", secondary=user_teams_association, back_populates="members")
     owned_projects = relationship("Project", back_populates="owner")
@@ -32,8 +39,25 @@ class User(Base):
     conversations = relationship("Conversation", secondary=conversation_participants, back_populates="participants")
     messages = relationship("Message", back_populates="sender")
     
-    comments = relationship("PostComment", back_populates="user", cascade="all, delete")
+    post_comments = relationship("PostComment", back_populates="user", cascade="all, delete")
     project_comments = relationship("ProjectComment", back_populates="user", cascade="all, delete")
+    saved_posts = relationship("SavedPost", back_populates="user", cascade="all, delete-orphan")
+
+    recommendations = relationship("Recommendation", back_populates="from_user")
+
+    # Todos created by the user
+    todos = relationship("Todo", back_populates="user")
+
+    #25.03.25:
+    # Новые отношения
+    watched_todos = relationship(
+        "Todo",
+        secondary=todo_watchers_association,
+        back_populates="watchers"
+    )
+
+    # Добавляем обратные связи для комментариев
+    todo_comments = relationship("TodoComment", back_populates="user")
 
     def __repr__(self):
         return f"<User id={self.id} username={self.username} email={self.email}>"
@@ -44,8 +68,11 @@ class Education(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     institution = Column(String(255), nullable=False)
     degree = Column(String(255), nullable=False)
-    start_year = Column(Integer, nullable=False)
-    end_year = Column(Integer, nullable=True)
+    field_of_study = Column(String(255), nullable=True)
+    start_year = Column(Date, nullable=False)
+    end_year = Column(Date, nullable=True)
+    relevant_courses = Column(Text, nullable=True)
+    description = Column(Text, nullable=True)
     
     user = relationship("User", back_populates="education")
 
@@ -55,7 +82,8 @@ class Experience(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     company = Column(String(255), nullable=False)
     role = Column(String(255), nullable=False)
-    start_year = Column(Integer, nullable=False)
-    end_year = Column(Integer, nullable=True)
-    
+    start_year = Column(Date, nullable=False)
+    end_year = Column(Date, nullable=True)
+    description = Column(Text, nullable=True)
+
     user = relationship("User", back_populates="experience")

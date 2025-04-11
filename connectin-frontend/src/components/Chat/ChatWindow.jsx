@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { fetchMessages, sendMessage } from "../../api/chatApi";
 import { connectToChat } from "../../api/chatWebSocket";
 import axios from "axios";
@@ -8,26 +8,85 @@ const ChatWindow = ({ conversationId }) => {
     const [newMessage, setNewMessage] = useState("");
     const [socket, setSocket] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isConnecting, setIsConnecting] = useState(false); // Track WebSocket connection state
+    const [connectionError, setConnectionError] = useState(null); // Store WebSocket errors
+    const messagesEndRef = useRef(null);
+    const socketRef = useRef(null); // Ref to manage a single WebSocket instance
 
     useEffect(() => {
         if (!conversationId) {
-            console.warn("ChatWindow: No conversationId provided. Skipping WebSocket connection.");
+            console.warn("ChatWindow: No conversationId provided.");
+            setConnectionError("Invalid conversation ID.");
             return;
         }
 
-        loadCurrentUser();
-        loadMessages();
-        const chatSocket = connectToChat(conversationId, handleNewMessage);
-        setSocket(chatSocket);
+        // Validate conversation exists before connecting
+        const validateConversation = async () => {
+            try {
+                const token = localStorage.getItem("access_token");
+                await axios.get(`${import.meta.env.VITE_API_URL}/chats/${conversationId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+            } catch (error) {
+                console.error("Conversation validation failed:", error);
+                setConnectionError("Conversation not found or inaccessible.");
+                return false;
+            }
+            return true;
+        };
 
-        return () => chatSocket && chatSocket.close();
+        const setupWebSocket = async () => {
+            setIsConnecting(true);
+            setConnectionError(null);
+
+            // Cleanup previous socket if it exists
+            if (socketRef.current) {
+                socketRef.current.close();
+            }
+
+            const isValid = await validateConversation();
+            if (!isValid) return;
+
+            loadCurrentUser();
+            loadMessages();
+            const chatSocket = connectToChat(conversationId, handleNewMessage);
+            socketRef.current = chatSocket;
+            setSocket(chatSocket);
+
+            chatSocket.onopen = () => {
+                console.log("Connected to chat WebSocket");
+                setIsConnecting(false);
+            };
+
+            chatSocket.onerror = (error) => {
+                console.error("WebSocket Error:", error);
+                setConnectionError("Failed to connect to WebSocket.");
+                setIsConnecting(false);
+            };
+
+            chatSocket.onclose = () => {
+                console.log("WebSocket Disconnected");
+                setIsConnecting(false);
+                // Attempt to reconnect after a delay
+                setTimeout(() => setupWebSocket(), 2000); // Reconnect after 2 seconds
+            };
+        };
+
+        setupWebSocket();
+
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.close();
+                socketRef.current = null;
+            }
+        };
     }, [conversationId]);
 
-    // Fetch the current user
     const loadCurrentUser = async () => {
         try {
-            const token = localStorage.getItem("token");
-            const response = await axios.get("http://127.0.0.1:8000/users/me", {
+            const token = localStorage.getItem("access_token");
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setCurrentUser(response.data);
@@ -36,78 +95,115 @@ const ChatWindow = ({ conversationId }) => {
         }
     };
 
-    // Load messages from API and set state
     const loadMessages = async () => {
         if (!conversationId) return;
+        setIsLoading(true);
         try {
             const data = await fetchMessages(conversationId);
-            setMessages(data);
+            const uniqueMessages = Array.from(new Map(data.map((msg) => [msg.id, msg])).values());
+            setMessages(uniqueMessages);
         } catch (error) {
             console.error("Failed to load messages", error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    // Handle new messages via WebSocket
     const handleNewMessage = (message) => {
         try {
             const parsedMessage = JSON.parse(message);
-            setMessages((prev) => [...prev, parsedMessage]);
+            if (currentUser && parsedMessage.sender_id !== currentUser.id) {
+                setMessages((prev) => {
+                    const updatedMessages = [...prev, parsedMessage];
+                    return Array.from(new Map(updatedMessages.map((msg) => [msg.id, msg])).values());
+                });
+            }
         } catch (error) {
             console.error("Failed to parse incoming message", error);
         }
     };
 
-    // Send message and update UI
     const handleSend = async () => {
         if (newMessage.trim()) {
             try {
                 const sentMessage = await sendMessage(conversationId, newMessage);
                 setNewMessage("");
-                // Optionally, update the UI immediately
-                setMessages((prev) => [...prev, sentMessage]);
+                setMessages((prev) => {
+                    const updatedMessages = [...prev, sentMessage];
+                    return Array.from(new Map(updatedMessages.map((msg) => [msg.id, msg])).values());
+                });
 
-                // Send message via WebSocket
-                if (socket) socket.send(JSON.stringify(sentMessage));
+                if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+                    socketRef.current.send(JSON.stringify(sentMessage));
+                }
             } catch (error) {
                 console.error("Failed to send message", error);
             }
         }
     };
 
-    // Optional: Handle Enter key for sending messages
     const handleKeyPress = (e) => {
         if (e.key === "Enter") {
             handleSend();
         }
     };
 
+    const formatTimestamp = (timestamp) => {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    };
+
+    useEffect(() => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [messages]);
+
     return (
-        <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
+        <div className="flex flex-col h-full bg-white dark:bg-gray-800 rounded-lg shadow-lg">
             <div className="flex-1 p-4 overflow-y-auto">
-                {messages.map((msg, index) => {
-                    const isCurrentUser = currentUser && msg.sender_id === currentUser.id;
-                    // Prefer a unique key if available (e.g., msg.id)
-                    return (
-                        <div key={msg.id || index} className={`mb-4 ${isCurrentUser ? "text-right" : "text-left"}`}>
-                            <div className={`inline-block p-3 rounded-lg ${isCurrentUser ? "bg-green-100 text-green-900" : "bg-gray-100 text-gray-900"}`}>
-                                <p className="text-sm">{msg.content}</p>
+                {isLoading || isConnecting ? (
+                    <div className="flex justify-center items-center h-full">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 dark:border-green-400"></div>
+                    </div>
+                ) : connectionError ? (
+                    <div className="flex justify-center items-center h-full">
+                        <p className="text-red-500 dark:text-red-400">{connectionError}</p>
+                    </div>
+                ) : messages.length === 0 ? (
+                    <div className="flex justify-center items-center h-full">
+                        <p className="text-gray-500 dark:text-gray-400">No messages yet. Start the conversation!</p>
+                    </div>
+                ) : (
+                    messages.map((msg, index) => {
+                        const isCurrentUser = currentUser && msg.sender_id === currentUser.id;
+                        return (
+                            <div key={msg.id || index} className={`mb-4 ${isCurrentUser ? "text-right" : "text-left"}`}>
+                                <div className={`inline-block max-w-[70%] p-3 rounded-lg ${isCurrentUser ? "bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100" : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100"}`}>
+                                    <p className="text-sm break-words">{msg.content}</p>
+                                    <div className="flex items-center justify-end mt-1">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">{formatTimestamp(msg.timestamp)}</p>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })
+                )}
+                <div ref={messagesEndRef}></div>
             </div>
 
-            <div className="p-4 border-t">
+            <div className="p-4 border-t dark:border-gray-700">
                 <div className="flex">
                     <input
                         type="text"
-                        className="flex-1 p-2 border rounded-l-lg focus:outline-none"
+                        className="flex-1 p-2 border dark:border-gray-600 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 dark:text-white"
                         placeholder="Type a message..."
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyPress={handleKeyPress} // Added Enter key handler
+                        onKeyPress={handleKeyPress}
+                        disabled={isConnecting || connectionError}
                     />
-                    <button className="px-4 bg-green-700 text-white rounded-r-lg hover:bg-green-800" onClick={handleSend}>
+                    <button className="px-4 bg-green-700 dark:bg-green-600 text-white rounded-r-lg hover:bg-green-800 dark:hover:bg-green-700 transition-colors" onClick={handleSend} disabled={isConnecting || connectionError || !newMessage.trim()}>
                         Send
                     </button>
                 </div>

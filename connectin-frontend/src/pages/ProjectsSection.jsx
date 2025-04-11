@@ -1,195 +1,114 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { NavLink } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrashAlt, faPlus, faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
-import { useNavigate } from "react-router";
+import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
+import { toast } from "react-toastify";
 
-const ProjectsSection = ({ user }) => {
-    const navigate = useNavigate();
+const ProjectsSection = ({ user, projects: propProjects, loading, isStatic }) => {
     const [projects, setProjects] = useState([]);
-    const [tags, setTags] = useState([]);
-    const [skills, setSkills] = useState([]);
-    const [selectedTags, setSelectedTags] = useState([]);
-    const [selectedSkills, setSelectedSkills] = useState([]);
-    const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
-    const [loading, setLoading] = useState(true);
-    const [creating, setCreating] = useState(false);
-    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [localLoading, setLocalLoading] = useState(true);
 
     useEffect(() => {
+        if (isStatic && propProjects) {
+            setProjects(propProjects);
+            setLocalLoading(false);
+            return;
+        }
+
         fetchProjects();
-        fetchTagsAndSkills();
-    }, []);
+    }, [isStatic, propProjects]);
 
     const fetchProjects = async () => {
         try {
-            setLoading(true);
-            const token = localStorage.getItem("token");
-            const response = await axios.get("http://127.0.0.1:8000/projects/my", {
+            setLocalLoading(true);
+            const token = localStorage.getItem("access_token");
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/my`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            setProjects(response.data);
+            if (response?.data) {
+                setProjects(response.data);
+            }
         } catch (error) {
             console.error("Failed to fetch projects:", error);
+            toast.error("Failed to load projects");
         } finally {
-            setLoading(false);
+            setLocalLoading(false);
         }
     };
 
-    const fetchTagsAndSkills = async () => {
-        try {
-            const tagsRes = await axios.get("http://127.0.0.1:8000/tags/");
-            const skillsRes = await axios.get("http://127.0.0.1:8000/skills/");
-            setTags(tagsRes.data);
-            setSkills(skillsRes.data);
-        } catch (error) {
-            console.error("Failed to fetch tags or skills:", error);
-        }
-    };
-
-    const handleCreateProject = async () => {
-        if (!name.trim() || !description.trim()) {
-            alert("Project name and description are required.");
-            return;
-        }
-
-        setCreating(true);
-        try {
-            const token = localStorage.getItem("token");
-            console.log({ name, description, selectedTags, selectedSkills });
-            await axios.post(
-                "http://127.0.0.1:8000/projects/",
-                {
-                    name,
-                    description,
-                    tag_ids: selectedTags,
-                    skill_ids: selectedSkills,
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            alert("Project created successfully!");
-            fetchProjects();
-            setName("");
-            setDescription("");
-            setSelectedTags([]);
-            setSelectedSkills([]);
-            setIsFormOpen(false);
-        } catch (error) {
-            console.error("Failed to create project:", error);
-        } finally {
-            setCreating(false);
-        }
-    };
-
-    const handleDeleteProject = async (projectId, ownerId) => {
-        if (!user || user.id !== ownerId) {
-            alert("You can only delete your own projects.");
-            return;
-        }
+    const handleDeleteProject = async (projectId) => {
         if (!window.confirm("Are you sure you want to delete this project?")) return;
 
         try {
-            const token = localStorage.getItem("token");
-            await axios.delete(`http://127.0.0.1:8000/projects/${projectId}`, {
+            const token = localStorage.getItem("access_token");
+            await axios.delete(`${import.meta.env.VITE_API_URL}/projects/${projectId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            alert("Project deleted successfully!");
+            toast.success("Project deleted successfully");
             setProjects((prev) => prev.filter((project) => project.id !== projectId));
         } catch (error) {
             console.error("Failed to delete project:", error);
+            toast.error("Failed to delete project");
         }
     };
 
     return (
-        <div className="self-start w-full hover:shadow-green-700 transition">
-            {/* 🔹 Toggle Create Project Form */}
-            <button onClick={() => setIsFormOpen(!isFormOpen)} className="mt-3 w-full bg-green-700 text-white px-4 py-2 rounded-md font-semibold shadow-md hover:bg-green-600 transition flex justify-between items-center">
-                {isFormOpen ? "Hide Form" : "Create New Project"}
-                <FontAwesomeIcon icon={isFormOpen ? faChevronUp : faChevronDown} />
-            </button>
-
-            {/* 🔹 Collapsible Create Project Form */}
-            {isFormOpen && (
-                <div className="mt-4">
-                    <h3 className="font-semibold">New Project</h3>
-                    <input type="text" placeholder="Project Name" className="w-full bg-white text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm" value={name} onChange={(e) => setName(e.target.value)} />
-                    <textarea placeholder="Project Description" className="w-full bg-white text-sm px-3 py-2 border border-gray-200 rounded-md shadow-sm mt-2" value={description} onChange={(e) => setDescription(e.target.value)} />
-
-                    {/* 🔹 Select Tags */}
-                    <div className="mt-2">
-                        <p className="font-semibold text-sm">Select Tags:</p>
-                        <div className="flex flex-wrap gap-2">
-                            {tags.map((tag) => (
-                                <button
-                                    key={tag.id}
-                                    onClick={() => setSelectedTags((prev) => (prev.includes(tag.id) ? prev.filter((id) => id !== tag.id) : [...prev, tag.id]))}
-                                    className={`px-2 py-1 shadow-sm rounded-md text-sm cursor-pointer transition ${selectedTags.includes(tag.id) ? "bg-green-700 text-white" : ""}`}
-                                >
-                                    {tag.name}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* 🔹 Select Skills */}
-                    <div className="mt-2">
-                        <p className="font-semibold text-sm">Select Skills:</p>
-                        <div className="flex flex-wrap gap-2">
-                            {skills.map((skill) => (
-                                <button
-                                    key={skill.id}
-                                    onClick={() => setSelectedSkills((prev) => (prev.includes(skill.id) ? prev.filter((id) => id !== skill.id) : [...prev, skill.id]))}
-                                    className={`px-2 py-1 shadow-sm rounded-md text-sm cursor-pointer transition ${selectedSkills.includes(skill.id) ? "bg-green-700 text-white" : ""}`}
-                                >
-                                    {skill.name}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <button onClick={handleCreateProject} className="mt-3 w-full bg-green-700 text-white px-4 py-2 rounded-md font-semibold shadow-md hover:bg-green-600 transition" disabled={creating}>
-                        {creating ? "Creating..." : "Save Project"}
-                    </button>
-                </div>
-            )}
-
-            {/* 🔹 Display Projects */}
-            {loading ? (
-                <p className="text-gray-600 mt-3">Loading projects...</p>
+        <div className="space-y-6">
+            {loading || localLoading ? (
+                <p className="text-center text-gray-500 py-4">Loading projects...</p>
             ) : projects.length > 0 ? (
-                projects.map((project) => (
-                    <div key={project.id} className="py-4 border-b border-gray-300 last:border-b-0">
-                        <div className="flex justify-between items-center">
-                            <div className="flex flex-col">
-                                <h4 className="font-semibold">{project.name}</h4>
-                                <p className="text-gray-600">{project.description}</p>
-                                <div className="flex flex-wrap gap-2 mt-2">
-                                    {project.tags.map((tag, index) => (
-                                        <span key={tag.id} className="text-xs text-gray-500 underline underline-offset-2">
-                                            {tag.name}
-                                            {index < project.tags.length - 1 && ", "}
-                                        </span>
-                                    ))}
+                <div className="space-y-4">
+                    {projects.map((project) => (
+                        <div key={project.id} className="border border-gray-200 rounded-md p-4 hover:shadow-md transition">
+                            <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                    <h3 className="font-semibold text-lg mb-2">{project.name}</h3>
+                                    {project.tags?.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mb-3">
+                                            {project.tags.map((tag) => (
+                                                <span key={tag.id} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-md">
+                                                    {tag.name}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: project.description }} />
                                 </div>
-                                <div className="flex flex-wrap gap-2 mt-2">
-                                    {project.skills.map((skill) => (
-                                        <span key={skill.id} className="bg-green-200 text-green-700 px-2 py-1 rounded-md text-xs">
-                                            {skill.name}
-                                        </span>
-                                    ))}
+                                <div className="flex items-center space-x-2 ml-4">
+                                    {user && user.id === project.owner?.id && (
+                                        <button
+                                            onClick={() => handleDeleteProject(project.id)}
+                                            className="text-red-500 cursor-pointer hover:text-red-700 px-2 py-1 flex items-center gap-2"
+                                        >
+                                            <FontAwesomeIcon icon={faTrashAlt} />
+                                            Delete
+                                        </button>
+                                    )}
+                                    <NavLink to={`/project/${project.id}/profile`} className="bg-green-700 text-white px-3 py-1 rounded hover:bg-green-600">
+                                        View
+                                    </NavLink>
                                 </div>
                             </div>
-                            {user.id === project.owner_id && (
-                                <button onClick={() => handleDeleteProject(project.id, project.owner_id)} className="hover:text-red-700 transition">
-                                    <FontAwesomeIcon icon={faTrashAlt} />
-                                </button>
-                            )}
+
+                            <div className="flex mt-4 text-sm text-gray-500">
+                                <div className="flex items-center mr-4">
+                                    <span>Votes: {project.vote_count}</span>
+                                </div>
+                                <div className="flex items-center">
+                                    <span>Comments: {project.comments_count}</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                ))
+                    ))}
+                </div>
             ) : (
-                <p className="text-gray-700 mt-3">No projects found.</p>
+                <div className="text-center py-8 border border-dashed rounded-md">
+                    <p className="text-gray-500">No projects available.</p>
+                    <NavLink to="/project/create" className="text-green-700 hover:underline mt-2 inline-block">
+                        Create your first project
+                    </NavLink>
+                </div>
             )}
         </div>
     );

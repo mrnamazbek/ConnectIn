@@ -3,7 +3,7 @@ app/api/__init__.py:
 Собираем все роутеры (endpoints) в одном месте.
 """
 
-from app.api.v1.skill_routes import router as skills_router
+from app.api.v1.todos import router as todos_router
 
 # Можно также определить функцию init_routers(app)
 # для удобного подключения в main.py:

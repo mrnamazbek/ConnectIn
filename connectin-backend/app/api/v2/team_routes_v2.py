@@ -10,7 +10,11 @@ from typing import List
 from app.database.connection import get_db
 from app.services.team_service import TeamService
 from app.schemas.team import TeamCreate, TeamOut, TeamUpdate
+<<<<<<< HEAD
 from app.api.v1.auth_router import get_current_user
+=======
+from app.api.v1.auth import get_current_user
+>>>>>>> backup_before_reset
 
 router = APIRouter()
 

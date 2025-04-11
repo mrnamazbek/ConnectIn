@@ -13,7 +13,11 @@ from app.database import get_db
 from app.models import User
 from app.schemas.chat import MessageCreate, MessageOut, ConversationCreate, ConversationOut
 from app.services.chat_service import ChatService
+<<<<<<< HEAD
 from app.api.v1.auth_router import get_current_user
+=======
+from app.api.v1.auth import get_current_user
+>>>>>>> backup_before_reset
 
 router = APIRouter()
 

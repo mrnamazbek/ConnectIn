@@ -20,6 +20,8 @@ class Post(Base):
     
     tags = relationship("Tag", secondary=post_tags_association, back_populates="posts")
     comments = relationship("PostComment", back_populates="post", cascade="all, delete-orphan")  # 🔹 Corrected reference
+    saved_by = relationship("SavedPost", back_populates="post", cascade="all, delete-orphan")
+    post_recommendations = relationship("PostRecommendation", back_populates="post")
 
     def __repr__(self):
         return f"<Post id={self.id} title={self.title} type={self.post_type}>"

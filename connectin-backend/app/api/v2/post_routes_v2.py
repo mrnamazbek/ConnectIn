@@ -1,7 +1,11 @@
 from fastapi import APIRouter, Depends
 from typing import List
 from app.database.connection import get_db
+<<<<<<< HEAD
 from app.api.v1.auth_router import get_current_user
+=======
+from app.api.v1.auth import get_current_user
+>>>>>>> backup_before_reset
 from app.schemas.post import PostCreate, PostOut
 from app.services.post_service import PostService
 

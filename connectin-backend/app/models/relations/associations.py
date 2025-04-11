@@ -1,3 +1,4 @@
+<<<<<<< HEAD:connectin-backend/app/models/relations/associations.py
 from sqlalchemy import Column, Integer, ForeignKey, Table
 from app.models.base import Base  # Make sure this is imported first
 
@@ -5,12 +6,31 @@ from sqlalchemy import Column, Integer, Boolean, ForeignKey, Table
 from app.models.base import Base
 
 # ✅ Many-to-Many: User ↔ Teams
+=======
+from sqlalchemy import Column, Integer, Boolean, ForeignKey, Table
+from app.models.base import Base
+
+# ✅ Many-to-Many: Skills ↔ Skill Categories
+skill_mappings = Table(
+    "skill_mappings",
+    Base.metadata,
+    Column("skill_id", Integer, ForeignKey("skills.id", ondelete="CASCADE"), primary_key=True),
+    Column("category_id", Integer, ForeignKey("skill_categories.id", ondelete="CASCADE"), primary_key=True),
+    extend_existing=True
+)
+
+# ✅ Many-to-Many: User ↔ Teams (with admin role)
+>>>>>>> backup_before_reset:connectin-backend/app/models/associations.py
 user_teams_association = Table(
     "user_teams",
     Base.metadata,
     Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
     Column("team_id", Integer, ForeignKey("teams.id"), primary_key=True),
+<<<<<<< HEAD:connectin-backend/app/models/relations/associations.py
     Column("is_admin", Boolean, default=False, nullable=False),  # Добавляем поле для роли
+=======
+    Column("is_admin", Boolean, default=False, nullable=False),
+>>>>>>> backup_before_reset:connectin-backend/app/models/associations.py
     extend_existing=True
 )
 
@@ -50,6 +70,7 @@ project_applications = Table(
     extend_existing=True
 )
 
+<<<<<<< HEAD:connectin-backend/app/models/relations/associations.py
 # user_teams_association = Table(
 #     "user_teams",
 #     Base.metadata,
@@ -58,6 +79,8 @@ project_applications = Table(
 #     extend_existing=True
 # )
 
+=======
+>>>>>>> backup_before_reset:connectin-backend/app/models/associations.py
 # ✅ Many-to-Many: User ↔ Skills
 user_skills_association = Table(
     "user_skills",
@@ -84,3 +107,21 @@ conversation_participants = Table(
     Column("conversation_id", Integer, ForeignKey("conversations.id"), primary_key=True),
     extend_existing=True
 )
+
+# Many-to-Many: User ↔ Todo (Watchers)
+todo_watchers_association = Table(
+    "todo_watchers",
+    Base.metadata,
+    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("todo_id", Integer, ForeignKey("todos.id", ondelete="CASCADE"), primary_key=True),
+    extend_existing=True
+)
+
+# Many-to-Many: Todo ↔ Tags
+todo_tags_association = Table(
+    "todo_tags",
+    Base.metadata,
+    Column("todo_id", Integer, ForeignKey("todos.id", ondelete="CASCADE"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
+    extend_existing=True
+) 

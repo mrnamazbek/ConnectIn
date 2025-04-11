@@ -40,9 +40,13 @@ const SavedPostsSection = ({ posts: propPosts, loading, isStatic }) => {
     const handleUnsavePost = async (postId) => {
         try {
             const token = localStorage.getItem("access_token");
-            await axios.post(`${import.meta.env.VITE_API_URL}/posts/${postId}/save`, {}, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await axios.post(
+                `${import.meta.env.VITE_API_URL}/posts/${postId}/save`,
+                {},
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
             toast.success("Post unsaved successfully");
             setPosts((prev) => prev.filter((post) => post.id !== postId));
         } catch (error) {
@@ -74,14 +78,11 @@ const SavedPostsSection = ({ posts: propPosts, loading, isStatic }) => {
                                     <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: post.content }} />
                                 </div>
                                 <div className="flex items-center space-x-2 ml-4">
-                                    <button
-                                        onClick={() => handleUnsavePost(post.id)}
-                                        className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 px-2 py-1 flex items-center gap-2"
-                                    >
+                                    <button onClick={() => handleUnsavePost(post.id)} className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 px-2 py-1 flex items-center gap-2">
                                         <FontAwesomeIcon icon={faBookmark} />
                                         Unsave
                                     </button>
-                                    <NavLink to={`/post/${post.id}`} className="bg-green-700 dark:bg-green-600 text-white px-3 py-1 rounded hover:bg-green-600 dark:hover:bg-green-500">
+                                    <NavLink to={`/posts/${post.id}`} className="bg-green-700 dark:bg-green-600 text-white px-3 py-1 rounded hover:bg-green-600 dark:hover:bg-green-500">
                                         View
                                     </NavLink>
                                 </div>
@@ -107,4 +108,4 @@ const SavedPostsSection = ({ posts: propPosts, loading, isStatic }) => {
     );
 };
 
-export default SavedPostsSection; 
+export default SavedPostsSection;

@@ -6,11 +6,16 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router";
 import TokenService from "../../services/tokenService";
+import axios from "axios";
 
 export const PostCard = ({ post, showReadButton = true, onLike, onSave, isLiked = false, isSaved = false }) => {
     const { id, title, content, author, tags, likes_count, comments_count, saves_count } = post;
     const [isLikeLoading, setIsLikeLoading] = useState(false);
     const [isSaveLoading, setIsSaveLoading] = useState(false);
+    const [localLikesCount, setLocalLikesCount] = useState(likes_count);
+    const [localSavesCount, setLocalSavesCount] = useState(saves_count);
+    const [localIsLiked, setLocalIsLiked] = useState(isLiked);
+    const [localIsSaved, setLocalIsSaved] = useState(isSaved);
     const navigate = useNavigate();
 
     const handleLike = async () => {
@@ -23,9 +28,17 @@ export const PostCard = ({ post, showReadButton = true, onLike, onSave, isLiked 
 
         setIsLikeLoading(true);
         try {
-            await onLike();
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/posts/${id}/like`, {}, { headers: { Authorization: `Bearer ${token}` } });
+
+            setLocalIsLiked(response.data.is_liked);
+            setLocalLikesCount(response.data.likes_count);
+
+            if (onLike) {
+                onLike(id, response.data.is_liked, response.data.likes_count);
+            }
         } catch (error) {
-            toast.error("Failed to like post:", error);
+            console.error("Error liking post:", error);
+            toast.error("Failed to like post");
         } finally {
             setIsLikeLoading(false);
         }
@@ -41,9 +54,17 @@ export const PostCard = ({ post, showReadButton = true, onLike, onSave, isLiked 
 
         setIsSaveLoading(true);
         try {
-            await onSave();
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/posts/${id}/save`, {}, { headers: { Authorization: `Bearer ${token}` } });
+
+            setLocalIsSaved(response.data.is_saved);
+            setLocalSavesCount(response.data.saves_count);
+
+            if (onSave) {
+                onSave(id, response.data.is_saved, response.data.saves_count);
+            }
         } catch (error) {
-            toast.error("Failed to save post:", error);
+            console.error("Error saving post:", error);
+            toast.error("Failed to save post");
         } finally {
             setIsSaveLoading(false);
         }
@@ -85,16 +106,16 @@ export const PostCard = ({ post, showReadButton = true, onLike, onSave, isLiked 
             <div className="flex justify-between items-center mt-3">
                 <div className="space-x-5 flex items-center">
                     <button onClick={handleLike} disabled={isLikeLoading} className="group relative text-gray-500 hover:text-red-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" title={isLikeLoading ? "Processing..." : "Like post"}>
-                        <FontAwesomeIcon icon={isLiked ? faHeartSolid : faHeart} className={`${isLikeLoading ? "animate-pulse" : ""}`} style={isLiked ? { color: "#ff0000" } : {}} />
-                        <span className="ml-1">{likes_count || ""}</span>
+                        <FontAwesomeIcon icon={localIsLiked ? faHeartSolid : faHeart} className={`${isLikeLoading ? "animate-pulse" : ""}`} style={localIsLiked ? { color: "#ff0000" } : {}} />
+                        <span className="ml-1">{localLikesCount || ""}</span>
                     </button>
                     <button className="group relative text-gray-500 hover:text-gray-700 transition cursor-pointer" title="View comments">
                         <FontAwesomeIcon icon={faComment} />
                         <span className="ml-1">{comments_count || ""}</span>
                     </button>
                     <button onClick={handleSave} disabled={isSaveLoading} className="group relative text-gray-500 hover:text-yellow-400 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" title={isSaveLoading ? "Processing..." : "Save post"}>
-                        <FontAwesomeIcon icon={isSaved ? faBookmarkSolid : faBookmarkRegular} className={`${isSaveLoading ? "animate-pulse" : ""}`} style={isSaved ? { color: "#facc15" } : {}} />
-                        <span className="ml-1">{saves_count || ""}</span>
+                        <FontAwesomeIcon icon={localIsSaved ? faBookmarkSolid : faBookmarkRegular} className={`${isSaveLoading ? "animate-pulse" : ""}`} style={localIsSaved ? { color: "#facc15" } : {}} />
+                        <span className="ml-1">{localSavesCount || ""}</span>
                     </button>
                 </div>
                 {showReadButton && (

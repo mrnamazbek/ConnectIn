@@ -341,17 +341,47 @@ def search_posts(
 
 # ✅ Like Post
 @router.post("/{post_id}/like")
-def like_post(post_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    existing_like = db.query(PostLike).filter_by(user_id=current_user.id, post_id=post_id).first()
-    if existing_like:
-        db.delete(existing_like)
+def like_post(
+    post_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Toggle like status for a post.
+    Returns the new like status and count.
+    """
+    try:
+        # Check if post exists
+        post = db.query(Post).filter(Post.id == post_id).first()
+        if not post:
+            raise HTTPException(status_code=404, detail="Post not found")
+
+        # Use a single query to handle the toggle
+        existing_like = db.query(PostLike).filter(
+            PostLike.user_id == current_user.id,
+            PostLike.post_id == post_id
+        ).first()
+
+        if existing_like:
+            db.delete(existing_like)
+            is_liked = False
+        else:
+            new_like = PostLike(user_id=current_user.id, post_id=post_id)
+            db.add(new_like)
+            is_liked = True
+
+        # Get updated like count
+        like_count = db.query(PostLike).filter(PostLike.post_id == post_id).count()
+        
         db.commit()
-        return {"detail": "Like removed"}
-    
-    new_like = PostLike(user_id=current_user.id, post_id=post_id)
-    db.add(new_like)
-    db.commit()
-    return {"detail": "Post liked"}
+        
+        return {
+            "is_liked": is_liked,
+            "likes_count": like_count
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to update like status")
 
 @router.get("/{post_id}/likes")
 def get_likes(post_id: int, db: Session = Depends(get_db)):
@@ -365,17 +395,47 @@ def is_post_liked(post_id: int, db: Session = Depends(get_db), current_user: Use
 
 # ✅ Save Post
 @router.post("/{post_id}/save")
-def save_post(post_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    existing_save = db.query(SavedPost).filter_by(user_id=current_user.id, post_id=post_id).first()
-    if existing_save:
-        db.delete(existing_save)
-        db.commit()
-        return {"detail": "Post unsaved"}
+def save_post(
+    post_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Toggle save status for a post.
+    Returns the new save status and count.
+    """
+    try:
+        # Check if post exists
+        post = db.query(Post).filter(Post.id == post_id).first()
+        if not post:
+            raise HTTPException(status_code=404, detail="Post not found")
 
-    new_save = SavedPost(user_id=current_user.id, post_id=post_id)
-    db.add(new_save)
-    db.commit()
-    return {"detail": "Post saved"}
+        # Use a single query to handle the toggle
+        existing_save = db.query(SavedPost).filter(
+            SavedPost.user_id == current_user.id,
+            SavedPost.post_id == post_id
+        ).first()
+
+        if existing_save:
+            db.delete(existing_save)
+            is_saved = False
+        else:
+            new_save = SavedPost(user_id=current_user.id, post_id=post_id)
+            db.add(new_save)
+            is_saved = True
+
+        # Get updated save count
+        save_count = db.query(SavedPost).filter(SavedPost.post_id == post_id).count()
+        
+        db.commit()
+        
+        return {
+            "is_saved": is_saved,
+            "saves_count": save_count
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to update save status")
 
 @router.get("/{post_id}/is_saved")
 def is_post_saved(post_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

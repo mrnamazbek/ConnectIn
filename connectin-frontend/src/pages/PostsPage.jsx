@@ -200,40 +200,20 @@ const PostsPage = () => {
         }
     };
 
-    const handleLike = async (postId) => {
-        const token = TokenService.getAccessToken();
-        if (!token) {
-            toast.error("Please log in to like posts");
-            return;
-        }
-
-        try {
-            const isCurrentlyLiked = likedPosts[postId] || false;
-            await axios.post(`${import.meta.env.VITE_API_URL}/posts/${postId}/like`, {}, { headers: { Authorization: `Bearer ${token}` } });
-            setLikedPosts((prev) => ({ ...prev, [postId]: !isCurrentlyLiked }));
-            setPosts((prevPosts) => prevPosts.map((post) => (post.id === postId ? { ...post, likes_count: post.likes_count + (isCurrentlyLiked ? -1 : 1) } : post)));
-        } catch (error) {
-            console.error("Error liking post:", error);
-            toast.error("Failed to like post");
-        }
+    const handleLike = async (postId, isLiked, likesCount) => {
+        setPosts((prevPosts) => prevPosts.map((post) => (post.id === postId ? { ...post, likes_count: likesCount } : post)));
+        setLikedPosts((prev) => ({
+            ...prev,
+            [postId]: isLiked,
+        }));
     };
 
-    const handleSave = async (postId) => {
-        const token = TokenService.getAccessToken();
-        if (!token) {
-            toast.error("Please log in to save posts");
-            return;
-        }
-
-        try {
-            const isCurrentlySaved = savedPosts[postId] || false;
-            await axios.post(`${import.meta.env.VITE_API_URL}/posts/${postId}/save`, {}, { headers: { Authorization: `Bearer ${token}` } });
-            setSavedPosts((prev) => ({ ...prev, [postId]: !isCurrentlySaved }));
-            setPosts((prevPosts) => prevPosts.map((post) => (post.id === postId ? { ...post, saves_count: post.saves_count + (isCurrentlySaved ? -1 : 1) } : post)));
-        } catch (error) {
-            console.error("Error saving post:", error);
-            toast.error("Failed to save post");
-        }
+    const handleSave = async (postId, isSaved, savesCount) => {
+        setPosts((prevPosts) => prevPosts.map((post) => (post.id === postId ? { ...post, saves_count: savesCount } : post)));
+        setSavedPosts((prev) => ({
+            ...prev,
+            [postId]: isSaved,
+        }));
     };
 
     const handleTagSelect = (tagId) => {
@@ -387,7 +367,7 @@ const PostsPage = () => {
                     <motion.div key={currentPage} variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
                         {posts.map((post) => (
                             <motion.div key={post.id} variants={itemVariants}>
-                                <PostCard key={post.id} post={post} currentUser={currentUser} showViewPost={true} showCommentsLink={true} onLike={() => handleLike(post.id)} onSave={() => handleSave(post.id)} isLiked={likedPosts[post.id] || false} isSaved={savedPosts[post.id] || false} />
+                                <PostCard key={post.id} post={post} currentUser={currentUser} showViewPost={true} showCommentsLink={true} onLike={handleLike} onSave={handleSave} isLiked={likedPosts[post.id] || false} isSaved={savedPosts[post.id] || false} />
                             </motion.div>
                         ))}
 

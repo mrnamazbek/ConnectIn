@@ -400,6 +400,42 @@ async def update_avatar(
             detail="Failed to update avatar"
         )
 
+@router.delete("/me/avatar", response_model=UserOut)
+async def delete_avatar(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Delete user's avatar and set it to null.
+    """
+    try:
+        # Store old avatar URL for cleanup
+        old_avatar_url = current_user.avatar_url
+        
+        # Set avatar URL to null
+        current_user.avatar_url = None
+        db.commit()
+        db.refresh(current_user)
+        
+        # If there was an old avatar, try to delete it from S3
+        if old_avatar_url:
+            try:
+                # Extract object name from URL
+                object_name = old_avatar_url.split(f"{settings.AWS_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/")[-1]
+                s3_service.delete_file(object_name)
+            except Exception as e:
+                logger.error(f"Failed to delete old avatar from S3: {str(e)}")
+                # Don't raise error, as the avatar URL is already set to null
+        
+        return current_user
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Unexpected error in avatar deletion: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete avatar"
+        )
+
 @router.patch("/me/status", response_model=UserOut, summary="Обновить статус пользователя")
 def update_status(
     status_data: StatusUpdate,

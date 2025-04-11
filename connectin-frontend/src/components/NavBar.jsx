@@ -7,6 +7,7 @@ import axios from "axios";
 import TokenService from "../services/tokenService";
 import { toast } from "react-toastify";
 import { useAuth } from "../contexts/AuthContext";
+import { useModeAnimation } from "react-theme-switch-animation";
 
 const NavBar = () => {
     const { isAuthenticated, updateAuthState } = useAuth();
@@ -16,9 +17,9 @@ const NavBar = () => {
     const isSticky = !noStickyRoutes.includes(location.pathname);
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const mobileMenuRef = useRef(null);
+    const { ref: themeRef, toggleSwitchTheme, isDarkMode } = useModeAnimation();
 
     useEffect(() => {
         if (isDarkMode) {
@@ -84,7 +85,7 @@ const NavBar = () => {
     };
 
     const toggleMobileMenu = () => {
-        setIsMobileMenuOpen(prev => !prev);
+        setIsMobileMenuOpen((prev) => !prev);
     };
 
     const handleMobileMenuClick = (e) => {
@@ -97,8 +98,8 @@ const NavBar = () => {
             to={to}
             onClick={onClick}
             className={({ isActive }) => `
-                flex items-center space-x-2 px-4 py-2 text-sm
-                ${isActive ? "text-green-700 dark:text-green-400" : "text-gray-700 dark:text-gray-300 hover:text-green-700 dark:hover:text-green-400"}
+                flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200
+                ${isActive ? "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-green-700 dark:hover:text-green-400"}
             `}
         >
             <FontAwesomeIcon icon={icon} className="w-4 h-4" />
@@ -107,20 +108,20 @@ const NavBar = () => {
     );
 
     return (
-        <nav className={`bg-white dark:bg-gray-800 border-b border-green-700 shadow-md ${isSticky ? "sticky top-0" : ""} z-20`}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <nav className={`grid grid-cols-8 bg-white dark:bg-gray-800 text-sm border-b border-green-700 shadow-md ${isSticky ? "sticky top-0" : ""} z-30`}>
+            <div className="col-start-2 col-span-6">
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
-                    <NavLink to="/" className="flex items-center space-x-2 font-semibold text-green-700 dark:text-green-400">
+                    <NavLink to="/" className="flex items-center space-x-2 font-semibold text-green-700 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors duration-200">
                         <img src={Logo} alt="Logo" width={24} height={24} />
                         <span className="hidden sm:inline">ConnectIn</span>
                     </NavLink>
 
                     {/* Desktop Navigation */}
-                    <div className="hidden md:flex items-center space-x-4">
+                    <div className="hidden font-semibold md:flex items-center space-x-2">
                         {/* Theme Toggle */}
-                        <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}>
-                            <FontAwesomeIcon icon={isDarkMode ? faSun : faMoon} className="w-4 h-4 text-gray-600 dark:text-white" />
+                        <button ref={themeRef} onClick={toggleSwitchTheme} className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}>
+                            <FontAwesomeIcon icon={isDarkMode ? faSun : faMoon} className="w-4 h-4 text-gray-600 dark:text-white transition-transform duration-300 transform hover:scale-110" />
                         </button>
 
                         {/* Navigation Links */}
@@ -132,17 +133,17 @@ const NavBar = () => {
                         {/* User Menu */}
                         {isAuthenticated ? (
                             <div className="relative user-button">
-                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
                                     <FontAwesomeIcon icon={faUser} className="w-4 h-4 text-gray-600 dark:text-white" />
                                 </button>
                                 {isMenuOpen && (
-                                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 border border-gray-200 dark:border-gray-700">
+                                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 border border-gray-200 dark:border-gray-700 z-40">
                                         <button
                                             onClick={() => {
                                                 setIsMenuOpen(false);
                                                 handleNavigation("/profile") && navigate("/profile");
                                             }}
-                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                                         >
                                             Profile
                                         </button>
@@ -151,7 +152,7 @@ const NavBar = () => {
                                                 setIsMenuOpen(false);
                                                 handleLogout();
                                             }}
-                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                                         >
                                             Logout
                                         </button>
@@ -164,16 +165,11 @@ const NavBar = () => {
                     </div>
 
                     {/* Mobile menu button */}
-                    <div className="md:hidden flex items-center space-x-4">
-                        <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}>
-                            <FontAwesomeIcon icon={isDarkMode ? faSun : faMoon} className="w-4 h-4 text-gray-600 dark:text-white" />
+                    <div className="md:hidden flex items-center space-x-2">
+                        <button ref={themeRef} onClick={toggleSwitchTheme} className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}>
+                            <FontAwesomeIcon icon={isDarkMode ? faSun : faMoon} className="w-4 h-4 text-gray-600 dark:text-white transition-transform duration-300 transform hover:scale-110" />
                         </button>
-                        <button 
-                            onClick={handleMobileMenuClick}
-                            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" 
-                            aria-label="Toggle menu"
-                            aria-expanded={isMobileMenuOpen}
-                        >
+                        <button onClick={handleMobileMenuClick} className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" aria-label="Toggle menu" aria-expanded={isMobileMenuOpen}>
                             <FontAwesomeIcon icon={isMobileMenuOpen ? faTimes : faBars} className="w-4 h-4 text-gray-600 dark:text-white" />
                         </button>
                     </div>
@@ -181,12 +177,7 @@ const NavBar = () => {
             </div>
 
             {/* Mobile menu */}
-            <div 
-                ref={mobileMenuRef} 
-                className={`mobile-menu md:hidden transition-all duration-200 ease-in-out ${
-                    isMobileMenuOpen ? "block" : "hidden"
-                }`}
-            >
+            <div ref={mobileMenuRef} className={`col-start-2 col-span-6 mobile-menu md:hidden transition-all duration-200 ease-in-out ${isMobileMenuOpen ? "block" : "hidden"}`}>
                 <div className="px-2 pt-2 pb-3 space-y-1 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
                     <NavItem to="/search" icon={faMagnifyingGlass} label="Search" onClick={handleMobileMenuClick} />
                     <NavItem to="/post" icon={faPen} label="New Post" onClick={handleMobileMenuClick} />
@@ -200,7 +191,7 @@ const NavBar = () => {
                             handleNavigation("/chats");
                         }}
                     />
-                    
+
                     {isAuthenticated ? (
                         <>
                             <NavItem
@@ -217,7 +208,7 @@ const NavBar = () => {
                                     handleMobileMenuClick();
                                     handleLogout();
                                 }}
-                                className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                                className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                             >
                                 <FontAwesomeIcon icon={faUser} className="w-4 h-4" />
                                 <span>Logout</span>

@@ -22,7 +22,7 @@ const PostsPage = () => {
     const [savedPosts, setSavedPosts] = useState({});
     const [totalPages, setTotalPages] = useState(1);
     const [searchParams, setSearchParams] = useSearchParams();
-    const pageSize = 10;
+    const pageSize = 5;
 
     // Get current page from URL or default to 1
     const currentPage = parseInt(searchParams.get("page")) || 1;
@@ -32,8 +32,7 @@ const PostsPage = () => {
         tags: null,
         user: null,
         posts: {},
-        likes: {},
-        saves: {},
+        statuses: {},
     });
 
     // Update URL when page changes
@@ -48,7 +47,10 @@ const PostsPage = () => {
             setLoading(true);
 
             // Fetch tags and user data in parallel if not cached
-            const [tagsRes, userRes] = await Promise.all([cache.tags ? Promise.resolve({ data: cache.tags }) : axios.get(`${import.meta.env.VITE_API_URL}/tags/`), cache.user ? Promise.resolve({ data: cache.user }) : fetchCurrentUser()]);
+            const [tagsRes, userRes] = await Promise.all([
+                cache.tags ? Promise.resolve({ data: cache.tags }) : axios.get(`${import.meta.env.VITE_API_URL}/tags/`),
+                cache.user ? Promise.resolve({ data: cache.user }) : fetchCurrentUser()
+            ]);
 
             // Update cache with fetched data
             if (!cache.tags) {
@@ -101,7 +103,7 @@ const PostsPage = () => {
             setPosts(postsRes.data.items);
             setTotalPages(postsRes.data.total_pages);
 
-            // Fetch like and save statuses for posts
+            // Fetch like and save statuses for posts in a single request
             await fetchPostStatuses(postsRes.data.items);
         } catch (error) {
             console.error("Error fetching posts:", error);
@@ -109,73 +111,46 @@ const PostsPage = () => {
         }
     };
 
-    // Combined function to fetch both like and save statuses
+    // Combined function to fetch both like and save statuses in a single request
     const fetchPostStatuses = async (posts) => {
         const token = TokenService.getAccessToken();
         if (!token) return;
 
         try {
             const postIds = posts.map((post) => post.id);
-
+            
             // Check cache first
-            const uncachedPostIds = postIds.filter((id) => !cache.likes[id] || !cache.saves[id]);
-
+            const uncachedPostIds = postIds.filter(id => !cache.statuses[id]);
+            
             if (uncachedPostIds.length > 0) {
-                const [likeStatuses, saveStatuses] = await Promise.all([
-                    Promise.all(
-                        uncachedPostIds.map((id) =>
-                            axios.get(`${import.meta.env.VITE_API_URL}/posts/${id}/is_liked`, {
-                                headers: { Authorization: `Bearer ${token}` },
-                            })
-                        )
-                    ),
-                    Promise.all(
-                        uncachedPostIds.map((id) =>
-                            axios.get(`${import.meta.env.VITE_API_URL}/posts/${id}/is_saved`, {
-                                headers: { Authorization: `Bearer ${token}` },
-                            })
-                        )
-                    ),
-                ]);
+                const response = await axios.post(
+                    `${import.meta.env.VITE_API_URL}/posts/batch_status`,
+                    { post_ids: uncachedPostIds },
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
 
                 // Update cache with new statuses
-                const newLikes = {};
-                const newSaves = {};
-
-                uncachedPostIds.forEach((id, index) => {
-                    newLikes[id] = likeStatuses[index].data.is_liked;
-                    newSaves[id] = saveStatuses[index].data.is_saved;
-                });
-
-                setCache((prev) => ({
+                setCache(prev => ({
                     ...prev,
-                    likes: { ...prev.likes, ...newLikes },
-                    saves: { ...prev.saves, ...newSaves },
+                    statuses: {
+                        ...prev.statuses,
+                        ...response.data
+                    }
                 }));
             }
 
             // Update state with all statuses (from cache and new fetches)
-            setLikedPosts((prev) => ({
-                ...prev,
-                ...postIds.reduce(
-                    (acc, id) => ({
-                        ...acc,
-                        [id]: cache.likes[id] || false,
-                    }),
-                    {}
-                ),
-            }));
+            const newLikedPosts = {};
+            const newSavedPosts = {};
 
-            setSavedPosts((prev) => ({
-                ...prev,
-                ...postIds.reduce(
-                    (acc, id) => ({
-                        ...acc,
-                        [id]: cache.saves[id] || false,
-                    }),
-                    {}
-                ),
-            }));
+            postIds.forEach(id => {
+                const status = cache.statuses[id] || { is_liked: false, is_saved: false };
+                newLikedPosts[id] = status.is_liked;
+                newSavedPosts[id] = status.is_saved;
+            });
+
+            setLikedPosts(newLikedPosts);
+            setSavedPosts(newSavedPosts);
         } catch (error) {
             console.error("Error fetching post statuses:", error);
         }
@@ -367,7 +342,17 @@ const PostsPage = () => {
                     <motion.div key={currentPage} variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
                         {posts.map((post) => (
                             <motion.div key={post.id} variants={itemVariants}>
-                                <PostCard key={post.id} post={post} currentUser={currentUser} showViewPost={true} showCommentsLink={true} onLike={handleLike} onSave={handleSave} isLiked={likedPosts[post.id] || false} isSaved={savedPosts[post.id] || false} />
+                                <PostCard 
+                                    key={post.id} 
+                                    post={post} 
+                                    currentUser={currentUser} 
+                                    showViewPost={true} 
+                                    showCommentsLink={true} 
+                                    onLike={handleLike} 
+                                    onSave={handleSave} 
+                                    isLiked={likedPosts[post.id] || false} 
+                                    isSaved={savedPosts[post.id] || false} 
+                                />
                             </motion.div>
                         ))}
 

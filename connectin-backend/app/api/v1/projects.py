@@ -129,108 +129,143 @@ def get_my_projects(
 @router.get("/", response_model=dict)
 def read_projects(
     page: int = Query(1, ge=1),
-    page_size: int = Query(10, ge=1, le=100),
+    page_size: int = Query(5, ge=1, le=100),
+    tag_ids: List[int] = Query(None),
     db: Session = Depends(get_db)
 ):
     """
-    Получить список всех проектов с пагинацией.
+    Get a list of all projects with pagination and optional tag filtering.
     """
-    # Query for total count
-    total_count = db.query(Project).count()
-
-    # Apply pagination
-    projects = db.query(Project).order_by(Project.id.desc()).offset((page - 1) * page_size).limit(page_size).all()
-
-    # Format projects for response
-    formatted_projects = [
-        ProjectOut(
-            id=project.id,
-            name=project.name,
-            description=project.description,
-            owner=UserOut.model_validate(project.owner) if project.owner else None,
-            tags=[TagOut.model_validate(tag, from_attributes=True) for tag in project.tags],
-            skills=[SkillOut.model_validate(skill, from_attributes=True) for skill in project.skills],
-            members=[UserOut.model_validate(user, from_attributes=True) for user in project.members],
-            applicants=[UserOut.model_validate(user, from_attributes=True) for user in project.applicants],
-            comments_count=len(project.comments),
-            vote_count=db.query(
-                func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
-            ).filter(ProjectVote.project_id == project.id).scalar() or 0
+    try:
+        # Base query with eager loading of relationships
+        query = db.query(Project).options(
+            joinedload(Project.owner),
+            joinedload(Project.tags),
+            joinedload(Project.skills),
+            joinedload(Project.members)
         )
-        for project in projects
-    ]
 
-    # Calculate total pages
-    total_pages = ceil(total_count / page_size)
+        # Apply tag filter if provided
+        if tag_ids:
+            query = query.join(Project.tags).filter(Tag.id.in_(tag_ids))
 
-    # Return paginated response
-    return {
-        "items": formatted_projects,
-        "total": total_count,
-        "page": page,
-        "page_size": page_size,
-        "total_pages": total_pages
-    }
-    
+        # Get total count for pagination
+        total_count = query.distinct().count()
+
+        # Calculate total pages
+        total_pages = ceil(total_count / page_size)
+
+        # Apply pagination and ordering
+        projects = (
+            query
+            .distinct()
+            .order_by(Project.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
+
+        # Format projects for response
+        formatted_projects = [
+            ProjectOut(
+                id=project.id,
+                name=project.name,
+                description=project.description,
+                owner=UserOut.model_validate(project.owner) if project.owner else None,
+                tags=[TagOut.model_validate(tag, from_attributes=True) for tag in project.tags],
+                skills=[SkillOut.model_validate(skill, from_attributes=True) for skill in project.skills],
+                members=[UserOut.model_validate(user, from_attributes=True) for user in project.members],
+                comments_count=len(project.comments),
+                vote_count=db.query(
+                    func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
+                ).filter(ProjectVote.project_id == project.id).scalar() or 0
+            )
+            for project in projects
+        ]
+
+        return {
+            "items": formatted_projects,
+            "total": total_count,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": total_pages
+        }
+
+    except Exception as e:
+        logger.error(f"Error fetching projects: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch projects")
+
 @router.get("/filter_by_tags", response_model=dict)
 def filter_projects_by_tags(
-    tag_ids: List[int] = Query([]), 
+    tag_ids: List[int] = Query([]),
     page: int = Query(1, ge=1),
-    page_size: int = Query(10, ge=1, le=100),
+    page_size: int = Query(5, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
     """
     Filter projects by tags with pagination support.
     """
-    # Base query
-    if not tag_ids:
-        query = db.query(Project)
-    else:
-        subquery = db.query(
-            project_tags_association.c.project_id
-        ).filter(
-            project_tags_association.c.tag_id.in_(tag_ids)
-        ).subquery()
-        query = db.query(Project).filter(
-            Project.id.in_(subquery)
+    try:
+        # Base query with eager loading
+        query = db.query(Project).options(
+            joinedload(Project.owner),
+            joinedload(Project.tags),
+            joinedload(Project.skills),
+            joinedload(Project.members)
         )
-    
-    # Get total count for pagination
-    total_count = query.count()
-    
-    # Apply pagination
-    projects = query.order_by(Project.id.desc()).offset((page - 1) * page_size).limit(page_size).all()
-    
-    # Format projects for response
-    formatted_projects = [
-        ProjectOut(
-            id=project.id,
-            name=project.name,
-            description=project.description,
-            owner=UserOut.model_validate(project.owner) if project.owner else None,
-            tags=[TagOut.model_validate(tag, from_attributes=True) for tag in project.tags],
-            skills=[SkillOut.model_validate(skill, from_attributes=True) for skill in project.skills],
-            members=[UserOut.model_validate(user, from_attributes=True) for user in project.members],
-            applicants=[UserOut.model_validate(user, from_attributes=True) for user in project.applicants],
-            comments_count=len(project.comments),
-            vote_count=db.query(
-                func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
-            ).filter(ProjectVote.project_id == project.id).scalar() or 0
-        )
-        for project in projects
-    ]
-    
-    # Calculate total pages
-    total_pages = ceil(total_count / page_size)
 
-    # Return paginated response
-    return {
-        "items": formatted_projects,
-        "total": total_count,
-        "page": page,
-        "page_size": page_size,
-        "total_pages": total_pages
-    }
+        # Apply tag filter
+        if tag_ids:
+            query = query.join(Project.tags).filter(Tag.id.in_(tag_ids))
+        else:
+            # If no tags provided, return all projects
+            query = query
+
+        # Get total count for pagination
+        total_count = query.distinct().count()
+
+        # Calculate total pages
+        total_pages = ceil(total_count / page_size)
+
+        # Apply pagination and ordering
+        projects = (
+            query
+            .distinct()
+            .order_by(Project.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
+
+        # Format projects for response
+        formatted_projects = [
+            ProjectOut(
+                id=project.id,
+                name=project.name,
+                description=project.description,
+                owner=UserOut.model_validate(project.owner) if project.owner else None,
+                tags=[TagOut.model_validate(tag, from_attributes=True) for tag in project.tags],
+                skills=[SkillOut.model_validate(skill, from_attributes=True) for skill in project.skills],
+                members=[UserOut.model_validate(user, from_attributes=True) for user in project.members],
+                comments_count=len(project.comments),
+                vote_count=db.query(
+                    func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
+                ).filter(ProjectVote.project_id == project.id).scalar() or 0
+            )
+            for project in projects
+        ]
+
+        return {
+            "items": formatted_projects,
+            "total": total_count,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": total_pages
+        }
+
+    except Exception as e:
+        logger.error(f"Error filtering projects: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to filter projects")
 
 # 🔹 Получить проект по ID
 @router.get("/{project_id}", response_model=ProjectOut)

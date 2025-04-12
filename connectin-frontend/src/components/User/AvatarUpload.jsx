@@ -83,7 +83,7 @@ const AvatarUpload = ({ user, onAvatarUpdate, editMode }) => {
                                 <span className="text-sm">Change</span>
                                 <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} disabled={isUploading} />
                             </label>
-                            <button onClick={handleDeleteAvatar} disabled={isDeleting} className="px-3 py-1.5 bg-red-600 dark:bg-red-500 text-white rounded-lg hover:bg-red-500 dark:hover:bg-red-400 transition-colors flex items-center gap-2">
+                            <button onClick={handleDeleteAvatar} disabled={isDeleting} className="px-3 py-1.5 cursor-pointer bg-red-600 dark:bg-red-500 text-white rounded-lg hover:bg-red-500 dark:hover:bg-red-400 transition-colors flex items-center gap-2">
                                 {isDeleting ? <FontAwesomeIcon icon={faSpinner} className="animate-spin" /> : <FontAwesomeIcon icon={faTrash} />}
                                 <span className="text-sm">Delete</span>
                             </button>

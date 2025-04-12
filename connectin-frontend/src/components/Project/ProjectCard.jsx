@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowUp, faArrowDown, faComment } from "@fortawesome/free-solid-svg-icons";
+import { faArrowUp, faArrowDown, faComment, faUser } from "@fortawesome/free-solid-svg-icons";
 import { NavLink } from "react-router";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -83,7 +83,21 @@ const ProjectCard = ({ project, currentUser, handleApply, handleUpvote, handleDo
     return (
         <div className="bg-white dark:bg-gray-800 shadow-md rounded-md border border-green-700 p-5 hover:shadow-lg transition-shadow">
             <div className="flex items-center space-x-2 mb-4">
-                <img src={owner.avatar_url} alt={owner.username} className="w-10 h-10 rounded-full border hover:ring-2 hover:ring-green-500 transition" onError={(e) => (e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png")} />
+                <div className="relative w-10 h-10 flex items-center justify-center rounded-full border-2 border-green-700 dark:border-green-500 bg-gray-100 dark:bg-gray-700">
+                    {owner.avatar_url ? (
+                        <img
+                            src={owner.avatar_url}
+                            alt={owner.username}
+                            className="w-full h-full rounded-full object-cover"
+                            onError={(e) => {
+                                e.target.src = "";
+                                e.target.onerror = null;
+                            }}
+                        />
+                    ) : (
+                        <FontAwesomeIcon icon={faUser} className="text-gray-500 dark:text-gray-400" />
+                    )}
+                </div>
                 <div>
                     <p className="font-semibold">{owner.username}</p>
                 </div>
@@ -100,7 +114,7 @@ const ProjectCard = ({ project, currentUser, handleApply, handleUpvote, handleDo
             )}
 
             <h3 className="text-lg font-bold mb-2">{project.name || "Untitled Project"}</h3>
-            <p className="text-gray-700 dark:text-gray-300 mb-3" dangerouslySetInnerHTML={{ __html: project.description || "No description available." }} />
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-3" dangerouslySetInnerHTML={{ __html: project.description || "No description available." }} />
 
             <div className="mt-3 flex flex-wrap gap-2 mb-4">
                 {project.skills?.length > 0 ? (

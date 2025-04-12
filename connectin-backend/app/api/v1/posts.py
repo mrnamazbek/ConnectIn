@@ -513,3 +513,41 @@ def get_post_likes(post_id: int, db: Session = Depends(get_db)):
     likes = db.query(PostLike).filter(PostLike.post_id == post_id).all()
 
     return [like.user_id for like in likes]  # ✅ Return user IDs who liked the post
+
+@router.post("/batch_status")
+def get_batch_post_status(
+    post_ids: List[int],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get like and save statuses for multiple posts in a single request.
+    """
+    try:
+        # Get all like statuses
+        like_statuses = db.query(PostLike).filter(
+            PostLike.post_id.in_(post_ids),
+            PostLike.user_id == current_user.id
+        ).all()
+        
+        # Get all save statuses
+        save_statuses = db.query(SavedPost).filter(
+            SavedPost.post_id.in_(post_ids),
+            SavedPost.user_id == current_user.id
+        ).all()
+        
+        # Create dictionaries for quick lookup
+        like_dict = {like.post_id: True for like in like_statuses}
+        save_dict = {save.post_id: True for save in save_statuses}
+        
+        # Prepare response
+        response = {}
+        for post_id in post_ids:
+            response[post_id] = {
+                "is_liked": post_id in like_dict,
+                "is_saved": post_id in save_dict
+            }
+            
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to fetch post statuses")

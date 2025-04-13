@@ -1,34 +1,26 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowUp, faArrowDown, faComment } from "@fortawesome/free-solid-svg-icons";
+import { faArrowUp, faArrowDown, faUser } from "@fortawesome/free-solid-svg-icons";
+import {faComment} from "@fortawesome/free-regular-svg-icons";
 import { NavLink } from "react-router";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router";
+import useProjectVoteStore from "../../store/projectVoteStore";
 
-const ProjectCard = ({ project, currentUser, handleApply, handleUpvote, handleDownvote, showViewProject = true, showCommentsLink = false }) => {
-    const [voteStatus, setVoteStatus] = useState({ has_voted: false, is_upvote: null });
+const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true, showCommentsLink = false }) => {
     const [isVoteLoading, setIsVoteLoading] = useState(false);
     const [isApplyLoading, setIsApplyLoading] = useState(false);
     const navigate = useNavigate();
-
-    const fetchVoteStatus = useCallback(async () => {
-        try {
-            const token = localStorage.getItem("access_token");
-            if (!token) return;
-
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/${project.id}/vote_status`, { headers: { Authorization: `Bearer ${token}` } });
-            setVoteStatus(response.data);
-        } catch (error) {
-            console.error("Failed to fetch vote status:", error);
-        }
-    }, [project.id]);
+    const { voteProject, getVoteStatus, initializeVoteState } = useProjectVoteStore();
+    const { hasVoted, isUpvote, voteCount } = getVoteStatus(project.id);
 
     useEffect(() => {
-        if (currentUser) {
-            fetchVoteStatus();
+        // Initialize vote state when component mounts
+        const token = localStorage.getItem("access_token");
+        if (token) {
+            initializeVoteState([project.id]);
         }
-    }, [currentUser, project.id, project.vote_count, fetchVoteStatus]);
+    }, [project.id, initializeVoteState]);
 
     const handleVote = async (isUpvote) => {
         const token = localStorage.getItem("access_token");
@@ -40,12 +32,7 @@ const ProjectCard = ({ project, currentUser, handleApply, handleUpvote, handleDo
 
         setIsVoteLoading(true);
         try {
-            if (isUpvote) {
-                await handleUpvote(project.id);
-            } else {
-                await handleDownvote(project.id);
-            }
-            await fetchVoteStatus();
+            await voteProject(project.id, isUpvote);
         } catch (error) {
             console.error("Failed to vote:", error);
             toast.error("Failed to vote. Please try again.");
@@ -83,7 +70,21 @@ const ProjectCard = ({ project, currentUser, handleApply, handleUpvote, handleDo
     return (
         <div className="bg-white dark:bg-gray-800 shadow-md rounded-md border border-green-700 p-5 hover:shadow-lg transition-shadow">
             <div className="flex items-center space-x-2 mb-4">
-                <img src={owner.avatar_url} alt={owner.username} className="w-10 h-10 rounded-full border hover:ring-2 hover:ring-green-500 transition" onError={(e) => (e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png")} />
+                <div className="relative w-10 h-10 flex items-center justify-center rounded-full border-2 border-green-700 dark:border-green-500 bg-gray-100 dark:bg-gray-700">
+                    {owner.avatar_url ? (
+                        <img
+                            src={owner.avatar_url}
+                            alt={owner.username}
+                            className="w-full h-full rounded-full object-cover"
+                            onError={(e) => {
+                                e.target.src = "";
+                                e.target.onerror = null;
+                            }}
+                        />
+                    ) : (
+                        <FontAwesomeIcon icon={faUser} className="text-gray-500 dark:text-gray-400" />
+                    )}
+                </div>
                 <div>
                     <p className="font-semibold">{owner.username}</p>
                 </div>
@@ -100,7 +101,7 @@ const ProjectCard = ({ project, currentUser, handleApply, handleUpvote, handleDo
             )}
 
             <h3 className="text-lg font-bold mb-2">{project.name || "Untitled Project"}</h3>
-            <p className="text-gray-700 dark:text-gray-300 mb-3" dangerouslySetInnerHTML={{ __html: project.description || "No description available." }} />
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-3" dangerouslySetInnerHTML={{ __html: project.description || "No description available." }} />
 
             <div className="mt-3 flex flex-wrap gap-2 mb-4">
                 {project.skills?.length > 0 ? (
@@ -119,23 +120,21 @@ const ProjectCard = ({ project, currentUser, handleApply, handleUpvote, handleDo
                     <button
                         onClick={() => handleVote(true)}
                         disabled={isVoteLoading}
-                        className={`group relative transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${voteStatus.has_voted && voteStatus.is_upvote ? "text-green-700" : "text-gray-500 hover:text-green-700"}`}
+                        className={`group relative transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${hasVoted && isUpvote ? "text-green-700" : "text-gray-500 hover:text-green-700"}`}
                         title={isVoteLoading ? "Processing..." : "Upvote"}
                     >
                         <FontAwesomeIcon icon={faArrowUp} className={`${isVoteLoading ? "animate-pulse" : ""}`} />
-                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{voteStatus.has_voted && voteStatus.is_upvote ? "Remove upvote" : "Upvote"}</span>
+                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{hasVoted && isUpvote ? "Remove upvote" : "Upvote"}</span>
                     </button>
-                    <span className="text-gray-700 dark:text-gray-300 font-bold">{project.vote_count || 0}</span>
+                    <span className="text-gray-700 dark:text-gray-300 font-bold">{voteCount}</span>
                     <button
                         onClick={() => handleVote(false)}
                         disabled={isVoteLoading}
-                        className={`group relative transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${voteStatus.has_voted && !voteStatus.is_upvote ? "text-red-700" : "text-gray-500 hover:text-red-700"}`}
+                        className={`group relative transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${hasVoted && !isUpvote ? "text-red-700" : "text-gray-500 hover:text-red-700"}`}
                         title={isVoteLoading ? "Processing..." : "Downvote"}
                     >
                         <FontAwesomeIcon icon={faArrowDown} className={`${isVoteLoading ? "animate-pulse" : ""}`} />
-                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                            {voteStatus.has_voted && !voteStatus.is_upvote ? "Remove downvote" : "Downvote"}
-                        </span>
+                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{hasVoted && !isUpvote ? "Remove downvote" : "Downvote"}</span>
                     </button>
                     {showCommentsLink && (
                         <NavLink to={`/project/${project.id}`} className="group relative text-gray-500 hover:text-blue-700 transition cursor-pointer" title="View comments">

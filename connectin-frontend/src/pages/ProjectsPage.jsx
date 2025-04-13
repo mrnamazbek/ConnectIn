@@ -18,7 +18,7 @@ const ProjectsPage = () => {
     const [currentUser, setCurrentUser] = useState(null);
     const [error, setError] = useState(null);
     const [totalPages, setTotalPages] = useState(1);
-    const pageSize = 10;
+    const pageSize = 5;
 
     const [searchParams, setSearchParams] = useSearchParams();
     const currentPage = parseInt(searchParams.get("page") || "1");
@@ -44,11 +44,21 @@ const ProjectsPage = () => {
 
     const fetchProjects = async (page) => {
         try {
+            const params = {
+                page: page,
+                page_size: pageSize,
+            };
+
+            // Add tag filter if tags are selected
+            if (selectedTags.length > 0) {
+                params.tag_ids = selectedTags;
+            }
+
             const projectsRes = await axios.get(`${import.meta.env.VITE_API_URL}/projects/`, {
-                params: {
-                    page: page,
-                    page_size: pageSize,
-                },
+                params,
+                paramsSerializer: (params) => {
+                    return qs.stringify(params, { arrayFormat: "repeat" });
+                }
             });
 
             setProjects(projectsRes.data.items);
@@ -84,6 +94,8 @@ const ProjectsPage = () => {
     const handleTagSelect = (tagId) => {
         setSelectedTags((prev) => {
             const newSelected = prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId];
+            // Reset to page 1 when changing filters
+            setSearchParams({ page: "1" });
             filterProjectsByTags(newSelected);
             return newSelected;
         });
@@ -92,20 +104,21 @@ const ProjectsPage = () => {
     const filterProjectsByTags = async (tags) => {
         setFilterLoading(true);
         try {
+            const params = {
+                tag_ids: tags,
+                page: 1, // Always reset to page 1 when filtering
+                page_size: pageSize,
+            };
+
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/filter_by_tags`, {
-                params: {
-                    tag_ids: tags,
-                    page: 1, // Reset to page 1 when filtering
-                    page_size: pageSize,
-                },
+                params,
                 paramsSerializer: (params) => {
                     return qs.stringify(params, { arrayFormat: "repeat" });
-                },
+                }
             });
 
             setProjects(response.data.items);
             setTotalPages(response.data.total_pages);
-            setSearchParams({ page: "1" }); // Reset to page 1 in URL
         } catch (error) {
             console.error("Error filtering projects:", error);
             toast.error("Failed to filter projects");

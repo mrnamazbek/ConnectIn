@@ -9,3 +9,4 @@ __pycache__/
 alembic.ini
 
 myenv/
+.DS_Store

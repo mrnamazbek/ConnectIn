@@ -152,6 +152,26 @@ const technologies = [
         description: "ASGI/WSGI servers running the FastAPI application.",
         category: "DevOps / Build",
     },
+
+    // --- Cloud / Infrastructure ---
+    {
+        name: "AWS Lambda",
+        logo: "https://cdn.worldvectorlogo.com/logos/aws-lambda.svg",
+        description: "Runs serverless code in response to events.",
+        category: "Cloud / Infrastructure",
+    },
+    {
+        name: "AWS EventBridge",
+        logo: "https://cdn.worldvectorlogo.com/logos/amazon-eventbridge.svg",
+        description: "Builds scalable event-driven applications with a central event bus.",
+        category: "Cloud / Infrastructure",
+    },
+    {
+        name: "Amazon CloudWatch",
+        logo: "https://cdn.worldvectorlogo.com/logos/amazon-cloudwatch.svg",
+        description: "Monitors resources and applications in real time, including logs.",
+        category: "Cloud / Infrastructure",
+    },
 ];
 
 export default technologies;

@@ -516,7 +516,7 @@ def get_post_likes(post_id: int, db: Session = Depends(get_db)):
 
 @router.post("/batch_status")
 def get_batch_post_status(
-    post_ids: List[int],
+    request: dict,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -524,28 +524,51 @@ def get_batch_post_status(
     Get like and save statuses for multiple posts in a single request.
     """
     try:
-        # Get all like statuses
+        post_ids = request.get("post_ids", [])
+        if not post_ids:
+            return {}
+
+        # Get all like statuses and counts
         like_statuses = db.query(PostLike).filter(
             PostLike.post_id.in_(post_ids),
             PostLike.user_id == current_user.id
         ).all()
         
-        # Get all save statuses
+        # Get all save statuses and counts
         save_statuses = db.query(SavedPost).filter(
             SavedPost.post_id.in_(post_ids),
             SavedPost.user_id == current_user.id
         ).all()
         
+        # Get total counts for each post
+        like_counts = db.query(
+            PostLike.post_id,
+            func.count(PostLike.id).label('likes_count')
+        ).filter(
+            PostLike.post_id.in_(post_ids)
+        ).group_by(PostLike.post_id).all()
+        
+        save_counts = db.query(
+            SavedPost.post_id,
+            func.count(SavedPost.id).label('saves_count')
+        ).filter(
+            SavedPost.post_id.in_(post_ids)
+        ).group_by(SavedPost.post_id).all()
+        
         # Create dictionaries for quick lookup
         like_dict = {like.post_id: True for like in like_statuses}
         save_dict = {save.post_id: True for save in save_statuses}
+        like_counts_dict = {count.post_id: count.likes_count for count in like_counts}
+        save_counts_dict = {count.post_id: count.saves_count for count in save_counts}
         
         # Prepare response
         response = {}
         for post_id in post_ids:
             response[post_id] = {
                 "is_liked": post_id in like_dict,
-                "is_saved": post_id in save_dict
+                "is_saved": post_id in save_dict,
+                "likes_count": like_counts_dict.get(post_id, 0),
+                "saves_count": save_counts_dict.get(post_id, 0)
             }
             
         return response

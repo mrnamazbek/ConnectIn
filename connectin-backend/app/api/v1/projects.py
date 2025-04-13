@@ -33,6 +33,7 @@ from app.models.recommendation import ProjectRecommendation
 from app.utils import get_logger
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 class VoteRequest(BaseModel):
     is_upvote: bool
@@ -40,6 +41,7 @@ class VoteRequest(BaseModel):
 class VoteStatusResponse(BaseModel):
     has_voted: bool
     is_upvote: bool | None = None
+    vote_count: int = 0
 
 # 🔹 Создать проект с тегами и навыками
 @router.post("/", response_model=ProjectOut, summary="Создать проект")
@@ -159,7 +161,7 @@ def read_projects(
         projects = (
             query
             .distinct()
-            .order_by(Project.created_at.desc())
+            .order_by(Project.id.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
             .all()
@@ -231,7 +233,7 @@ def filter_projects_by_tags(
         projects = (
             query
             .distinct()
-            .order_by(Project.created_at.desc())
+            .order_by(Project.id.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
             .all()
@@ -621,10 +623,17 @@ def get_vote_status(
     """
     Проверить, голосовал ли текущий пользователь за проект и был ли это upvote или downvote.
     """
+    # Get user's vote status
     vote = db.query(ProjectVote).filter_by(user_id=current_user.id, project_id=project_id).first()
+    
+    # Get total vote count
+    vote_count = db.query(
+        func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
+    ).filter(ProjectVote.project_id == project_id).scalar() or 0
+
     if vote:
-        return {"has_voted": True, "is_upvote": vote.is_upvote}
-    return {"has_voted": False, "is_upvote": None}
+        return {"has_voted": True, "is_upvote": vote.is_upvote, "vote_count": vote_count}
+    return {"has_voted": False, "is_upvote": None, "vote_count": vote_count}
 
 # 🔹 Добавить комментарий к проекту
 @router.post("/{project_id}/comment", response_model=CommentOut)

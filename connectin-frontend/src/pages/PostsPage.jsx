@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import TokenService from "../services/tokenService";
 import { useSearchParams } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
+import usePostStore from '../store/postStore';
 
 const PostsPage = () => {
     const [posts, setPosts] = useState([]);
@@ -34,6 +35,9 @@ const PostsPage = () => {
         posts: {},
         statuses: {},
     });
+
+    // Initialize post store
+    const initializePostState = usePostStore((state) => state.initializePostState);
 
     // Update URL when page changes
     useEffect(() => {
@@ -103,6 +107,10 @@ const PostsPage = () => {
             setPosts(postsRes.data.items);
             setTotalPages(postsRes.data.total_pages);
 
+            // Initialize post store with new posts
+            const postIds = postsRes.data.items.map(post => post.id);
+            await initializePostState(postIds);
+
             // Fetch like and save statuses for posts in a single request
             await fetchPostStatuses(postsRes.data.items);
         } catch (error) {
@@ -123,20 +131,26 @@ const PostsPage = () => {
             const uncachedPostIds = postIds.filter(id => !cache.statuses[id]);
             
             if (uncachedPostIds.length > 0) {
-                const response = await axios.post(
-                    `${import.meta.env.VITE_API_URL}/posts/batch_status`,
-                    { post_ids: uncachedPostIds },
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
+                try {
+                    const response = await axios.post(
+                        `${import.meta.env.VITE_API_URL}/posts/batch_status`,
+                        { post_ids: uncachedPostIds },
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    );
 
-                // Update cache with new statuses
-                setCache(prev => ({
-                    ...prev,
-                    statuses: {
-                        ...prev.statuses,
-                        ...response.data
-                    }
-                }));
+                    // Update cache with new statuses
+                    setCache(prev => ({
+                        ...prev,
+                        statuses: {
+                            ...prev.statuses,
+                            ...response.data
+                        }
+                    }));
+                } catch (error) {
+                    console.error("Error fetching batch status:", error);
+                    // If batch status fails, fetch individual statuses
+                    await fetchIndividualStatuses(uncachedPostIds);
+                }
             }
 
             // Update state with all statuses (from cache and new fetches)
@@ -152,7 +166,39 @@ const PostsPage = () => {
             setLikedPosts(newLikedPosts);
             setSavedPosts(newSavedPosts);
         } catch (error) {
-            console.error("Error fetching post statuses:", error);
+            console.error("Error updating post statuses:", error);
+        }
+    };
+
+    // Fallback function to fetch individual statuses
+    const fetchIndividualStatuses = async (postIds) => {
+        const token = TokenService.getAccessToken();
+        if (!token) return;
+
+        for (const postId of postIds) {
+            try {
+                const [likeRes, saveRes] = await Promise.all([
+                    axios.get(`${import.meta.env.VITE_API_URL}/posts/${postId}/is_liked`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }),
+                    axios.get(`${import.meta.env.VITE_API_URL}/posts/${postId}/is_saved`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    })
+                ]);
+
+                setCache(prev => ({
+                    ...prev,
+                    statuses: {
+                        ...prev.statuses,
+                        [postId]: {
+                            is_liked: likeRes.data.is_liked,
+                            is_saved: saveRes.data.is_saved
+                        }
+                    }
+                }));
+            } catch (error) {
+                console.error(`Error fetching status for post ${postId}:`, error);
+            }
         }
     };
 
@@ -176,18 +222,58 @@ const PostsPage = () => {
     };
 
     const handleLike = async (postId, isLiked, likesCount) => {
-        setPosts((prevPosts) => prevPosts.map((post) => (post.id === postId ? { ...post, likes_count: likesCount } : post)));
+        // Update posts state with new likes count
+        setPosts((prevPosts) => 
+            prevPosts.map((post) => 
+                post.id === postId ? { ...post, likes_count: likesCount } : post
+            )
+        );
+
+        // Update liked posts state
         setLikedPosts((prev) => ({
             ...prev,
             [postId]: isLiked,
         }));
+
+        // Update cache with new status
+        setCache((prev) => ({
+            ...prev,
+            statuses: {
+                ...prev.statuses,
+                [postId]: {
+                    ...prev.statuses[postId],
+                    is_liked: isLiked,
+                    likes_count: likesCount
+                }
+            }
+        }));
     };
 
     const handleSave = async (postId, isSaved, savesCount) => {
-        setPosts((prevPosts) => prevPosts.map((post) => (post.id === postId ? { ...post, saves_count: savesCount } : post)));
+        // Update posts state with new saves count
+        setPosts((prevPosts) => 
+            prevPosts.map((post) => 
+                post.id === postId ? { ...post, saves_count: savesCount } : post
+            )
+        );
+
+        // Update saved posts state
         setSavedPosts((prev) => ({
             ...prev,
             [postId]: isSaved,
+        }));
+
+        // Update cache with new status
+        setCache((prev) => ({
+            ...prev,
+            statuses: {
+                ...prev.statuses,
+                [postId]: {
+                    ...prev.statuses[postId],
+                    is_saved: isSaved,
+                    saves_count: savesCount
+                }
+            }
         }));
     };
 

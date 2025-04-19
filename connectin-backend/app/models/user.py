@@ -43,7 +43,11 @@ class User(Base):
     project_comments = relationship("ProjectComment", back_populates="user", cascade="all, delete")
     saved_posts = relationship("SavedPost", back_populates="user", cascade="all, delete-orphan")
 
-    recommendations = relationship("Recommendation", back_populates="from_user")
+    # В классе User (app/models/user.py)
+    sent_recommendations = relationship("Recommendation", foreign_keys="[Recommendation.from_user_id]",
+                                        back_populates="from_user")
+    received_recommendations = relationship("Recommendation", foreign_keys="[Recommendation.to_user_id]",
+                                            back_populates="to_user")
 
     # Todos created by the user
     todos = relationship("Todo", back_populates="user")

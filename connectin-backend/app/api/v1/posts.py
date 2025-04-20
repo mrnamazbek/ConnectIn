@@ -17,7 +17,7 @@ from app.api.v1.auth import get_current_user
 from app.utils.logger import get_logger
 from datetime import datetime
 from math import ceil
-from app.models.recommendation import PostRecommendation, Recommendation
+from app.models.recommendation import Recommendation
 
 router = APIRouter()
 
@@ -292,11 +292,6 @@ def delete_post(
     if post.author_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this post")
 
-    # Delete related recommendations first
-    db.query(PostRecommendation).filter(PostRecommendation.to_post_id == post_id).delete()
-    db.query(Recommendation).filter(Recommendation.id.in_(
-        db.query(PostRecommendation.recommendation_id).filter(PostRecommendation.to_post_id == post_id)
-    )).delete()
 
     # Delete related likes, comments, and saves
     db.query(PostLike).filter(PostLike.post_id == post_id).delete()

@@ -17,19 +17,16 @@ from typing import List
 
 from app.database.connection import get_db
 from app.models import Tag, Skill
-from app.models.project import Project
+from app.models.project import Project, project_applications, project_members_association
 from app.models.user import User
-from app.schemas.project import ProjectCreate, ProjectOut, ProjectProfileOut, ProjectUpdate
+from app.models.vote import ProjectVote
+from app.schemas.project import ProjectCreate, ProjectOut, ProjectProfileOut, ProjectUpdate, TagOut
 from app.schemas.user import UserOut
-from app.schemas.tag import TagOut
 from app.schemas.skill import SkillOut
 from app.api.v1.auth import get_current_user
-from app.models.project import project_applications, project_members_association, project_tags_association, project_skills_association
 from app.schemas.project import ApplicationDecisionRequest, ApplicationStatus
-from app.models.vote import ProjectVote
 from app.models.comment import ProjectComment
 from app.schemas.comment import CommentOut, CommentCreate
-from app.models.recommendation import ProjectRecommendation
 from app.utils import get_logger
 
 router = APIRouter()
@@ -269,6 +266,54 @@ def filter_projects_by_tags(
         logger.error(f"Error filtering projects: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to filter projects")
 
+@router.get("/applied", response_model=List[ProjectOut], summary="Get applied projects")
+def get_applied_projects(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get all projects that the current user has applied to.
+    """
+    try:
+        logger.info(f"Fetching applied projects for user {current_user.id}")
+        
+        # First, get the project IDs from the applications table
+        applied_project_ids = db.query(project_applications.c.project_id).filter(
+            project_applications.c.user_id == current_user.id
+        ).all()
+        
+        if not applied_project_ids:
+            logger.info("No applied projects found")
+            return []
+            
+        # Convert to list of IDs
+        project_ids = [pid[0] for pid in applied_project_ids]
+        
+        # Then fetch the projects
+        projects = db.query(Project).filter(Project.id.in_(project_ids)).all()
+        
+        logger.info(f"Found {len(projects)} applied projects")
+        
+        return [
+            ProjectOut(
+                id=project.id,
+                name=project.name,
+                description=project.description,
+                owner=UserOut.model_validate(project.owner) if project.owner else None,
+                tags=[TagOut(id=tag.id, name=tag.name) for tag in project.tags],
+                skills=[SkillOut(id=skill.id, name=skill.name) for skill in project.skills],
+                members=[UserOut(id=user.id, username=user.username) for user in project.members],
+                comments_count=len(project.comments),
+                vote_count=db.query(
+                    func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
+                ).filter(ProjectVote.project_id == project.id).scalar() or 0
+            )
+            for project in projects
+        ]
+    except Exception as e:
+        logger.error(f"Error fetching applied projects: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # 🔹 Получить проект по ID
 @router.get("/{project_id}", response_model=ProjectOut)
 def read_project(project_id: int, db: Session = Depends(get_db)):
@@ -338,11 +383,6 @@ def delete_project(
 
     if project.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Вы не можете удалить чужой проект")
-
-    # Delete project recommendations first
-    db.query(ProjectRecommendation).filter(
-        ProjectRecommendation.to_project_id == project_id
-    ).delete(synchronize_session=False)
 
     # Now delete the project
     db.delete(project)

@@ -195,7 +195,7 @@ const NavBar = () => {
                         label="Chat"
                         onClick={() => {
                             handleMobileMenuClick();
-                            handleNavigation("/chats");
+                            handleNavigation("/chats/");
                         }}
                     />
 

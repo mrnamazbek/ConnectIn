@@ -1,190 +1,387 @@
-from typing import List, cast
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy.sql import func
+from typing import List, Optional, Dict
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
+from sqlalchemy.orm import Session
+from sqlalchemy import desc, func, and_, or_
 from app.database import get_db
-from app.models import User, Conversation, Message
-from app.schemas.chat import MessageCreate, MessageOut, ConversationCreate, ConversationOut
+from app.models.chat import Conversation, Message, ConversationType
+from app.schemas.chat import (
+    ConversationCreate,
+    ConversationOut,
+    ConversationList,
+    MessageCreate,
+    MessageOut,
+    MessageList,
+    UserBasicInfo,
+    ReadReceipt
+)
 from app.api.v1.auth import get_current_user
-from app.models.relations.associations import conversation_participants
+from app.models import User
+from datetime import datetime
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
-
-def _sort_and_convert_messages(messages: List[Message]) -> List[MessageOut]:
-    """Сортировка сообщений по времени и преобразование в схему"""
+def get_user_basic_info(users) -> List[UserBasicInfo]:
+    """Convert User objects to UserBasicInfo schemas"""
     return [
-        MessageOut.model_validate(msg)
-        for msg in sorted(messages, key=lambda m: m.timestamp)
+        UserBasicInfo(
+            id=user.id,
+            username=user.username,
+            avatar_url=getattr(user, 'avatar_url', None)
+        ) for user in users
     ]
 
+def get_unread_count(conversation_id: int, user_id: int, db: Session) -> int:
+    """Get count of unread messages in conversation for user"""
+    return db.query(Message).filter(
+        Message.conversation_id == conversation_id,
+        Message.sender_id != user_id,
+        Message.read.is_(None)
+    ).count()
 
-@router.get("/", response_model=List[ConversationOut])
-def get_conversations(
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user)
-) -> List[ConversationOut]:
-    """
-    Получение всех бесед пользователя с оптимизированными запросами:
-    - Использование cast для явного указания типа отношений
-    - Оптимизированная проверка участия
-    - Снижение нагрузки на БД
-    """
-    conversations = (
-        db.query(Conversation)
-        .options(
-            joinedload(cast(str, Conversation.participants)),
-            joinedload(cast(str, Conversation.messages))
+@router.get("/", response_model=List[ConversationList])
+async def get_conversations(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=50),
+    search: Optional[str] = None,
+):
+    """Get all conversations for the current user with pagination and search."""
+    try:
+        query = (
+            db.query(Conversation)
+            .join(Conversation.participants)
+            .filter(User.id == current_user.id)
+            .order_by(desc(Conversation.updated_at))
         )
-        .join(conversation_participants)
-        .filter(conversation_participants.c.user_id == current_user.id)
-        .distinct()
-        .all()
-    )
 
-    return [
-        ConversationOut(
-            id=conv.id,
-            type=conv.type.value,
-            project_id=conv.project_id,
-            team_id=conv.team_id,
-            participants=[user.id for user in conv.participants],
-            messages=_sort_and_convert_messages(conv.messages)
-        )
-        for conv in conversations
-    ]
+        if search:
+            query = query.join(User, Conversation.participants).filter(
+                and_(
+                    User.id != current_user.id,
+                    or_(
+                        User.username.ilike(f"%{search}%"),
+                        User.email.ilike(f"%{search}%"),
+                        User.first_name.ilike(f"%{search}%"),
+                        User.last_name.ilike(f"%{search}%")
+                    )
+                )
+            )
 
+        total = query.count()
+        conversations = query.offset((page - 1) * per_page).limit(per_page).all()
+        
+        result = []
+        for conv in conversations:
+            # Get other participants (not the current user)
+            other_participants = [user for user in conv.participants if user.id != current_user.id]
+            
+            # Get unread messages count
+            unread_count = get_unread_count(conv.id, current_user.id, db)
+            
+            result.append(
+                ConversationList(
+                    id=conv.id,
+                    type=conv.type,
+                    participants=[user.id for user in conv.participants],
+                    participants_info=get_user_basic_info(other_participants),
+                    last_message=conv.messages[0] if conv.messages else None,
+                    updated_at=conv.updated_at,
+                    unread_count=unread_count
+                )
+            )
+        
+        return result
+    except Exception as e:
+        logger.error(f"Error getting conversations: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve conversations")
 
 @router.get("/{conversation_id}", response_model=ConversationOut)
-def get_conversation(
-        conversation_id: int,
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user)
-) -> ConversationOut:
-    """Оптимизированная проверка прав доступа с использованием генератора"""
-    conversation = (
-        db.query(Conversation)
-        .options(
-            joinedload(cast(str, Conversation.participants)),
-            joinedload(cast(str, Conversation.messages))
+async def get_conversation(
+    conversation_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get a specific conversation by ID."""
+    try:
+        conversation = (
+            db.query(Conversation)
+            .join(Conversation.participants)
+            .filter(
+                Conversation.id == conversation_id,
+                User.id == current_user.id,
+            )
+            .first()
         )
-        .filter(Conversation.id == conversation_id)
-        .first()
-    )
 
-    if not conversation:
-        raise HTTPException(status_code=404, detail="Беседа не найдена")
-
-    # Быстрая проверка через генератор
-    if not any(p.id == current_user.id for p in conversation.participants):
-        raise HTTPException(status_code=403, detail="Нет доступа к беседе")
-
-    return ConversationOut(
-        id=conversation.id,
-        type=conversation.type.value,
-        project_id=conversation.project_id,
-        team_id=conversation.team_id,
-        participants=[user.id for user in conversation.participants],
-        messages=_sort_and_convert_messages(conversation.messages)
-    )
-
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        # Get other participants (not the current user)
+        other_participants = [user for user in conversation.participants if user.id != current_user.id]
+        
+        # Get unread messages count
+        unread_count = get_unread_count(conversation_id, current_user.id, db)
+        
+        return ConversationOut(
+            id=conversation.id,
+            type=conversation.type,
+            participants=[user.id for user in conversation.participants],
+            participants_info=get_user_basic_info(other_participants),
+            created_at=conversation.created_at,
+            updated_at=conversation.updated_at,
+            messages=conversation.messages[:50],  # Limit to most recent 50 messages
+            unread_count=unread_count
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving conversation {conversation_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve conversation")
 
 @router.post("/", response_model=ConversationOut)
-def create_conversation(
-        conversation_data: ConversationCreate,
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user)
-) -> ConversationOut:
-    """Оптимизация поиска существующих бесед через множества"""
-    if conversation_data.type not in {"direct", "project", "team"}:
-        raise HTTPException(status_code=400, detail="Недопустимый тип беседы")
+async def create_conversation(
+    conversation_data: ConversationCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a new conversation."""
+    try:
+        # Check if conversation already exists for direct messages
+        if conversation_data.type == ConversationType.DIRECT.value:
+            # For direct messages, check if a conversation already exists with these participants
+            all_participant_ids = [current_user.id] + conversation_data.participant_ids
+            
+            # Get all conversations where current user is a participant
+            user_conversations = (
+                db.query(Conversation)
+                .join(Conversation.participants)
+                .filter(
+                    Conversation.type == ConversationType.DIRECT.value,
+                    User.id == current_user.id
+                )
+                .all()
+            )
+            
+            # Check each conversation to see if it has exactly these participants
+            for conv in user_conversations:
+                conv_participant_ids = [p.id for p in conv.participants]
+                if set(conv_participant_ids) == set(all_participant_ids) and len(conv_participant_ids) == len(all_participant_ids):
+                    # Use same method as get_conversation to return consistent format
+                    other_participants = [user for user in conv.participants if user.id != current_user.id]
+                    unread_count = get_unread_count(conv.id, current_user.id, db)
+                    
+                    return ConversationOut(
+                        id=conv.id,
+                        type=conv.type,
+                        participants=[user.id for user in conv.participants],
+                        participants_info=get_user_basic_info(other_participants),
+                        created_at=conv.created_at,
+                        updated_at=conv.updated_at,
+                        messages=conv.messages[:50],  # Limit to most recent 50 messages
+                        unread_count=unread_count
+                    )
 
-    if conversation_data.type == "direct":
-        participant_ids = set(conversation_data.participant_ids) | {current_user.id}
-        existing = _find_existing_direct_conversation(db, participant_ids)
-        if existing:
-            return existing
+        # If no existing conversation is found, create a new one
+        # Get all participants including the current user
+        all_participant_ids = [current_user.id] + conversation_data.participant_ids
+        participants = db.query(User).filter(User.id.in_(all_participant_ids)).all()
 
-    # Оптимизированное создание беседы
-    conversation = _create_new_conversation(db, conversation_data, current_user)
-    return ConversationOut(
-        id=conversation.id,
-        type=conversation.type.value,
-        project_id=conversation.project_id,
-        team_id=conversation.team_id,
-        participants=[user.id for user in conversation.participants],
-        messages=[]
-    )
+        if len(participants) != len(all_participant_ids):
+            missing_ids = set(all_participant_ids) - set(user.id for user in participants)
+            raise HTTPException(status_code=404, detail=f"Some participants not found: {missing_ids}")
 
-
-def _find_existing_direct_conversation(
-        db: Session,
-        participant_ids: set[int]
-) -> ConversationOut | None:
-    """Оптимизированный поиск существующей direct-беседы"""
-    return (
-        db.query(Conversation)
-        .join(conversation_participants)
-        .filter(Conversation.type == "direct")
-        .group_by(Conversation.id)
-        .having(func.count(conversation_participants.c.user_id) == len(participant_ids))
-        .having(
-            func.every(conversation_participants.c.user_id.in_(participant_ids))
+        conversation = Conversation(
+            type=conversation_data.type,
+            participants=participants,
         )
-        .first()
-    )
+        db.add(conversation)
+        db.commit()
+        db.refresh(conversation)
+        
+        # Get other participants (not the current user)
+        other_participants = [user for user in conversation.participants if user.id != current_user.id]
+        
+        return ConversationOut(
+            id=conversation.id,
+            type=conversation.type,
+            participants=[user.id for user in conversation.participants],
+            participants_info=get_user_basic_info(other_participants),
+            created_at=conversation.created_at,
+            updated_at=conversation.updated_at,
+            messages=[],
+            unread_count=0
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating conversation: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create conversation")
 
+@router.get("/{conversation_id}/messages", response_model=MessageList)
+async def get_messages(
+    conversation_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=1, le=100),
+):
+    """Get messages for a conversation with pagination."""
+    try:
+        # Verify conversation access
+        conversation = (
+            db.query(Conversation)
+            .join(Conversation.participants)
+            .filter(
+                Conversation.id == conversation_id,
+                User.id == current_user.id,
+            )
+            .first()
+        )
 
-def _create_new_conversation(
-        db: Session,
-        data: ConversationCreate,
-        user: User
-) -> Conversation:
-    """Оптимизированное создание беседы с валидацией участников"""
-    conversation = Conversation(
-        type=data.type,
-        project_id=data.project_id,
-        team_id=data.team_id,
-    )
-    db.add(conversation)
-    db.commit()
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
 
-    participant_ids = set(data.participant_ids) | {user.id}
-    participants = db.query(User).filter(User.id.in_(participant_ids)).all()
+        messages = (
+            db.query(Message)
+            .filter(Message.conversation_id == conversation_id)
+            .order_by(desc(Message.timestamp))
+            .offset((page - 1) * per_page)
+            .limit(per_page + 1)
+            .all()
+        )
 
-    if len(participants) != len(participant_ids):
-        db.rollback()
-        raise HTTPException(status_code=404, detail="Участники не найдены")
+        has_more = len(messages) > per_page
+        messages = messages[:per_page]
+        
+        # Mark unread messages as read
+        unread_messages = (
+            db.query(Message)
+            .filter(
+                Message.conversation_id == conversation_id,
+                Message.sender_id != current_user.id,
+                Message.read.is_(None)
+            )
+            .all()
+        )
+        
+        now = datetime.utcnow()
+        for msg in unread_messages:
+            msg.read = now
+        
+        db.commit()
 
-    conversation.participants = participants
-    db.commit()
-    return conversation
+        return MessageList(
+            messages=messages,
+            has_more=has_more,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving messages for conversation {conversation_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve messages")
 
+@router.post("/{conversation_id}/messages", response_model=MessageOut)
+async def send_message(
+    conversation_id: int,
+    message_data: MessageCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Send a message in a conversation."""
+    try:
+        # Verify conversation access
+        conversation = (
+            db.query(Conversation)
+            .join(Conversation.participants)
+            .filter(
+                Conversation.id == conversation_id,
+                User.id == current_user.id,
+            )
+            .first()
+        )
 
-@router.post("/message", response_model=MessageOut)
-def send_message(
-        message_data: MessageCreate,
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user)
-) -> MessageOut:
-    """Оптимизированная проверка прав через EXISTS"""
-    exists = db.query(Conversation).filter(
-        Conversation.id == message_data.conversation_id
-    ).join(
-        conversation_participants
-    ).filter(
-        conversation_participants.c.user_id == current_user.id
-    ).exists()
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
 
-    if not db.query(exists).scalar():
-        raise HTTPException(status_code=403, detail="Нет доступа к беседе")
+        message = Message(
+            content=message_data.content,
+            conversation_id=conversation_id,
+            sender_id=current_user.id,
+        )
+        db.add(message)
+        
+        # Update conversation timestamp
+        conversation.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(message)
 
-    message = Message(
-        conversation_id=message_data.conversation_id,
-        sender_id=current_user.id,
-        content=message_data.content,
-    )
-    db.add(message)
-    db.commit()
-    db.refresh(message)
-    return MessageOut.model_validate(message)
+        return message
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending message in conversation {conversation_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to send message")
+
+@router.post("/{conversation_id}/read", status_code=204)
+async def mark_as_read(
+    conversation_id: int,
+    read_receipt: ReadReceipt,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Mark messages as read."""
+    try:
+        # Verify conversation access
+        conversation = (
+            db.query(Conversation)
+            .join(Conversation.participants)
+            .filter(
+                Conversation.id == conversation_id,
+                User.id == current_user.id,
+            )
+            .first()
+        )
+
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+
+        # If message_ids is empty, mark all unread messages in the conversation as read
+        if not read_receipt.message_ids:
+            unread_messages = (
+                db.query(Message)
+                .filter(
+                    Message.conversation_id == conversation_id,
+                    Message.sender_id != current_user.id,
+                    Message.read.is_(None)
+                )
+                .all()
+            )
+        else:
+            # Otherwise, mark only specified messages
+            unread_messages = (
+                db.query(Message)
+                .filter(
+                    Message.id.in_(read_receipt.message_ids),
+                    Message.conversation_id == conversation_id,
+                    Message.sender_id != current_user.id,
+                    Message.read.is_(None)
+                )
+                .all()
+            )
+        
+        read_time = read_receipt.read_at
+        for message in unread_messages:
+            message.read = read_time
+        
+        db.commit()
+        
+        return None
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error marking messages as read in conversation {conversation_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to mark messages as read") 

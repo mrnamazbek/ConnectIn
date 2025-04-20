@@ -10,9 +10,10 @@ import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import ProjectProfile from "./pages/ProjectProfile";
 import AboutPage from "./pages/AboutPage.jsx";
+import LandingPage from "./pages/LandingPage";
 import { ToastContainer } from "react-toastify";
 import AuthWrapper from "./components/AuthWrapper.jsx";
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
     return (
@@ -24,15 +25,16 @@ function App() {
                         <div className="flex-grow grid grid-cols-8">
                             <div className="col-start-2 col-span-6">
                                 <Routes>
+                                    <Route path="/" element={<LandingPage />} />
+                                    <Route path="/feed" element={<FeedPage />} />
                                     <Route path="/login" element={<LoginPage />} />
                                     <Route path="/register" element={<RegisterPage />} />
                                     <Route path="/profile/*" element={<UserProfile />} />
-                                    <Route path="/*" element={<FeedPage />} />
                                     <Route path="/search" element={<SearchPage />} />
-                                    <Route path="/chats" element={<ChatPage />} />
-                                    <Route path="*" element={<NotFoundPage />} />
-                                    <Route path="project/:projectId/profile" element={<ProjectProfile />} />
+                                    <Route path="/chats" element={<FullHeightPage><ChatPage /></FullHeightPage>} />
+                                    <Route path="/project/:projectId/profile" element={<ProjectProfile />} />
                                     <Route path="/about" element={<AboutPage />} />
+                                    <Route path="*" element={<NotFoundPage />} />
                                 </Routes>
                             </div>
                             <ToastContainer autoClose={5000} position="bottom-left" />
@@ -45,9 +47,18 @@ function App() {
     );
 }
 
+// Wrapper component for pages that need full height
+function FullHeightPage({ children }) {
+    return (
+        <div className="h-[calc(100vh-64px)] overflow-hidden">
+            {children}
+        </div>
+    );
+}
+
 function ConditionalFooter() {
     const location = useLocation();
-    const hiddenRoutes = ["/login", "/register"];
+    const hiddenRoutes = ["/login", "/register", "/", "/chats"];
     return !hiddenRoutes.includes(location.pathname) ? <Footer /> : null;
 }
 

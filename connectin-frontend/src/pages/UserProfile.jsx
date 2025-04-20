@@ -9,6 +9,7 @@ import ProjectsSection from "./ProjectsSection";
 import SkillsSection from "./SkillsSection";
 import ActionsSection from "./ActionsSection";
 import SavedPostsSection from "./SavedPostsSection";
+import AppliedProjectsSection from "./AppliedProjectsSection";
 import { motion, AnimatePresence } from "framer-motion";
 import AvatarUpload from "../components/User/AvatarUpload";
 
@@ -61,6 +62,8 @@ const UserProfile = () => {
     const [loadingSavedPosts, setLoadingSavedPosts] = useState(true);
     const [dataLoaded, setDataLoaded] = useState(false);
     const [activeTab, setActiveTab] = useState("projects");
+    const [appliedProjects, setAppliedProjects] = useState([]);
+    const [loadingAppliedProjects, setLoadingAppliedProjects] = useState(true);
 
     const degreeOptions = ["High School Diploma", "Associate's Degree", "Bachelor's Degree", "Master's Degree", "PhD", "Other"];
 
@@ -71,6 +74,7 @@ const UserProfile = () => {
             setLoadingUser(true);
             setLoadingPosts(true);
             setLoadingSavedPosts(true);
+            setLoadingAppliedProjects(true);
 
             const token = localStorage.getItem("access_token");
             if (!token) {
@@ -78,7 +82,7 @@ const UserProfile = () => {
                 return;
             }
 
-            const [userResponse, postsResponse, skillsResponse, savedPostsResponse, projectsResponse] = await Promise.all([
+            const [userResponse, postsResponse, skillsResponse, savedPostsResponse, projectsResponse, appliedProjectsResponse] = await Promise.all([
                 axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
                     headers: { Authorization: `Bearer ${token}` },
                 }),
@@ -92,6 +96,9 @@ const UserProfile = () => {
                     headers: { Authorization: `Bearer ${token}` },
                 }),
                 axios.get(`${import.meta.env.VITE_API_URL}/projects/my`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+                axios.get(`${import.meta.env.VITE_API_URL}/projects/applied`, {
                     headers: { Authorization: `Bearer ${token}` },
                 }),
             ]);
@@ -120,6 +127,10 @@ const UserProfile = () => {
                 setProjects(projectsResponse.data);
             }
 
+            if (appliedProjectsResponse?.data) {
+                setAppliedProjects(appliedProjectsResponse.data);
+            }
+
             setDataLoaded(true);
         } catch (error) {
             if (error.response?.status === 401) {
@@ -134,6 +145,7 @@ const UserProfile = () => {
             setLoadingUser(false);
             setLoadingPosts(false);
             setLoadingSavedPosts(false);
+            setLoadingAppliedProjects(false);
         }
     }, [dataLoaded, navigate]);
 
@@ -930,6 +942,14 @@ const UserProfile = () => {
                                             Projects
                                         </button>
                                         <button
+                                            onClick={() => handleTabChange("applied")}
+                                            className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
+                                                activeTab === "applied" ? "text-green-700 dark:text-green-400 border-b-2 border-green-700 dark:border-green-400" : "text-gray-500 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400"
+                                            }`}
+                                        >
+                                            Applied Projects
+                                        </button>
+                                        <button
                                             onClick={() => handleTabChange("skills")}
                                             className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
                                                 activeTab === "skills" ? "text-green-700 dark:text-green-400 border-b-2 border-green-700 dark:border-green-400" : "text-gray-500 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400"
@@ -959,6 +979,11 @@ const UserProfile = () => {
                                         {activeTab === "projects" && (
                                             <motion.div key="projects" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
                                                 <ProjectsSection user={user} projects={projects} loading={loadingUser} isStatic={true} />
+                                            </motion.div>
+                                        )}
+                                        {activeTab === "applied" && (
+                                            <motion.div key="applied" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                                                <AppliedProjectsSection user={user} projects={appliedProjects} loading={loadingAppliedProjects} isStatic={true} />
                                             </motion.div>
                                         )}
                                         {activeTab === "skills" && (

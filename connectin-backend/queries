@@ -1,45 +1,126 @@
-SELECT
-    conname AS constraint_name,
-    conrelid::regclass AS table_name,
-    a.attname AS column_name,
-    confrelid::regclass AS foreign_table_name,
-    af.attname AS foreign_column_name
-FROM
-    pg_constraint AS c
-JOIN
-    pg_attribute AS a ON a.attnum = ANY(c.conkey) AND a.attrelid = c.conrelid
-JOIN
-    pg_attribute AS af ON af.attnum = ANY(c.confkey) AND af.attrelid = c.confrelid
-WHERE
-    c.contype = 'f';
-
-10.01.25:
-SELECT table_name FROM information_schema.tables WHERE table_schema='public'
-
-17.03.25 queries:
 ---
-SELECT setval('skills_id_seq', (SELECT MAX(id) FROM skills));
+
+## 📦 СТРУКТУРА И СХЕМА
+
+### 1. Все таблицы в схеме `public`
+```sql
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public';
+```
+
+### 2. Все колонки в таблицах
+```sql
+SELECT 
+    table_name,
+    column_name,
+    data_type,
+    is_nullable
+FROM information_schema.columns
+WHERE table_schema = 'public'
+ORDER BY table_name, ordinal_position;
+```
+
+### 3. Все первичные ключи
+```sql
+SELECT 
+    tc.table_name, 
+    kcu.column_name
+FROM 
+    information_schema.table_constraints AS tc
+JOIN 
+    information_schema.key_column_usage AS kcu
+    ON tc.constraint_name = kcu.constraint_name
+WHERE 
+    tc.constraint_type = 'PRIMARY KEY'
+    AND tc.table_schema = 'public';
+```
+
+### 4. Все внешние ключи (через `information_schema`)
+```sql
+SELECT 
+    tc.table_name AS fk_table,
+    kcu.column_name AS fk_column,
+    ccu.table_name AS pk_table,
+    ccu.column_name AS pk_column
+FROM 
+    information_schema.table_constraints AS tc
+JOIN 
+    information_schema.key_column_usage AS kcu 
+    ON tc.constraint_name = kcu.constraint_name
+JOIN 
+    information_schema.constraint_column_usage AS ccu 
+    ON ccu.constraint_name = tc.constraint_name
+WHERE 
+    tc.constraint_type = 'FOREIGN KEY';
+```
 
 ---
-SELECT id, COUNT(*)
-FROM skills
+
+## 📊 АНАЛИТИКА И ПРОФИЛИНГ ДАННЫХ
+
+### 5. Подсчет количества строк в каждой таблице
+```sql
+SELECT 
+    relname AS table_name, 
+    n_live_tup AS row_estimate
+FROM 
+    pg_stat_user_tables
+ORDER BY n_live_tup DESC;
+```
+
+### 6. Поиск дубликатов по полю `id`
+```sql
+SELECT id, COUNT(*) 
+FROM your_table
 GROUP BY id
 HAVING COUNT(*) > 1;
+```
+
+### 7. Статистика по null-значениям в колонках
+```sql
+SELECT 
+    table_name,
+    column_name,
+    COUNT(*) FILTER (WHERE column_name IS NULL) AS null_count
+FROM information_schema.columns
+JOIN public.your_table ON true
+WHERE table_schema = 'public'
+  AND table_name = 'your_table'
+GROUP BY table_name, column_name;
+```
 
 ---
-SELECT currval('skills_id_seq');
 
----
-CREATE TABLE skill_categories (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
-    description TEXT
+## ⚙️ СЛУЖЕБНЫЕ КОМАНДЫ
+
+### 8. Установить новое значение для `SEQUENCE` (автоинкремент)
+```sql
+SELECT setval('your_table_id_seq', (SELECT MAX(id) FROM your_table));
+```
+
+### 9. Получить текущее значение SEQUENCE
+```sql
+SELECT currval('your_table_id_seq');
+```
+
+### 10. Удалить дубликаты, оставив одну запись
+```sql
+DELETE FROM your_table
+WHERE id IN (
+    SELECT id FROM (
+        SELECT id, ROW_NUMBER() OVER (PARTITION BY field1, field2 ORDER BY id) AS rnk
+        FROM your_table
+    ) t
+    WHERE t.rnk > 1
 );
+```
 
-Визуализация структуры
-Запрос для просмотра категорий и навыков:
+---
 
-sql:
+## 📊 ВИЗУАЛИЗАЦИЯ СТРУКТУРЫ: Категории и навыки
+
+```sql
 SELECT
     c.name AS category,
     STRING_AGG(s.name, ', ') AS skills,
@@ -49,3 +130,38 @@ JOIN skill_category_mapping m ON c.id = m.category_id
 JOIN skills s ON m.skill_id = s.id
 GROUP BY c.name
 ORDER BY total_skills DESC;
+```
+
+---
+
+## 📌 БОНУС: Найти все индексы в схеме
+```sql
+SELECT 
+    tablename,
+    indexname,
+    indexdef
+FROM pg_indexes
+WHERE schemaname = 'public';
+```
+
+---
+-- 📇 3. Индексы по таблицам
+SELECT
+    t.relname AS table_name,
+    i.relname AS index_name,
+    a.attname AS column_name,
+    ix.indisunique AS is_unique,
+    ix.indisprimary AS is_primary
+FROM
+    pg_class t
+JOIN
+    pg_index ix ON t.oid = ix.indrelid
+JOIN
+    pg_class i ON i.oid = ix.indexrelid
+JOIN
+    pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
+WHERE
+    t.relkind = 'r'
+    AND t.relnamespace = 'public'::regnamespace
+ORDER BY
+    t.relname, index_name;

@@ -2,6 +2,13 @@ from enum import Enum
 # enums.py
 from enum import Enum as PyEnum
 
+#------------------# Можно создать Enum для статусов
+class SubscriptionStatusEnum(Enum):
+    FREE = "free"
+    ACTIVE = "active"
+    PAST_DUE = "past_due" # Платеж просрочен
+    CANCELED = "canceled"
+#-----------------
 class ApplicationStatus(str, Enum):
     ACCEPTED = "accepted"
     REJECTED = "rejected"
@@ -24,4 +31,6 @@ class TodoStatus(PyEnum):
     COMPLETED = "Completed"
     BLOCKED = "Blocked"
     ARCHIVED = "Archived"
+
+
 

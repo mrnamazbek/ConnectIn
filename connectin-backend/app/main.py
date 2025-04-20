@@ -38,7 +38,7 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Include API router
-app.include_router(api_router)
+app.include_router(api_router, prefix="/api/v1")
 
 # Define global exception handler
 @app.exception_handler(Exception)

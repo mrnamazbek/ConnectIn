@@ -8,6 +8,9 @@ class ConversationType(str, Enum):
 
 class MessageBase(BaseModel):
     content: str = Field(..., min_length=1, max_length=5000)
+    media_url: Optional[str] = None
+    media_type: Optional[str] = None
+    media_name: Optional[str] = None
 
 class MessageCreate(MessageBase):
     conversation_id: int

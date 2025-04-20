@@ -2,6 +2,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
 class Settings(BaseSettings):
+    # В классе Settings
+    STRIPE_SECRET_KEY: str = "sk_test_..."  # ОБЯЗАТЕЛЬНО ЗАДАТЬ В ОКРУЖЕНИИ!
+    STRIPE_PUBLISHABLE_KEY: str = "pk_test_..."  # Этот может быть известен фронтенду
+    STRIPE_PRICE_ID: str = "price_..."  # ID вашей ценовой планы из Stripe Dashboard
+    STRIPE_WEBHOOK_SECRET: str = "whsec_..."  # Секрет для проверки подписи вебхуков
+
     OPENAI_API_KEY: str = Field(..., env="OPENAI_API_KEY")
     FRONTEND_URL: str = Field("http://localhost:8000/docs")
     ENVIRONMENT: str = Field("development", env="ENVIRONMENT")

@@ -40,3 +40,13 @@ openai~=1.72.0           # OpenAI API client (GPT, embeddings)
 
 # Testing
 pytest~=7.4.2            # Testing framework
+
+#billing api
+stripe==12.0.0
+
+certifi==2025.1.31
+charset-normalizer==3.4.1
+idna==3.10
+requests==2.32.3
+typing-extensions==4.13.2
+urllib3==2.4.0

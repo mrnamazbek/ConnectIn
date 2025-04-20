@@ -20,6 +20,7 @@ class Conversation(Base):
     type = Column(SQLEnum(ConversationType), nullable=False, comment="Тип чата")
     project_id = Column(Integer, ForeignKey("projects.id"), comment="Связь с проектом")
     team_id = Column(Integer, ForeignKey("teams.id"), comment="Связь с командой")
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False, comment="Время последнего обновления")
 
     # Отношения
     participants = relationship(

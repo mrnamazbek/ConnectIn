@@ -10,6 +10,9 @@ passlib~=1.7.4           # Password hashing (bcrypt, Argon2)
 python_jose~=3.3.0       # JWT encoding/decoding
 Authlib~=1.4.1           # OAuth/OIDC authentication
 
+# Real time chat
+websockets~=15.0.1
+
 # Web Framework
 fastapi~=0.115.12        # Async web framework for APIs
 slowapi~=0.1.9           # Rate limiting for FastAPI

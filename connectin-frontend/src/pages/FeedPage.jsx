@@ -1,11 +1,9 @@
 import PopularProjects from "../components/PopularProjects";
 import { Routes, Route, Navigate } from "react-router";
 import ProjectsPage from "./ProjectsPage";
-import TeamsPage from "./TeamsPage";
 import SubNav from "../components/SubNav";
-import { fakePopularProjects, fakeTeams } from "../data/data";
 import PublishPage from "./PublishPage";
-import PopularNews from "../components/PopularNews";
+import PopularPosts from "../components/PopularPosts";
 import PostPage from "./PostPage";
 import ProjectPage from "./ProjectPage";
 import PostsPage from "./PostsPage";
@@ -20,15 +18,14 @@ const Feed = () => {
                         <Route index element={<Navigate to="news" />} />
                         <Route path="news" element={<PostsPage />} />
                         <Route path="projects" element={<ProjectsPage />} />
-                        <Route path="teams" element={<TeamsPage fakeTeams={fakeTeams} />} />
                         <Route path="post" element={<PublishPage />} />
                         <Route path="posts/:postId" element={<PostPage />} />
                         <Route path="project/:projectId" element={<ProjectPage />} />
                     </Routes>
                 </div>
                 <div className="md:col-span-2 flex-col space-y-5">
-                    <PopularNews />
-                    <PopularProjects fakePopularProjects={fakePopularProjects} />
+                    <PopularPosts />
+                    <PopularProjects />
                 </div>
             </div>
         </>

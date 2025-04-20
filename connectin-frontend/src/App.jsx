@@ -31,7 +31,7 @@ function App() {
                                     <Route path="/register" element={<RegisterPage />} />
                                     <Route path="/profile/*" element={<UserProfile />} />
                                     <Route path="/search" element={<SearchPage />} />
-                                    <Route path="/chats" element={<ChatPage />} />
+                                    <Route path="/chats" element={<FullHeightPage><ChatPage /></FullHeightPage>} />
                                     <Route path="/project/:projectId/profile" element={<ProjectProfile />} />
                                     <Route path="/about" element={<AboutPage />} />
                                     <Route path="*" element={<NotFoundPage />} />
@@ -47,9 +47,18 @@ function App() {
     );
 }
 
+// Wrapper component for pages that need full height
+function FullHeightPage({ children }) {
+    return (
+        <div className="h-[calc(100vh-64px)] overflow-hidden">
+            {children}
+        </div>
+    );
+}
+
 function ConditionalFooter() {
     const location = useLocation();
-    const hiddenRoutes = ["/login", "/register", "/"];
+    const hiddenRoutes = ["/login", "/register", "/", "/chats"];
     return !hiddenRoutes.includes(location.pathname) ? <Footer /> : null;
 }
 

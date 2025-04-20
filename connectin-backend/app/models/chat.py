@@ -1,66 +1,61 @@
 from datetime import datetime
-from enum import Enum
-from sqlalchemy import Column, ForeignKey, Integer, Text, DateTime, Enum as SQLEnum
-from sqlalchemy.orm import relationship, validates
-from .base import Base
-from .relations.associations import conversation_participants
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, func
+from sqlalchemy.orm import relationship
+from app.models.base import Base
+from app.models.relations.associations import conversation_participants
+import enum
 
-
-class ConversationType(str, Enum):
-    """Типы чатов с автоматическим приведением к строке"""
-    direct = "direct"  # Личная переписка
-    project = "project"  # Чат проекта
-    team = "team"  # Чат команды
-
+class ConversationType(str, enum.Enum):
+    DIRECT = "direct"
+    # Future types can be added here:
+    # PROJECT = "project"
+    # TEAM = "team"
 
 class Conversation(Base):
     __tablename__ = "conversations"
 
-    id = Column(Integer, primary_key=True, index=True, comment="Уникальный ID чата")
-    type = Column(SQLEnum(ConversationType), nullable=False, comment="Тип чата")
-    project_id = Column(Integer, ForeignKey("projects.id"), comment="Связь с проектом")
-    team_id = Column(Integer, ForeignKey("teams.id"), comment="Связь с командой")
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False, comment="Время последнего обновления")
+    id = Column(Integer, primary_key=True, index=True)
+    type = Column(String, nullable=False, default=ConversationType.DIRECT.value)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Отношения
+    # Relationships
     participants = relationship(
         "User",
         secondary=conversation_participants,
         back_populates="conversations",
-        lazy="selectin",  # Оптимизация загрузки
-        cascade="save-update, merge"
+        lazy="selectin"
     )
-
     messages = relationship(
         "Message",
         back_populates="conversation",
         cascade="all, delete-orphan",
-        passive_deletes=True,
-        order_by="Message.timestamp"
+        lazy="selectin",
+        order_by="Message.timestamp.desc()"
     )
 
-    @validates('type')
-    def validate_type(self, key, value):
-        """Валидация типа чата при создании"""
-        if not isinstance(value, ConversationType):
-            raise ValueError("Недопустимый тип чата")
-        return value
-
+    @property
+    def last_message(self):
+        """Return the most recent message in this conversation"""
+        return self.messages[0] if self.messages else None
+        
+    @property
+    def other_participants(self, current_user_id):
+        """Get participants other than the current user"""
+        return [p for p in self.participants if p.id != current_user_id]
 
 class Message(Base):
     __tablename__ = "messages"
 
-    id = Column(Integer, primary_key=True, index=True, comment="Уникальный ID сообщения")
-    content = Column(Text, nullable=False, comment="Текст сообщения")
-    timestamp = Column(DateTime, default=datetime.now(), index=True, comment="Время отправки")
-
-    # Внешние ключи
+    id = Column(Integer, primary_key=True, index=True)
+    content = Column(String, nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    read = Column(DateTime, nullable=True)  # When the message was read
+    
+    # Foreign keys
     conversation_id = Column(Integer, ForeignKey("conversations.id", ondelete="CASCADE"))
     sender_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"))
 
-    # Отношения
-    sender = relationship("User", back_populates="messages", lazy="joined")
+    # Relationships
     conversation = relationship("Conversation", back_populates="messages")
-
-    def __repr__(self):
-        return f"<Message {self.id} from {self.sender_id}>"
+    sender = relationship("User", back_populates="messages", lazy="joined") 

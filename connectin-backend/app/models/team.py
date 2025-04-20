@@ -15,7 +15,5 @@ class Team(Base):
     members = relationship("User", secondary=user_teams_association, back_populates="teams")
     posts = relationship("Post", back_populates="team", cascade="all, delete")
 
-    team_recommendations = relationship("TeamRecommendation", back_populates="team")
-
     def __repr__(self):
         return f"<Team id={self.id} name={self.name}>"

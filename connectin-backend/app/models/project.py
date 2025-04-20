@@ -31,7 +31,5 @@ class Project(Base):
     
     comments = relationship("ProjectComment", back_populates="project", cascade="all, delete-orphan")
 
-    project_recommendations = relationship("ProjectRecommendation", back_populates="project")
-
     def __repr__(self):
         return f"<Project id={self.id} name={self.name} owner_id={self.owner_id}>"

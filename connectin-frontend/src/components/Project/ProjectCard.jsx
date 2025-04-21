@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowUp, faArrowDown, faUser } from "@fortawesome/free-solid-svg-icons";
-import {faComment} from "@fortawesome/free-regular-svg-icons";
+import { faComment } from "@fortawesome/free-regular-svg-icons";
 import { NavLink } from "react-router";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router";
@@ -157,7 +157,7 @@ const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true
                         </button>
                     )}
                     {showViewProject && (
-                        <NavLink to={`/project/${project.id}`} className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition" title="View project details">
+                        <NavLink to={`/feed/project/${project.id}`} className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition" title="View project details">
                             View Project
                         </NavLink>
                     )}

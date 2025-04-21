@@ -19,7 +19,7 @@ const Feed = () => {
                         <Route path="news" element={<PostsPage />} />
                         <Route path="projects" element={<ProjectsPage />} />
                         <Route path="post" element={<PublishPage />} />
-                        <Route path="posts/:postId" element={<PostPage />} />
+                        <Route path="post/:postId" element={<PostPage />} />
                         <Route path="project/:projectId" element={<ProjectPage />} />
                     </Routes>
                 </div>

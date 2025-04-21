@@ -16,8 +16,8 @@ const PopularPosts = () => {
                         page: 1,
                         page_size: 3,
                         sort_by: "likes_count",
-                        sort_order: "desc"
-                    }
+                        sort_order: "desc",
+                    },
                 });
                 setPopularPosts(response.data.items);
             } catch (error) {
@@ -54,10 +54,7 @@ const PopularPosts = () => {
                             <h3 className="font-semibold text-sm mb-2">{post.title}</h3>
                             <p className="text-sm mb-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: post.content }}></p>
                             <div className="flex justify-between items-center text-xs">
-                                <NavLink 
-                                    to={`/post/${post.id}`}
-                                    className="text-green-700 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
-                                >
+                                <NavLink to={`/feed/post/${post.id}`} className="text-green-700 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
                                     View Post
                                 </NavLink>
                             </div>

@@ -176,7 +176,7 @@ export default function PostPage() {
                     <NoDataMessage message="Post not found." />
                 ) : (
                     <div className="flex flex-col space-y-5">
-                        <div className="bg-white dark:bg-zinc-800 border border-green-700 rounded-md shadow-md p-5">
+                        <div className="bg-white dark:bg-gray-800 border border-green-700 rounded-md shadow-md p-5">
                             <div className="flex items-center mb-4">
                                 <img
                                     src={post.author.avatar_url || "default-avatar.png"}
@@ -225,14 +225,14 @@ export default function PostPage() {
             </div>
 
             {/* Comment Writing Form */}
-            <div className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-4">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-4">
                 <h3 className="font-semibold text-lg">Write a Comment</h3>
                 <form onSubmit={handleCommentSubmit} className="flex flex-col space-y-2">
                     <textarea
                         value={commentContent}
                         onChange={(e) => setCommentContent(e.target.value)}
                         placeholder="Add your comment..."
-                        className="w-full bg-white dark:bg-zinc-800 my-2 p-3 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:text-white"
+                        className="w-full bg-white dark:bg-gray-800 my-2 p-3 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:text-white"
                         rows="3"
                         disabled={isCommentLoading}
                     />
@@ -248,14 +248,14 @@ export default function PostPage() {
             </div>
 
             {/* Comments Section */}
-            <div className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                     <h3 className="font-semibold text-lg">Comments ({comments.length})</h3>
                 </div>
                 {comments.length > 0 ? (
                     <div className="divide-y divide-gray-200 dark:divide-gray-700">
                         {comments.map((comment) => (
-                            <div key={comment.id} className="p-4 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors">
+                            <div key={comment.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                 <div className="flex items-start gap-3">
                                     <img
                                         src={comment.user?.avatar_url || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}

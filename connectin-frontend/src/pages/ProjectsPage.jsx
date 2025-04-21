@@ -23,6 +23,13 @@ const ProjectsPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const currentPage = parseInt(searchParams.get("page") || "1");
 
+    // Set initial page parameter if it doesn't exist
+    useEffect(() => {
+        if (!searchParams.get("page")) {
+            setSearchParams({ page: "1" });
+        }
+    }, [searchParams, setSearchParams]);
+
     const fetchAllData = useCallback(async () => {
         try {
             setLoading(true);
@@ -58,7 +65,7 @@ const ProjectsPage = () => {
                 params,
                 paramsSerializer: (params) => {
                     return qs.stringify(params, { arrayFormat: "repeat" });
-                }
+                },
             });
 
             setProjects(projectsRes.data.items);
@@ -114,7 +121,7 @@ const ProjectsPage = () => {
                 params,
                 paramsSerializer: (params) => {
                     return qs.stringify(params, { arrayFormat: "repeat" });
-                }
+                },
             });
 
             setProjects(response.data.items);

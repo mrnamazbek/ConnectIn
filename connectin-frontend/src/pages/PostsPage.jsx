@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 import TokenService from "../services/tokenService";
 import { useSearchParams } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import usePostStore from '../store/postStore';
+import usePostStore from "../store/postStore";
 
 const PostsPage = () => {
     const [posts, setPosts] = useState([]);
@@ -51,10 +51,7 @@ const PostsPage = () => {
             setLoading(true);
 
             // Fetch tags and user data in parallel if not cached
-            const [tagsRes, userRes] = await Promise.all([
-                cache.tags ? Promise.resolve({ data: cache.tags }) : axios.get(`${import.meta.env.VITE_API_URL}/tags/`),
-                cache.user ? Promise.resolve({ data: cache.user }) : fetchCurrentUser()
-            ]);
+            const [tagsRes, userRes] = await Promise.all([cache.tags ? Promise.resolve({ data: cache.tags }) : axios.get(`${import.meta.env.VITE_API_URL}/tags/`), cache.user ? Promise.resolve({ data: cache.user }) : fetchCurrentUser()]);
 
             // Update cache with fetched data
             if (!cache.tags) {
@@ -108,7 +105,7 @@ const PostsPage = () => {
             setTotalPages(postsRes.data.total_pages);
 
             // Initialize post store with new posts
-            const postIds = postsRes.data.items.map(post => post.id);
+            const postIds = postsRes.data.items.map((post) => post.id);
             await initializePostState(postIds);
 
             // Fetch like and save statuses for posts in a single request
@@ -126,25 +123,21 @@ const PostsPage = () => {
 
         try {
             const postIds = posts.map((post) => post.id);
-            
+
             // Check cache first
-            const uncachedPostIds = postIds.filter(id => !cache.statuses[id]);
-            
+            const uncachedPostIds = postIds.filter((id) => !cache.statuses[id]);
+
             if (uncachedPostIds.length > 0) {
                 try {
-                    const response = await axios.post(
-                        `${import.meta.env.VITE_API_URL}/posts/batch_status`,
-                        { post_ids: uncachedPostIds },
-                        { headers: { Authorization: `Bearer ${token}` } }
-                    );
+                    const response = await axios.post(`${import.meta.env.VITE_API_URL}/posts/batch_status`, { post_ids: uncachedPostIds }, { headers: { Authorization: `Bearer ${token}` } });
 
                     // Update cache with new statuses
-                    setCache(prev => ({
+                    setCache((prev) => ({
                         ...prev,
                         statuses: {
                             ...prev.statuses,
-                            ...response.data
-                        }
+                            ...response.data,
+                        },
                     }));
                 } catch (error) {
                     console.error("Error fetching batch status:", error);
@@ -157,7 +150,7 @@ const PostsPage = () => {
             const newLikedPosts = {};
             const newSavedPosts = {};
 
-            postIds.forEach(id => {
+            postIds.forEach((id) => {
                 const status = cache.statuses[id] || { is_liked: false, is_saved: false };
                 newLikedPosts[id] = status.is_liked;
                 newSavedPosts[id] = status.is_saved;
@@ -179,22 +172,22 @@ const PostsPage = () => {
             try {
                 const [likeRes, saveRes] = await Promise.all([
                     axios.get(`${import.meta.env.VITE_API_URL}/posts/${postId}/is_liked`, {
-                        headers: { Authorization: `Bearer ${token}` }
+                        headers: { Authorization: `Bearer ${token}` },
                     }),
                     axios.get(`${import.meta.env.VITE_API_URL}/posts/${postId}/is_saved`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    })
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
                 ]);
 
-                setCache(prev => ({
+                setCache((prev) => ({
                     ...prev,
                     statuses: {
                         ...prev.statuses,
                         [postId]: {
                             is_liked: likeRes.data.is_liked,
-                            is_saved: saveRes.data.is_saved
-                        }
-                    }
+                            is_saved: saveRes.data.is_saved,
+                        },
+                    },
                 }));
             } catch (error) {
                 console.error(`Error fetching status for post ${postId}:`, error);
@@ -223,11 +216,7 @@ const PostsPage = () => {
 
     const handleLike = async (postId, isLiked, likesCount) => {
         // Update posts state with new likes count
-        setPosts((prevPosts) => 
-            prevPosts.map((post) => 
-                post.id === postId ? { ...post, likes_count: likesCount } : post
-            )
-        );
+        setPosts((prevPosts) => prevPosts.map((post) => (post.id === postId ? { ...post, likes_count: likesCount } : post)));
 
         // Update liked posts state
         setLikedPosts((prev) => ({
@@ -243,19 +232,15 @@ const PostsPage = () => {
                 [postId]: {
                     ...prev.statuses[postId],
                     is_liked: isLiked,
-                    likes_count: likesCount
-                }
-            }
+                    likes_count: likesCount,
+                },
+            },
         }));
     };
 
     const handleSave = async (postId, isSaved, savesCount) => {
         // Update posts state with new saves count
-        setPosts((prevPosts) => 
-            prevPosts.map((post) => 
-                post.id === postId ? { ...post, saves_count: savesCount } : post
-            )
-        );
+        setPosts((prevPosts) => prevPosts.map((post) => (post.id === postId ? { ...post, saves_count: savesCount } : post)));
 
         // Update saved posts state
         setSavedPosts((prev) => ({
@@ -271,9 +256,9 @@ const PostsPage = () => {
                 [postId]: {
                     ...prev.statuses[postId],
                     is_saved: isSaved,
-                    saves_count: savesCount
-                }
-            }
+                    saves_count: savesCount,
+                },
+            },
         }));
     };
 
@@ -428,17 +413,7 @@ const PostsPage = () => {
                     <motion.div key={currentPage} variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
                         {posts.map((post) => (
                             <motion.div key={post.id} variants={itemVariants}>
-                                <PostCard 
-                                    key={post.id} 
-                                    post={post} 
-                                    currentUser={currentUser} 
-                                    showViewPost={true} 
-                                    showCommentsLink={true} 
-                                    onLike={handleLike} 
-                                    onSave={handleSave} 
-                                    isLiked={likedPosts[post.id] || false} 
-                                    isSaved={savedPosts[post.id] || false} 
-                                />
+                                <PostCard key={post.id} post={post} currentUser={currentUser} showViewPost={true} showCommentsLink={true} onLike={handleLike} onSave={handleSave} isLiked={likedPosts[post.id] || false} isSaved={savedPosts[post.id] || false} />
                             </motion.div>
                         ))}
 

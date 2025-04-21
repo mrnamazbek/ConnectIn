@@ -18,8 +18,12 @@ const ProjectPage = () => {
     const [error, setError] = useState(null);
     const [commentLoading, setCommentLoading] = useState(false);
     const [commentError, setCommentError] = useState(null);
+    const [commentsListLoading, setCommentsListLoading] = useState(false);
+    const [userLoading, setUserLoading] = useState(false);
+    const [voteLoading, setVoteLoading] = useState(false);
 
     const fetchProject = useCallback(async () => {
+        setLoading(true);
         try {
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/${projectId}`);
             setProject({
@@ -37,6 +41,7 @@ const ProjectPage = () => {
     }, [projectId]);
 
     const fetchCurrentUser = async () => {
+        setUserLoading(true);
         try {
             const token = localStorage.getItem("access_token");
             if (!token) return;
@@ -47,11 +52,13 @@ const ProjectPage = () => {
             setCurrentUser(response.data);
         } catch (err) {
             console.error("Error fetching current user:", err);
+        } finally {
+            setUserLoading(false);
         }
     };
 
     const fetchComments = useCallback(async () => {
-        setCommentLoading(true);
+        setCommentsListLoading(true);
         try {
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/${projectId}/comments`);
             setComments(response.data);
@@ -60,11 +67,16 @@ const ProjectPage = () => {
             setCommentError("Failed to load comments.");
             toast.error("Failed to load comments. Please try again.");
         } finally {
-            setCommentLoading(false);
+            setCommentsListLoading(false);
         }
     }, [projectId]);
 
     useEffect(() => {
+        // Reset all loading states when projectId changes
+        setLoading(true);
+        setCommentsListLoading(true);
+        setUserLoading(true);
+        
         fetchProject();
         fetchCurrentUser();
         fetchComments();
@@ -95,6 +107,7 @@ const ProjectPage = () => {
             return;
         }
 
+        setVoteLoading(true);
         try {
             const response = await axios.post(`${import.meta.env.VITE_API_URL}/projects/${projectId}/vote`, { is_upvote: true }, { headers: { Authorization: `Bearer ${token}` } });
             setProject((prev) => ({
@@ -105,6 +118,8 @@ const ProjectPage = () => {
         } catch (err) {
             console.error("Failed to upvote:", err);
             toast.error("Failed to upvote. Please try again.");
+        } finally {
+            setVoteLoading(false);
         }
     };
 
@@ -116,6 +131,7 @@ const ProjectPage = () => {
             return;
         }
 
+        setVoteLoading(true);
         try {
             const response = await axios.post(`${import.meta.env.VITE_API_URL}/projects/${projectId}/vote`, { is_upvote: false }, { headers: { Authorization: `Bearer ${token}` } });
             setProject((prev) => ({
@@ -126,6 +142,8 @@ const ProjectPage = () => {
         } catch (err) {
             console.error("Failed to downvote:", err);
             toast.error("Failed to downvote. Please try again.");
+        } finally {
+            setVoteLoading(false);
         }
     };
 
@@ -163,7 +181,7 @@ const ProjectPage = () => {
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
             </div>
         );
     }
@@ -189,7 +207,23 @@ const ProjectPage = () => {
 
     return (
         <div className="space-y-6">
-            <ProjectCard project={project} currentUser={currentUser} handleApply={handleApply} handleUpvote={handleUpvote} handleDownvote={handleDownvote} showViewProject={false} showCommentsLink={true} />
+            <div className={`transition-opacity duration-300 ${userLoading || voteLoading ? 'opacity-70' : 'opacity-100'}`}>
+                <ProjectCard 
+                    project={project} 
+                    currentUser={currentUser} 
+                    handleApply={handleApply} 
+                    handleUpvote={handleUpvote} 
+                    handleDownvote={handleDownvote} 
+                    showViewProject={false} 
+                    showCommentsLink={true}
+                    isLoading={userLoading || voteLoading}
+                />
+                {(userLoading || voteLoading) && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700"></div>
+                    </div>
+                )}
+            </div>
 
             {/* Comment Writing Form */}
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-4">
@@ -207,10 +241,14 @@ const ProjectPage = () => {
                         placeholder="Add your comment..."
                         className="w-full bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:text-white"
                         rows="3"
-                        disabled={commentLoading}
+                        disabled={commentLoading || loading}
                     />
                     {commentError && <p className="text-red-500 text-sm">{commentError}</p>}
-                    <button type="submit" disabled={commentLoading || !newComment.trim()} className="rounded-md shadow-sm text-sm px-4 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button 
+                        type="submit" 
+                        disabled={commentLoading || !newComment.trim() || loading} 
+                        className="rounded-md shadow-sm text-sm px-4 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                         {commentLoading ? (
                             <span className="flex items-center gap-2">
                                 <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
@@ -228,7 +266,7 @@ const ProjectPage = () => {
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                     <h3 className="font-semibold text-lg">Comments ({comments.length})</h3>
                 </div>
-                {commentLoading ? (
+                {commentsListLoading ? (
                     <div className="flex justify-center items-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700"></div>
                     </div>

@@ -14,6 +14,7 @@ import LandingPage from "./pages/LandingPage";
 import { ToastContainer } from "react-toastify";
 import AuthWrapper from "./components/AuthWrapper.jsx";
 import { AuthProvider } from "./contexts/AuthContext";
+import PublishPage from "./pages/PublishPage.jsx";
 
 function App() {
     return (
@@ -30,8 +31,16 @@ function App() {
                                     <Route path="/login" element={<LoginPage />} />
                                     <Route path="/register" element={<RegisterPage />} />
                                     <Route path="/profile/*" element={<UserProfile />} />
+                                    <Route path="/post" element={<PublishPage />} />
                                     <Route path="/search" element={<SearchPage />} />
-                                    <Route path="/chats" element={<FullHeightPage><ChatPage /></FullHeightPage>} />
+                                    <Route
+                                        path="/chats"
+                                        element={
+                                            <FullHeightPage>
+                                                <ChatPage />
+                                            </FullHeightPage>
+                                        }
+                                    />
                                     <Route path="/project/:projectId/profile" element={<ProjectProfile />} />
                                     <Route path="/about" element={<AboutPage />} />
                                     <Route path="*" element={<NotFoundPage />} />
@@ -49,11 +58,7 @@ function App() {
 
 // Wrapper component for pages that need full height
 function FullHeightPage({ children }) {
-    return (
-        <div className="h-[calc(100vh-64px)] overflow-hidden">
-            {children}
-        </div>
-    );
+    return <div className="h-[calc(100vh-64px)] overflow-hidden">{children}</div>;
 }
 
 function ConditionalFooter() {

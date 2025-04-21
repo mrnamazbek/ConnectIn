@@ -21,6 +21,7 @@
     "axios": "^1.8.3",
     "chart.js": "^4.4.8",
     "ckeditor5": "^44.1.0",
+    "date-fns": "^4.1.0",
     "formik": "^2.4.6",
     "framer-motion": "^12.6.2",
     "js-cookie": "^3.0.5",

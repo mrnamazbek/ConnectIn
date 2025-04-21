@@ -78,8 +78,8 @@ post_tags_association = Table(
 conversation_participants = Table(
     "conversation_participants",
     Base.metadata,
-    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
-    Column("conversation_id", Integer, ForeignKey("conversations.id"), primary_key=True),
+    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("conversation_id", Integer, ForeignKey("conversations.id", ondelete="CASCADE"), primary_key=True),
     extend_existing=True
 )
 

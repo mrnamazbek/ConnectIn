@@ -86,7 +86,7 @@ export const PostCard = ({ post, showReadButton = true }) => {
                     </button>
                 </div>
                 {showReadButton && (
-                    <button onClick={() => navigate(`/posts/${id}`)} className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition">
+                    <button onClick={() => navigate(`/feed/post/${id}`)} className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition">
                         Read
                     </button>
                 )}

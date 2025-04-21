@@ -18,7 +18,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Union, Dict
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Body
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Body, WebSocket
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from fastapi.responses import RedirectResponse
 from jose import JWTError, jwt
@@ -46,7 +46,7 @@ from app.core.config import settings
 
 # Инициализация роутера и OAuth2 схемы
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 logger = get_logger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 
@@ -149,46 +149,45 @@ def validate_token(token: str) -> dict:
             detail="Invalid or expired token"
         )
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
-    """
-    Извлекает текущего пользователя из JWT-токена.
-    Improved error handling for authentication.
-    """
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
     try:
-        # Validate token
-        payload = validate_token(token)
-        email = payload.get("sub")
-        
-        if not email:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token"
-            )
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    
+    user = db.query(User).filter(User.email == email).first()
+    if user is None:
+        raise credentials_exception
+    return user
 
-        # Check if token is blacklisted
-        if db.query(BlacklistedToken).filter(BlacklistedToken.token == token).first():
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token has been revoked"
-            )
+async def get_current_user_ws(websocket: WebSocket) -> Optional[User]:
+    try:
+        token = websocket.query_params.get("access_token")
+        if not token:
+            return None
 
-        # Get user
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+
+        # Get database session
+        db = next(get_db())
         user = db.query(User).filter(User.email == email).first()
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
         return user
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error getting current user: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication failed"
-        )
+    except (JWTError, Exception):
+        return None
 
 # ---------------------- Регистрация и Логин ----------------------
 

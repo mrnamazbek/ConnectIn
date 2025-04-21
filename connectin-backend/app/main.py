@@ -1,13 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import todos, auth, chat_ws, projects, skills, teams, posts, users, tags, chats
 from app.core.config import settings
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from app.api.v1 import resume as resumes_v1 # Импортируем роутер резюме
-
-
+from app.api.v1 import resume as resumes_v1
 
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -40,18 +38,24 @@ def create_app() -> FastAPI:
         response.headers["X-RateLimit-Remaining"] = "some_value"
         return response
 
-    # Подключаем маршруты
-    app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
-    app.include_router(projects.router, prefix="/projects", tags=["Projects"])
-    app.include_router(teams.router, prefix="/teams", tags=["Teams"])
-    app.include_router(users.router, prefix="/users", tags=["Users"])
-    app.include_router(posts.router, prefix="/posts", tags=["Posts"])
-    app.include_router(tags.router, prefix="/tags", tags=["Tags"])
-    app.include_router(skills.router, prefix="/skills", tags=["Skills"])
-    app.include_router(todos.router, prefix="/todos", tags=["Todos"])
-    app.include_router(chats.router, prefix="/chats", tags=["Chats"])
-    app.include_router(chat_ws.router, prefix="/chats/ws", tags=["Chat WebSocket"])
-    app.include_router(resumes_v1.router, prefix="/resume", tags=["Resume Generator"])
+    # Create main API router with /api/v1 prefix
+    api_router = APIRouter(prefix="/api/v1")
+    
+    # Include all routers in the main API router
+    api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+    api_router.include_router(projects.router, prefix="/projects", tags=["Projects"])
+    api_router.include_router(teams.router, prefix="/teams", tags=["Teams"])
+    api_router.include_router(users.router, prefix="/users", tags=["Users"])
+    api_router.include_router(posts.router, prefix="/posts", tags=["Posts"])
+    api_router.include_router(tags.router, prefix="/tags", tags=["Tags"])
+    api_router.include_router(skills.router, prefix="/skills", tags=["Skills"])
+    api_router.include_router(todos.router, prefix="/todos", tags=["Todos"])
+    api_router.include_router(chats.router, prefix="/chats", tags=["Chats"])
+    api_router.include_router(chat_ws.router, prefix="/chats/ws", tags=["Chat WebSocket"])
+    api_router.include_router(resumes_v1.router, prefix="/resume", tags=["Resume Generator"])
+    
+    # Include the main API router in the app
+    app.include_router(api_router)
 
     return app
 

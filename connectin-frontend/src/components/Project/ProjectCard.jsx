@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowUp, faArrowDown, faUser } from "@fortawesome/free-solid-svg-icons";
-import {faComment} from "@fortawesome/free-regular-svg-icons";
+import { faComment } from "@fortawesome/free-regular-svg-icons";
 import { NavLink } from "react-router";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router";
 import useProjectVoteStore from "../../store/projectVoteStore";
 
-const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true, showCommentsLink = false }) => {
+const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true, showCommentsLink = false, isLoading = false }) => {
     const [isVoteLoading, setIsVoteLoading] = useState(false);
     const [isApplyLoading, setIsApplyLoading] = useState(false);
     const navigate = useNavigate();
@@ -68,7 +68,7 @@ const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true
     };
 
     return (
-        <div className="bg-white dark:bg-gray-800 shadow-md rounded-md border border-green-700 p-5 hover:shadow-lg transition-shadow">
+        <div className={`bg-white dark:bg-gray-800 shadow-md rounded-md border border-green-700 p-5 hover:shadow-lg transition-shadow relative ${isLoading ? 'pointer-events-none' : ''}`}>
             <div className="flex items-center space-x-2 mb-4">
                 <div className="relative w-10 h-10 flex items-center justify-center rounded-full border-2 border-green-700 dark:border-green-500 bg-gray-100 dark:bg-gray-700">
                     {owner.avatar_url ? (
@@ -157,7 +157,7 @@ const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true
                         </button>
                     )}
                     {showViewProject && (
-                        <NavLink to={`/project/${project.id}`} className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition" title="View project details">
+                        <NavLink to={`/feed/project/${project.id}`} className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition" title="View project details">
                             View Project
                         </NavLink>
                     )}

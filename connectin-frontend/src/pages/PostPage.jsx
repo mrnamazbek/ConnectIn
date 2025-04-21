@@ -3,7 +3,7 @@ import { useParams, useLocation, useNavigate } from "react-router";
 import axios from "axios";
 import { LoadingMessage, ErrorMessage, NoDataMessage } from "../components/Post/PostCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart as faHeartSolid, faBookmark as faBookmarkSolid, faClock } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as faHeartSolid, faBookmark as faBookmarkSolid, faClock, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { faHeart, faComment, faBookmark } from "@fortawesome/free-regular-svg-icons";
 import { toast } from "react-toastify";
 import { formatDate, formatFullDate } from "../utils/dateFormat";
@@ -16,15 +16,18 @@ export default function PostPage() {
     const [comments, setComments] = useState([]);
     const [isLiked, setIsLiked] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
-    const [loading, setLoading] = useState(!post);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [commentContent, setCommentContent] = useState("");
     const [commentError, setCommentError] = useState(null);
     const [isLikeLoading, setIsLikeLoading] = useState(false);
     const [isSaveLoading, setIsSaveLoading] = useState(false);
     const [isCommentLoading, setIsCommentLoading] = useState(false);
+    const [commentsLoading, setCommentsLoading] = useState(false);
+    const [statusLoading, setStatusLoading] = useState(false);
 
     const fetchPost = useCallback(async () => {
+        setLoading(true);
         try {
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts/${postId}`);
             setPost(response.data);
@@ -37,16 +40,20 @@ export default function PostPage() {
     }, [postId]);
 
     const fetchComments = useCallback(async () => {
+        setCommentsLoading(true);
         try {
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts/${postId}/comments`);
             setComments(response.data);
         } catch (error) {
             console.error("Error fetching comments:", error);
             toast.error("Failed to load comments");
+        } finally {
+            setCommentsLoading(false);
         }
     }, [postId]);
 
     const fetchLikeStatus = useCallback(async () => {
+        setStatusLoading(true);
         try {
             const token = localStorage.getItem("access_token");
             if (!token) return;
@@ -57,10 +64,13 @@ export default function PostPage() {
             setIsLiked(response.data.is_liked);
         } catch (error) {
             console.error("Error fetching like status:", error);
+        } finally {
+            setStatusLoading(false);
         }
     }, [postId]);
 
     const fetchSaveStatus = useCallback(async () => {
+        setStatusLoading(true);
         try {
             const token = localStorage.getItem("access_token");
             if (!token) return;
@@ -70,15 +80,22 @@ export default function PostPage() {
             setIsSaved(response.data.is_saved);
         } catch (error) {
             console.error("Error fetching save status:", error);
+        } finally {
+            setStatusLoading(false);
         }
     }, [postId]);
 
     useEffect(() => {
-        if (!post) fetchPost();
+        // Reset states on postId change
+        setLoading(true);
+        setCommentsLoading(true);
+        setStatusLoading(true);
+        
+        fetchPost();
         fetchComments();
         fetchLikeStatus();
         fetchSaveStatus();
-    }, [post, postId, fetchPost, fetchComments, fetchLikeStatus, fetchSaveStatus]);
+    }, [postId, fetchPost, fetchComments, fetchLikeStatus, fetchSaveStatus]);
 
     const handleLike = async () => {
         const token = localStorage.getItem("access_token");
@@ -176,7 +193,7 @@ export default function PostPage() {
                     <NoDataMessage message="Post not found." />
                 ) : (
                     <div className="flex flex-col space-y-5">
-                        <div className="bg-white dark:bg-zinc-800 border border-green-700 rounded-md shadow-md p-5">
+                        <div className="bg-white dark:bg-gray-800 border border-green-700 rounded-md shadow-md p-5">
                             <div className="flex items-center mb-4">
                                 <img
                                     src={post.author.avatar_url || "default-avatar.png"}
@@ -202,7 +219,7 @@ export default function PostPage() {
 
                             <div className="flex justify-between items-center mt-3">
                                 <div className="space-x-5 flex items-center">
-                                    <button onClick={handleLike} disabled={isLikeLoading} className="group relative text-gray-500 hover:text-red-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" title={isLikeLoading ? "Processing..." : "Like post"}>
+                                    <button onClick={handleLike} disabled={isLikeLoading || statusLoading} className="group relative text-gray-500 hover:text-red-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" title={isLikeLoading ? "Processing..." : "Like post"}>
                                         <FontAwesomeIcon icon={isLiked ? faHeartSolid : faHeart} className={`${isLikeLoading ? "animate-pulse" : ""}`} style={isLiked ? { color: "#ff0000" } : {}} />
                                         <span className="ml-1">{post.likes_count || ""}</span>
                                         <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{isLiked ? "Unlike" : "Like"}</span>
@@ -212,7 +229,7 @@ export default function PostPage() {
                                         <span className="ml-1">{post.comments_count || ""}</span>
                                         <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Comments</span>
                                     </button>
-                                    <button onClick={handleSave} disabled={isSaveLoading} className="group relative text-gray-500 hover:text-yellow-400 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" title={isSaveLoading ? "Processing..." : "Save post"}>
+                                    <button onClick={handleSave} disabled={isSaveLoading || statusLoading} className="group relative text-gray-500 hover:text-yellow-400 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" title={isSaveLoading ? "Processing..." : "Save post"}>
                                         <FontAwesomeIcon icon={isSaved ? faBookmarkSolid : faBookmark} className={`${isSaveLoading ? "animate-pulse" : ""}`} style={isSaved ? { color: "#facc15" } : {}} />
                                         <span className="ml-1">{post.saves_count || ""}</span>
                                         <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{isSaved ? "Unsave" : "Save"}</span>
@@ -225,37 +242,46 @@ export default function PostPage() {
             </div>
 
             {/* Comment Writing Form */}
-            <div className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-4">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-4">
                 <h3 className="font-semibold text-lg">Write a Comment</h3>
                 <form onSubmit={handleCommentSubmit} className="flex flex-col space-y-2">
                     <textarea
                         value={commentContent}
                         onChange={(e) => setCommentContent(e.target.value)}
                         placeholder="Add your comment..."
-                        className="w-full bg-white dark:bg-zinc-800 my-2 p-3 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:text-white"
+                        className="w-full bg-white dark:bg-gray-800 my-2 p-3 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:text-white"
                         rows="3"
-                        disabled={isCommentLoading}
+                        disabled={isCommentLoading || loading}
                     />
                     {commentError && <p className="text-red-500 text-sm">{commentError}</p>}
                     <button
                         type="submit"
-                        disabled={isCommentLoading || !commentContent.trim()}
+                        disabled={isCommentLoading || !commentContent.trim() || loading}
                         className="w-1/6 rounded-md shadow-sm text-sm px-4 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isCommentLoading ? "Submitting..." : "Submit"}
+                        {isCommentLoading ? (
+                            <span className="flex items-center justify-center gap-2">
+                                <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                                <span>Submitting...</span>
+                            </span>
+                        ) : "Submit"}
                     </button>
                 </form>
             </div>
 
             {/* Comments Section */}
-            <div className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                     <h3 className="font-semibold text-lg">Comments ({comments.length})</h3>
                 </div>
-                {comments.length > 0 ? (
+                {commentsLoading ? (
+                    <div className="flex justify-center items-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700"></div>
+                    </div>
+                ) : comments.length > 0 ? (
                     <div className="divide-y divide-gray-200 dark:divide-gray-700">
                         {comments.map((comment) => (
-                            <div key={comment.id} className="p-4 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors">
+                            <div key={comment.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                 <div className="flex items-start gap-3">
                                     <img
                                         src={comment.user?.avatar_url || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}

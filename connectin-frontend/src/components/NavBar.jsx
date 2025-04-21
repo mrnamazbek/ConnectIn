@@ -120,7 +120,12 @@ const NavBar = () => {
                     {/* Desktop Navigation */}
                     <div className="hidden font-semibold md:flex items-center space-x-2">
                         {/* Theme Toggle */}
-                        <button ref={themeRef} onClick={toggleSwitchTheme} className="flex flex-col cursor-pointer items-center space-y-1 px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}>
+                        <button
+                            ref={themeRef}
+                            onClick={toggleSwitchTheme}
+                            className="flex flex-col cursor-pointer items-center space-y-1 px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+                        >
                             <FontAwesomeIcon icon={isDarkMode ? faSun : faMoon} className="w-5 h-5 text-gray-600 dark:text-white transition-transform duration-300" />
                             <span className="text-xs text-gray-600 dark:text-gray-300">Theme</span>
                         </button>
@@ -128,7 +133,7 @@ const NavBar = () => {
                         {/* Navigation Links */}
                         <NavItem to="/search" icon={faMagnifyingGlass} label="Search" />
                         <NavItem to="/post" icon={faPen} label="New Post" />
-                        <NavItem to="/" icon={faNewspaper} label="Feed" />
+                        <NavItem to="/feed" icon={faNewspaper} label="Feed" />
                         <NavItem to="/chats" icon={faComments} label="Chats" onClick={() => handleNavigation("/chats")} />
 
                         {/* User Menu */}
@@ -195,7 +200,7 @@ const NavBar = () => {
                         label="Chat"
                         onClick={() => {
                             handleMobileMenuClick();
-                            handleNavigation("/chats");
+                            handleNavigation("/chats/");
                         }}
                     />
 

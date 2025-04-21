@@ -26,11 +26,11 @@ const PublishPage = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const tagRes = await axios.get(`${import.meta.env.VITE_API_URL}/tags`);
+                const tagRes = await axios.get(`${import.meta.env.VITE_API_URL}/tags/`);
                 setTags(tagRes.data);
 
                 if (postType === "project") {
-                    const skillRes = await axios.get(`${import.meta.env.VITE_API_URL}/skills`);
+                    const skillRes = await axios.get(`${import.meta.env.VITE_API_URL}/skills/`);
                     setSkills(skillRes.data);
                 }
             } catch (error) {

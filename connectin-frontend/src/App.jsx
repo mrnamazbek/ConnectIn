@@ -16,6 +16,8 @@ import AuthWrapper from "./components/AuthWrapper.jsx";
 import { AuthProvider } from "./contexts/AuthContext";
 import PublishPage from "./pages/PublishPage.jsx";
 import ProjectPage from "./pages/ProjectPage.jsx";
+import LandingPage_v3 from "./pages/LandingPage_v3.jsx";
+import LandingPageUpdatedVersion from "./pages/LandingPageUpdatedVersion.jsx";
 
 function App() {
     return (
@@ -27,6 +29,12 @@ function App() {
                         <div className="flex-grow grid grid-cols-8">
                             <div className="col-start-2 col-span-6">
                                 <Routes>
+                                    {/* Landing page v3 at root */}
+                                    <Route path="/v3" element={<LandingPage_v3 />} />
+
+                                    {/* Landing page v2 at root */}
+                                    <Route path="/v2" element={<LandingPageUpdatedVersion />} />
+
                                     {/* Landing page at root */}
                                     <Route path="/" element={<LandingPage />} />
 

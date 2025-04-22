@@ -52,6 +52,11 @@ class Message(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
     read = Column(DateTime, nullable=True)  # When the message was read
     
+    # Media fields
+    media_url = Column(String, nullable=True)  # URL or path to the media file
+    media_type = Column(String, nullable=True)  # Type of media (image, video, etc.)
+    media_name = Column(String, nullable=True)  # Original filename of the media
+    
     # Foreign keys
     conversation_id = Column(Integer, ForeignKey("conversations.id", ondelete="CASCADE"))
     sender_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"))

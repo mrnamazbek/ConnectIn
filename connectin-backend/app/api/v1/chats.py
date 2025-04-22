@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict
-from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, and_, or_
 from app.database import get_db
@@ -18,9 +18,16 @@ from app.api.v1.auth import get_current_user
 from app.models import User
 from datetime import datetime
 import logging
+import os
+import shutil
+from pathlib import Path
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# Create media directory if it doesn't exist
+MEDIA_DIR = Path("media/chats")
+MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 
 def get_user_basic_info(users) -> List[UserBasicInfo]:
     """Convert User objects to UserBasicInfo schemas"""
@@ -384,4 +391,69 @@ async def mark_as_read(
         raise
     except Exception as e:
         logger.error(f"Error marking messages as read in conversation {conversation_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to mark messages as read") 
+        raise HTTPException(status_code=500, detail="Failed to mark messages as read")
+
+@router.post("/{conversation_id}/media", response_model=MessageOut)
+async def upload_media(
+    conversation_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Upload a media file to a conversation."""
+    try:
+        # Verify conversation access
+        conversation = (
+            db.query(Conversation)
+            .join(Conversation.participants)
+            .filter(
+                Conversation.id == conversation_id,
+                User.id == current_user.id,
+            )
+            .first()
+        )
+
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+            
+        # Create directory for this conversation if it doesn't exist
+        conversation_dir = MEDIA_DIR / str(conversation_id)
+        conversation_dir.mkdir(exist_ok=True)
+        
+        # Generate unique filename to prevent overwriting
+        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        safe_filename = f"{timestamp}_{file.filename.replace(' ', '_')}"
+        file_path = conversation_dir / safe_filename
+        
+        # Save the file
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Get file content type (media type)
+        media_type = file.content_type or "application/octet-stream"
+        
+        # Create a message with the media information
+        message = Message(
+            content="",  # Empty content for media messages
+            conversation_id=conversation_id,
+            sender_id=current_user.id,
+            media_url=str(file_path),
+            media_type=media_type,
+            media_name=file.filename
+        )
+        
+        db.add(message)
+        
+        # Update conversation timestamp
+        conversation.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(message)
+        
+        logger.info(f"Media uploaded: {file.filename} to conversation {conversation_id}")
+        
+        return message
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uploading media to conversation {conversation_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to upload media") 

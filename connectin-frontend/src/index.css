@@ -2,6 +2,14 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
 @font-face {
     font-family: "Comfortaa";
     src: url(./assets/fonts/Comfortaa-Regular.ttf) format("truetype");

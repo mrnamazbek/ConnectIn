@@ -1,6 +1,6 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router";
 import { ToastContainer } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css'; // Импорт стилей для Toastify
+import "react-toastify/dist/ReactToastify.css"; // Импорт стилей для Toastify
 
 // Контекст и обертки
 import { AuthProvider } from "./contexts/AuthContext"; // Путь к вашему AuthContext
@@ -32,35 +32,115 @@ function App() {
                 {/* AuthWrapper обрабатывает состояние аутентификации */}
                 <AuthWrapper>
                     {/* Общий контейнер приложения */}
-                    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950"> {/* Немного изменил фон */}
+                    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950">
+                        {/* Немного изменил фон */}
                         {/* Навигация отображается всегда */}
                         <NavBar />
                         {/* Основной контент */}
-                        <main className="flex-grow"> {/* main занимает оставшееся место */}
-                             <Routes>
+                        <main className="flex-grow">
+                            {" "}
+                            {/* main занимает оставшееся место */}
+                            <Routes>
                                 {/* === ЛЕНДИНГ НА ГЛАВНОЙ === */}
                                 <Route path="/" element={<LandingPageV3 />} />
 
                                 {/* === ОСТАЛЬНЫЕ СТРАНИЦЫ ВНУТРИ ОБЕРТКИ С ОГРАНИЧЕНИЕМ ШИРИНЫ === */}
-                                <Route path="/feed/*" element={<MainContentWrapper><FeedPage /></MainContentWrapper>} />
-                                <Route path="/login" element={<MainContentWrapper><LoginPage /></MainContentWrapper>} />
-                                <Route path="/register" element={<MainContentWrapper><RegisterPage /></MainContentWrapper>} />
-                                <Route path="/profile/*" element={<MainContentWrapper><UserProfile /></MainContentWrapper>} />
-                                <Route path="/post" element={<MainContentWrapper><PublishPage /></MainContentWrapper>} />
-                                <Route path="/search" element={<MainContentWrapper><SearchPage /></MainContentWrapper>} />
-                                <Route path="/project/:projectId" element={<MainContentWrapper><ProjectPage /></MainContentWrapper>} />
-                                <Route path="/project/:projectId/profile" element={<MainContentWrapper><ProjectProfile /></MainContentWrapper>} />
-                                <Route path="/about" element={<MainContentWrapper><AboutPage /></MainContentWrapper>} />
+                                <Route
+                                    path="/feed/*"
+                                    element={
+                                        <MainContentWrapper>
+                                            <FeedPage />
+                                        </MainContentWrapper>
+                                    }
+                                />
+                                <Route
+                                    path="/login"
+                                    element={
+                                        <MainContentWrapper>
+                                            <LoginPage />
+                                        </MainContentWrapper>
+                                    }
+                                />
+                                <Route
+                                    path="/register"
+                                    element={
+                                        <MainContentWrapper>
+                                            <RegisterPage />
+                                        </MainContentWrapper>
+                                    }
+                                />
+                                <Route
+                                    path="/profile/*"
+                                    element={
+                                        <MainContentWrapper>
+                                            <UserProfile />
+                                        </MainContentWrapper>
+                                    }
+                                />
+                                <Route
+                                    path="/post"
+                                    element={
+                                        <MainContentWrapper>
+                                            <PublishPage />
+                                        </MainContentWrapper>
+                                    }
+                                />
+                                <Route
+                                    path="/search"
+                                    element={
+                                        <MainContentWrapper>
+                                            <SearchPage />
+                                        </MainContentWrapper>
+                                    }
+                                />
+                                <Route
+                                    path="/project/:projectId"
+                                    element={
+                                        <MainContentWrapper>
+                                            <ProjectPage />
+                                        </MainContentWrapper>
+                                    }
+                                />
+                                <Route
+                                    path="/project/:projectId/profile"
+                                    element={
+                                        <MainContentWrapper>
+                                            <ProjectProfile />
+                                        </MainContentWrapper>
+                                    }
+                                />
+                                <Route
+                                    path="/about"
+                                    element={
+                                        <MainContentWrapper>
+                                            <AboutPage />
+                                        </MainContentWrapper>
+                                    }
+                                />
                                 {/* Добавьте другие страницы внутрь MainContentWrapper */}
 
                                 {/* Чат - особый случай, может требовать другой обертки или полной высоты */}
-                                <Route path="/chats" element={<FullHeightPage><ChatPage /></FullHeightPage>} />
+                                <Route
+                                    path="/chats"
+                                    element={
+                                        <FullHeightPage>
+                                            <ChatPage />
+                                        </FullHeightPage>
+                                    }
+                                />
 
                                 {/* Страница не найдена */}
-                                <Route path="*" element={<MainContentWrapper><NotFoundPage /></MainContentWrapper>} />
+                                <Route
+                                    path="*"
+                                    element={
+                                        <MainContentWrapper>
+                                            <NotFoundPage />
+                                        </MainContentWrapper>
+                                    }
+                                />
                             </Routes>
                         </main>
-                         {/* Уведомления */}
+                        {/* Уведомления */}
                         <ToastContainer autoClose={3000} position="bottom-left" theme="colored" />
                         {/* Футер с условием */}
                         <ConditionalFooter />
@@ -75,7 +155,8 @@ function App() {
 function MainContentWrapper({ children }) {
     // Используем grid для позиционирования, но контент сам определяет свою ширину (max-w в дочерних)
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"> {/* Общий контейнер с отступами */}
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Общий контейнер с отступами */}
             {children}
         </div>
     );

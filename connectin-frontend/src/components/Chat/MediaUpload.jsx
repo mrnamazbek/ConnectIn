@@ -1,18 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { 
-    faImage, 
-    faFile, 
-    faSpinner, 
-    faTimes,
-    faFileImage,
-    faFilePdf,
-    faFileAudio,
-    faFileVideo,
-    faFileArchive,
-    faFileAlt
-} from "@fortawesome/free-solid-svg-icons";
+import { faImage, faFile, faSpinner, faTimes, faFileImage, faFilePdf, faFileAudio, faFileVideo, faFileArchive, faFileAlt } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
 
 const MediaUpload = ({ conversationId, onMediaSent }) => {
@@ -61,22 +50,18 @@ const MediaUpload = ({ conversationId, onMediaSent }) => {
         try {
             setIsUploading(true);
             setUploadProgress(0);
-            
+
             const token = localStorage.getItem("access_token");
-            const response = await axios.post(
-                `${import.meta.env.VITE_API_URL}/chats/${conversationId}/media`, 
-                formData, 
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "multipart/form-data",
-                    },
-                    onUploadProgress: (progressEvent) => {
-                        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                        setUploadProgress(percentCompleted);
-                    }
-                }
-            );
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/chats/${conversationId}/media`, formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "multipart/form-data",
+                },
+                onUploadProgress: (progressEvent) => {
+                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    setUploadProgress(percentCompleted);
+                },
+            });
 
             if (response.data) {
                 toast.success("Media sent successfully");
@@ -96,24 +81,24 @@ const MediaUpload = ({ conversationId, onMediaSent }) => {
         if (!file) return faFile;
 
         const type = file.type;
-        
+
         if (type.startsWith("image/")) return faFileImage;
         if (type.startsWith("video/")) return faFileVideo;
         if (type.startsWith("audio/")) return faFileAudio;
         if (type === "application/pdf") return faFilePdf;
         if (type.includes("zip") || type.includes("rar") || type.includes("tar") || type.includes("gz")) return faFileArchive;
-        
+
         return faFileAlt;
     };
 
     // Function to format file size
     const formatFileSize = (bytes) => {
         if (bytes === 0) return "0 Bytes";
-        
+
         const k = 1024;
         const sizes = ["Bytes", "KB", "MB", "GB"];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        
+
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
     };
 
@@ -122,12 +107,7 @@ const MediaUpload = ({ conversationId, onMediaSent }) => {
             {!selectedFile ? (
                 <label className="media-upload-button p-2 text-green-600 hover:text-green-700 cursor-pointer">
                     <FontAwesomeIcon icon={faImage} className="text-xl" />
-                    <input 
-                        type="file" 
-                        className="hidden" 
-                        onChange={handleFileSelect} 
-                        accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" 
-                    />
+                    <input type="file" className="hidden" onChange={handleFileSelect} accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" />
                 </label>
             ) : (
                 <div className="media-preview bg-gray-50 p-3 rounded-lg mb-3">
@@ -147,22 +127,15 @@ const MediaUpload = ({ conversationId, onMediaSent }) => {
                                 <p className="text-gray-500">{formatFileSize(selectedFile.size)}</p>
                             </div>
                         </div>
-                        <button 
-                            onClick={clearSelection}
-                            className="text-gray-500 hover:text-gray-700"
-                            disabled={isUploading}
-                        >
+                        <button onClick={clearSelection} className="text-gray-500 hover:text-gray-700" disabled={isUploading}>
                             <FontAwesomeIcon icon={faTimes} />
                         </button>
                     </div>
-                    
+
                     {isUploading ? (
                         <div>
                             <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
-                                <div 
-                                    className="bg-green-600 h-2.5 rounded-full" 
-                                    style={{ width: `${uploadProgress}%` }} 
-                                ></div>
+                                <div className="bg-green-600 h-2.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
                             </div>
                             <div className="flex justify-between text-xs text-gray-500">
                                 <span>Uploading...</span>
@@ -170,10 +143,7 @@ const MediaUpload = ({ conversationId, onMediaSent }) => {
                             </div>
                         </div>
                     ) : (
-                        <button 
-                            onClick={uploadMedia}
-                            className="w-full py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm"
-                        >
+                        <button onClick={uploadMedia} className="w-full py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm">
                             Send
                         </button>
                     )}
@@ -183,4 +153,4 @@ const MediaUpload = ({ conversationId, onMediaSent }) => {
     );
 };
 
-export default MediaUpload; 
+export default MediaUpload;

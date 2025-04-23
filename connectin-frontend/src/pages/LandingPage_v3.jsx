@@ -567,9 +567,9 @@ const LandingPage_v3 = () => {
                         <NavLink to="/register" className="bg-white text-emerald-700 px-10 py-4 rounded-full text-lg font-semibold hover:bg-gray-50 transition-all shadow-xl hover:shadow-2xl transform hover:translate-y-[-2px]">
                             Join ConnectIn Today
                         </NavLink>
-                        <NavLink to="/demo" className="text-white border border-white/40 bg-white/10 backdrop-blur-sm px-10 py-4 rounded-full text-lg font-semibold hover:bg-white/20 transition-all">
-                            Request Demo
-                        </NavLink>
+                        {/*<NavLink to="/demo" className="text-white border border-white/40 bg-white/10 backdrop-blur-sm px-10 py-4 rounded-full text-lg font-semibold hover:bg-white/20 transition-all">*/}
+                        {/*    Request Demo*/}
+                        {/*</NavLink>*/}
                     </motion.div>
                 </motion.div>
             </section>

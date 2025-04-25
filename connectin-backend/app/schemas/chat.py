@@ -7,10 +7,7 @@ class ConversationType(str, Enum):
     DIRECT = "direct"
 
 class MessageBase(BaseModel):
-    content: str = Field(..., min_length=1, max_length=5000)
-    media_url: Optional[str] = None
-    media_type: Optional[str] = None
-    media_name: Optional[str] = None
+    content: Optional[str] = Field(default="", max_length=5000)
 
 class MessageCreate(MessageBase):
     conversation_id: int

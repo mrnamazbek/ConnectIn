@@ -306,33 +306,52 @@ def delete_post(
 
 @router.get("/search", response_model=List[PostOut])
 def search_posts(
-    query: str = Query(..., min_length=1),  # Обязательный параметр с минимальной длиной
-    page: int = Query(1, ge=1),             # Номер страницы
-    page_size: int = Query(10, ge=1, le=100),  # Размер страницы
+    query: str = Query(""),  # Default to empty string with no validation constraints
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
     """
-    Поиск постов по заголовку, содержимому или связанным тегам с пагинацией.
+    Search for posts by title, content, or tags with pagination.
+    Returns an empty list for empty queries.
     """
     logger = get_logger(__name__)
-    logger.info(f"Получен поисковый запрос: query='{query}', page={page}, page_size={page_size}")
+    logger.info(f"Searching posts: query='{query}', page={page}, page_size={page_size}")
 
-    # Выполняем поиск
-    posts_query = db.query(Post).filter(
-        (Post.title.ilike(f"%{query}%")) |
-        (Post.content.ilike(f"%{query}%")) |
-        (Post.tags.any(Tag.name.ilike(f"%{query}%")))
-    )
+    # Only perform search if query is not empty and has meaningful content
+    if query and len(query.strip()) > 0:
+        posts_query = db.query(Post).filter(
+            (Post.title.ilike(f"%{query}%")) |
+            (Post.content.ilike(f"%{query}%")) |
+            (Post.tags.any(Tag.name.ilike(f"%{query}%")))
+        )
+        
+        # Apply pagination
+        total = posts_query.count()
+        posts = posts_query.offset((page - 1) * page_size).limit(page_size).all()
+        
+        logger.info(f"Found posts: {total} for query='{query}', returning page {page} with {len(posts)} posts")
 
-    # Пагинация
-    total = posts_query.count()
-    posts = posts_query.offset((page - 1) * page_size).limit(page_size).all()
+        # Format the results
+        result = []
+        for post in posts:
+            # Count the number of likes, comments, and saves for each post
+            likes_count = db.query(PostLike).filter(PostLike.post_id == post.id).count()
+            comments_count = db.query(PostComment).filter(PostComment.post_id == post.id).count()
+            saves_count = db.query(SavedPost).filter(SavedPost.post_id == post.id).count()
 
-    logger.info(f"Найдено постов: {total} для query='{query}', возвращаем страницу {page} с {len(posts)} постами")
+            # Create and populate the PostOut model
+            post_out = PostOut.model_validate(post)
+            post_out.likes_count = likes_count
+            post_out.comments_count = comments_count
+            post_out.saves_count = saves_count
+            result.append(post_out)
 
-    # Форматируем результат
-    result = [PostOut.model_validate(post) for post in posts]
-    return result
+        return result
+    else:
+        # For empty queries, return an empty list without hitting the database
+        logger.info(f"Empty query provided, returning empty results")
+        return []
 
 # ✅ Like Post
 @router.post("/{post_id}/like")

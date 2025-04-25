@@ -1,16 +1,67 @@
 // eslint-disable-next-line no-unused-vars
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import axios from "axios";
 import { debounce } from "lodash";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
 import { toast } from "react-toastify";
 import { chatApi } from "../../api/chatApi";
 import { ChatWebSocket } from "../../api/chatWebSocket";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 // FontAwesome icons
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPaperPlane, faSpinner, faCheckCircle, faImage, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faPaperPlane, faSpinner, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
+
+// Memoized message bubble component to prevent re-renders
+const MessageBubble = memo(({ message, isCurrentUser, showAvatar, isFirstInSequence, username }) => {
+    return (
+        <div className={`flex ${isCurrentUser ? "justify-end" : "justify-start"} mb-1`}>
+            <motion.div
+                key={message.id}
+                initial={message.isNew ? { opacity: 0, y: 10 } : { opacity: 1, y: 0 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className={`flex ${isCurrentUser ? "flex-row-reverse" : "flex-row"} max-w-[80%]`}
+            >
+                {showAvatar && !isCurrentUser && (
+                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-gray-700 dark:text-gray-200 font-medium text-sm mr-2">
+                        {username ? username[0].toUpperCase() : "?"}
+                    </div>
+                )}
+                
+                <div className={`flex flex-col ${isCurrentUser ? "items-end" : "items-start"}`}>
+                    {isFirstInSequence && !isCurrentUser && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 ml-2 mb-1">{username}</div>
+                    )}
+                    
+                    <div className={`px-3 py-2 rounded-lg bg-opacity-100 dark:bg-opacity-100 ${isCurrentUser 
+                        ? "bg-green-500 text-white" 
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white"
+                    }`}>
+                        <div className="text-sm whitespace-pre-wrap break-words">{message.content}</div>
+                    </div>
+                    
+                    <div className={`flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1 ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+                        <span className="mx-1">{format(parseISO(message.timestamp), "h:mm a")}</span>
+                        
+                        {isCurrentUser && message.read && (
+                            <FontAwesomeIcon icon={faCheckCircle} className="text-green-500 ml-1" title="Read" />
+                        )}
+                    </div>
+                </div>
+                
+                {showAvatar && isCurrentUser && (
+                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-gray-700 dark:text-gray-200 font-medium text-sm ml-2">
+                        {username ? username[0].toUpperCase() : "?"}
+                    </div>
+                )}
+            </motion.div>
+        </div>
+    );
+});
+
+// Add display name for debugging
+MessageBubble.displayName = 'MessageBubble';
 
 const ChatWindow = ({ conversationId }) => {
     const [messages, setMessages] = useState([]);
@@ -24,17 +75,17 @@ const ChatWindow = ({ conversationId }) => {
     const [participants, setParticipants] = useState([]);
     const [typingIndicator, setTypingIndicator] = useState(null);
     const [currentUserId, setCurrentUserId] = useState(null);
-    const [fullyLoaded, setFullyLoaded] = useState(false);
     const [wsConnected, setWsConnected] = useState(false);
     const [wsStatus, setWsStatus] = useState("connecting"); // "connecting", "connected", "fallback", "disconnected"
-    const [mediaFile, setMediaFile] = useState(null);
-    const [mediaPreview, setMediaPreview] = useState(null);
-    const [uploadProgress, setUploadProgress] = useState(0);
+    const [receivedMessages, setReceivedMessages] = useState(new Set()); // Track received message IDs
 
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
     const inputRef = useRef(null);
     const webSocketRef = useRef(null);
+    const pollIntervalRef = useRef(null);
+    const connectionTimeoutRef = useRef(null);
+    const initialLoadCompletedRef = useRef(false);
 
     // Scroll to bottom of messages
     const scrollToBottom = (behavior = "smooth") => {
@@ -43,254 +94,380 @@ const ChatWindow = ({ conversationId }) => {
         }
     };
 
-    // Initialize WebSocket connection
-    useEffect(() => {
-        if (conversationId) {
-            console.log(`Setting up WebSocket for conversation ${conversationId}`);
+    // Clear all timeouts and intervals
+    const clearTimers = () => {
+        if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+        }
+        
+        if (connectionTimeoutRef.current) {
+            clearTimeout(connectionTimeoutRef.current);
+            connectionTimeoutRef.current = null;
+        }
+    };
 
-            // Clean up previous WebSocket if exists
+    // Handle socket connection and message reception
+    useEffect(() => {
+        initialLoadCompletedRef.current = false;
+        setWsStatus("connecting");
+        setWsConnected(false);
+        setMessages([]);
+        setReceivedMessages(new Set());
+        
+        // Clear any existing WebSocket and timers
             if (webSocketRef.current) {
                 webSocketRef.current.disconnect();
+            webSocketRef.current = null;
             }
 
-            setWsStatus("connecting");
-            const ws = setupWebSocket(conversationId);
-            webSocketRef.current = ws;
+        clearTimers();
 
-            // Initial data loading
+        // Initialize
             const init = async () => {
-                setFullyLoaded(false); // Reset loading state
+            try {
+                // Fetch current user first
                 await fetchCurrentUser();
-                await validateAndSetup();
+                
+                // Fetch initial messages
                 await fetchMessages();
-                setFullyLoaded(true); // All data loaded successfully
+                initialLoadCompletedRef.current = true;
+                
+                // Set up WebSocket connection after messages load
+                setupWebSocket(conversationId);
+                
+                // Scroll to bottom
+                setTimeout(() => {
                 scrollToBottom("auto");
+                }, 100);
+            } catch (err) {
+                console.error("Error initializing chat:", err);
+                setError("Failed to load messages. Please try refreshing.");
+                setLoading(false);
+            }
             };
 
             init();
 
             // Clean up WebSocket on unmount
             return () => {
+            clearTimers();
+            
                 if (webSocketRef.current) {
                     webSocketRef.current.disconnect();
-                    setWsConnected(false);
-                    setWsStatus("disconnected");
+                webSocketRef.current = null;
                 }
             };
-        }
     }, [conversationId]);
 
-    // Setup WebSocket connection
+    // Set up WebSocket connection
     const setupWebSocket = (conversationId) => {
         try {
-            const wsCallbacks = {
+            // Don't create multiple WebSocket connections
+            if (webSocketRef.current) {
+                webSocketRef.current.disconnect();
+                webSocketRef.current = null;
+            }
+            
+            setWsStatus("connecting");
+            
+            // Create a new WebSocket connection
+            const socket = new ChatWebSocket(conversationId, {
                 onOpen: () => {
-                    console.log("WebSocket connected successfully!");
+                    console.log(`WebSocket connected for conversation ${conversationId}`);
+                    
+                    // Clear any existing connection timeout
+                    if (connectionTimeoutRef.current) {
+                        clearTimeout(connectionTimeoutRef.current);
+                    }
+                    
+                    // Clear any existing polling interval
+                    if (pollIntervalRef.current) {
+                        clearInterval(pollIntervalRef.current);
+                        pollIntervalRef.current = null;
+                    }
+                    
                     setWsConnected(true);
                     setWsStatus("connected");
                 },
+                onMessage: (data) => {
+                    handleWebSocketMessage(data);
+                },
                 onClose: () => {
-                    console.log("WebSocket disconnected");
+                    console.log(`WebSocket disconnected for conversation ${conversationId}`);
                     setWsConnected(false);
                     setWsStatus("disconnected");
-                },
-                onError: (error) => {
-                    console.error("WebSocket error:", error);
-                    setWsConnected(false);
-
-                    // If we're using fallback mode, update status
-                    if (webSocketRef.current && webSocketRef.current.useFallback) {
-                        setWsStatus("fallback");
-                    } else {
-                        setWsStatus("disconnected");
+                    
+                    // If we weren't explicitly disconnected, try to fall back to polling
+                    if (initialLoadCompletedRef.current) {
+                        setupPolling();
                     }
                 },
-                onMessage: handleWebSocketMessage,
-            };
-
-            const ws = new ChatWebSocket(conversationId, wsCallbacks);
-            ws.connect();
-            return ws;
+                onError: (error) => {
+                    console.error(`WebSocket error: ${error}`);
+                    setWsStatus("fallback");
+                    
+                    // Set up polling if WebSocket fails
+                    if (initialLoadCompletedRef.current) {
+                        setupPolling();
+                    }
+                }
+            });
+            
+            // Store reference to disconnect later
+            webSocketRef.current = socket;
+            
+            // Connect to the WebSocket server
+            socket.connect();
+            
+            // Set a timeout to check connection status and fall back if needed
+            connectionTimeoutRef.current = setTimeout(() => {
+                validateAndSetup();
+            }, 5000);
+            
         } catch (error) {
-            console.error("Error setting up WebSocket:", error);
+            console.error("Failed to set up WebSocket:", error);
             setWsStatus("fallback");
-            return null;
+            
+            // Set up polling if WebSocket setup fails
+            if (initialLoadCompletedRef.current) {
+                setupPolling();
+            }
         }
     };
 
-    // Validate and setup conversation
-    const validateAndSetup = async () => {
-        if (!conversationId) {
-            setError("No conversation selected");
-            setLoading(false);
+    // Set up polling for new messages
+    const setupPolling = () => {
+        // Don't set up polling if it's already active
+        if (pollIntervalRef.current) {
             return;
         }
 
-        try {
-            setLoading(true);
-            const conversation = await chatApi.getConversation(conversationId);
-
-            if (!conversation) {
-                console.error("Conversation not found:", conversationId);
-                setError("Conversation not found");
-                setLoading(false);
-                return;
+        console.log("Setting up message polling");
+        setWsStatus("fallback");
+        
+        // Poll for new messages every 10 seconds
+        pollIntervalRef.current = setInterval(async () => {
+            try {
+                if (document.visibilityState === "visible") {
+                    // Only poll when page is visible
+                    const response = await chatApi.getMessages(conversationId, 1, 10);
+                    
+                    if (response && response.messages) {
+                        // Filter out messages we've already received
+                        const newMessages = response.messages.filter(
+                            newMsg => !receivedMessages.has(newMsg.id)
+                        );
+                        
+                        if (newMessages.length > 0) {
+                            // Update our set of received message IDs
+                            const updatedReceivedMessages = new Set(receivedMessages);
+                            newMessages.forEach(msg => updatedReceivedMessages.add(msg.id));
+                            setReceivedMessages(updatedReceivedMessages);
+                            
+                            // Add new messages
+                            setMessages(prev => [...prev, ...newMessages]);
+                            
+                            // Scroll to bottom
+                            setTimeout(() => {
+                                scrollToBottom();
+                            }, 100);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Error polling messages:", err);
             }
+        }, 10000); // 10 seconds interval
+    };
 
-            setParticipants(conversation.participants_info || []);
-            setLoading(false);
-        } catch (error) {
-            console.error("Error validating conversation:", error);
-            setError("Error loading conversation");
-            setLoading(false);
+    // Validate WebSocket connection and set up fallback if needed
+    const validateAndSetup = async () => {
+        // If WebSocket isn't connected after timeout, fall back to polling
+        if (!wsConnected && initialLoadCompletedRef.current) {
+            console.log("WebSocket not connected, using fallback mode");
+            setupPolling();
         }
     };
 
     // Handle incoming WebSocket messages
     const handleWebSocketMessage = (data) => {
-        console.log("Received WebSocket message:", data);
-
-        if (data.type === "message") {
-            // Add new message to state
-            setMessages((prevMessages) => {
-                // Check if message already exists to prevent duplicates
-                const exists = prevMessages.some((msg) => msg.id === data.id);
-                if (exists) return prevMessages;
-
-                return [
-                    ...prevMessages,
-                    {
+        try {
+            const messageType = data.type;
+            
+            if (messageType === "message") {
+                // New message received
+                const newMessage = {
                         id: data.id,
-                        content: data.content,
+                    content: data.content || "",
                         sender_id: data.sender_id,
+                    conversation_id: data.conversation_id,
                         timestamp: data.timestamp,
                         read: null,
-                        isNew: true, // Flag for animation
-                    },
-                ];
-            });
-
-            // Remove the isNew flag after animation
-            setTimeout(() => {
-                setMessages((prevMessages) => prevMessages.map((msg) => (msg.id === data.id ? { ...msg, isNew: false } : msg)));
-            }, 1000);
-
-            // Mark as read
-            markMessagesAsRead([data.id]);
-
-            // Scroll to bottom
+                    isNew: true,
+                };
+                
+                // Don't add duplicate messages
+                if (!receivedMessages.has(newMessage.id)) {
+                    // Update our set of received message IDs
+                    setReceivedMessages(prev => new Set(prev).add(newMessage.id));
+                    
+                    // Add the new message
+                    setMessages(prev => [...prev, newMessage]);
+                    
+                    // Scroll to bottom when receiving new messages
+                    setTimeout(() => {
             scrollToBottom();
-        } else if (data.type === "typing") {
+                    }, 100);
+                    
+                    // Mark message as read
+                    if (newMessage.sender_id !== currentUserId) {
+                        markMessagesAsRead([newMessage.id]);
+                    }
+                }
+            } else if (messageType === "typing") {
             handleTypingIndicator(data);
-        } else if (data.type === "read_receipt") {
+            } else if (messageType === "read_receipt") {
             handleReadReceipt(data);
+            }
+        } catch (err) {
+            console.error("Error handling WebSocket message:", err);
         }
     };
 
-    // Handle typing indicators
+    // Handle typing indicator messages
     const handleTypingIndicator = (data) => {
+        if (data.user_id === currentUserId) return;
+        
+        // Find username for the typing user
+        const username = getUsernameById(data.user_id);
+        
         if (data.is_typing) {
             setTypingIndicator({
-                user_id: data.user_id,
-                timestamp: new Date(),
+                userId: data.user_id,
+                username: username || "Someone",
+                timestamp: new Date()
             });
-        } else {
-            setTypingIndicator(null);
-        }
-    };
-
-    // Send typing indicator (debounced)
-    const sendTypingIndicator = useCallback(
-        debounce((isTyping) => {
-            if (webSocketRef.current && wsConnected) {
-                webSocketRef.current.sendMessage({
-                    type: "typing",
-                    is_typing: isTyping,
-                    conversation_id: conversationId,
+            
+            // Auto-clear typing indicator after 5 seconds of inactivity
+            setTimeout(() => {
+                setTypingIndicator(prevState => {
+                    if (prevState && prevState.userId === data.user_id) {
+                        return null;
+                    }
+                    return prevState;
                 });
-            }
-        }, 500),
-        [conversationId, wsConnected]
-    );
-
-    // Handle read receipts
-    const handleReadReceipt = (data) => {
-        const { user_id, message_ids } = data;
-        if (user_id !== currentUserId) {
-            setMessages((prevMessages) => prevMessages.map((msg) => (message_ids.includes(msg.id) && !msg.read ? { ...msg, read: new Date() } : msg)));
+            }, 5000);
+        } else {
+            // Clear typing indicator for this user
+            setTypingIndicator(prevState => {
+                if (prevState && prevState.userId === data.user_id) {
+                    return null;
+                }
+                return prevState;
+            });
         }
     };
 
-    // Mark messages as read
+    // Handle read receipt messages
+    const handleReadReceipt = (data) => {
+        // Update read status for messages that were read
+        setMessages(prevMessages => 
+            prevMessages.map(msg => 
+                data.message_ids.includes(msg.id) ? { ...msg, read: data.timestamp } : msg
+            )
+        );
+    };
+
+    // Mark messages as read on server
     const markMessagesAsRead = async (messageIds) => {
         try {
-            if (!messageIds.length) return;
-
-            await chatApi.markAsRead(conversationId, messageIds);
-
-            // Update local message state
-            setMessages((prevMessages) => prevMessages.map((msg) => (messageIds.includes(msg.id) && !msg.read ? { ...msg, read: new Date() } : msg)));
-
-            // Send read receipt via WebSocket
-            if (webSocketRef.current && wsConnected) {
+            if (!messageIds || messageIds.length === 0) return;
+            
+            // Send read receipt over WebSocket if connected
+            if (webSocketRef.current && webSocketRef.current.isConnected()) {
                 webSocketRef.current.sendMessage({
                     type: "read_receipt",
                     message_ids: messageIds,
-                    conversation_id: conversationId,
+                    conversation_id: conversationId
                 });
+            } else {
+                // Fallback to REST API
+                await chatApi.markAsRead(conversationId, messageIds);
             }
-        } catch (error) {
-            console.error("Error marking messages as read:", error);
+        } catch (err) {
+            console.error("Error marking messages as read:", err);
         }
     };
 
-    // Fetch messages from API
+    // Fetch messages from the API
     const fetchMessages = async (pageNum = 1) => {
         try {
             setLoadingMore(pageNum > 1);
 
             const response = await chatApi.getMessages(conversationId, pageNum);
 
-            const newMessages = response.messages.reverse();
-
+            // Process messages
+            if (response.messages && response.messages.length > 0) {
+                // Update our set of received message IDs
+                const updatedReceivedMessages = new Set(receivedMessages);
+                response.messages.forEach(msg => updatedReceivedMessages.add(msg.id));
+                setReceivedMessages(updatedReceivedMessages);
+                
+                // Add isNew = false flag to prevent animation
+                const processedMessages = response.messages.map(msg => ({
+                    ...msg,
+                    isNew: false
+                }));
+                
+                // Update messages state
             if (pageNum === 1) {
-                setMessages(newMessages);
+                    setMessages(processedMessages || []);
             } else {
-                setMessages((prevMessages) => [...newMessages, ...prevMessages]);
+                    // Add older messages at the beginning
+                    setMessages(prev => [...processedMessages, ...prev]);
+                }
             }
 
-            setHasMore(response.has_more);
+            // Update page and hasMore status
             setPage(pageNum);
-
-            // Mark newly loaded messages as read
-            const unreadMessages = newMessages.filter((msg) => msg.sender_id !== currentUserId && !msg.read).map((msg) => msg.id);
-
-            if (unreadMessages.length) {
-                markMessagesAsRead(unreadMessages);
+            setHasMore(response.has_more);
+            
+            // Get conversation details including participants
+            const conversation = await chatApi.getConversation(conversationId);
+            if (conversation && conversation.participants_info) {
+                setParticipants(conversation.participants_info);
             }
-        } catch (error) {
-            console.error("Error fetching messages:", error);
-            if (error.response?.status === 404) {
-                setError("Conversation not found");
-            } else {
+            
+            return response;
+        } catch (err) {
+            console.error("Error fetching messages:", err);
                 setError("Failed to load messages");
-            }
+            toast.error("Could not load messages");
+            throw err;
         } finally {
             setLoading(false);
             setLoadingMore(false);
         }
     };
 
-    // Get current user
+    // Fetch current user info
     const fetchCurrentUser = async () => {
         try {
             const token = localStorage.getItem("access_token");
+            if (!token) {
+                throw new Error("No authentication token found");
+            }
+            
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
-                headers: { Authorization: `Bearer ${token}` },
+                headers: { Authorization: `Bearer ${token}` }
             });
+            
             setCurrentUserId(response.data.id);
-        } catch (error) {
-            console.error("Error fetching current user:", error);
+            return response.data;
+        } catch (err) {
+            console.error("Error fetching current user:", err);
+            throw err;
         }
     };
 
@@ -314,53 +491,16 @@ const ChatWindow = ({ conversationId }) => {
         }
     };
 
-    // Handle file selection
-    const handleFileSelect = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        // Validate file size (max 10MB)
-        if (file.size > 10 * 1024 * 1024) {
-            toast.error("File size should be less than 10MB");
-            return;
-        }
-
-        setMediaFile(file);
-
-        // Create preview for images
-        if (file.type.startsWith("image/")) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setMediaPreview(reader.result);
-            };
-            reader.readAsDataURL(file);
-        } else {
-            setMediaPreview(null);
-        }
-    };
-
-    // Clear selected media
-    const clearMediaSelection = () => {
-        setMediaFile(null);
-        setMediaPreview(null);
-        setUploadProgress(0);
-    };
-
     // Handle sending a message
     const handleSendMessage = async (e) => {
         e?.preventDefault();
         
-        // Check if we have text or media to send
-        if ((!newMessage.trim() && !mediaFile) || sending) return;
+        // Check if we have text to send
+        if (!newMessage.trim() || sending) return;
 
         setSending(true);
 
         try {
-            if (mediaFile) {
-                // Handle media upload
-                const formData = new FormData();
-                formData.append("file", mediaFile);
-                
                 // Optimistically add message to UI first
                 const optimisticId = `temp-${Date.now()}`;
                 const optimisticMessage = {
@@ -371,96 +511,43 @@ const ChatWindow = ({ conversationId }) => {
                     read: null,
                     optimistic: true,
                     isNew: true,
-                    media_name: mediaFile.name,
-                    media_type: mediaFile.type,
-                };
-
-                setMessages((prev) => [...prev, optimisticMessage]);
-                setNewMessage("");
-                clearMediaSelection();
-                scrollToBottom();
-
-                // Upload media using axios
-                const token = localStorage.getItem("access_token");
-                const response = await axios.post(`${import.meta.env.VITE_API_URL}/chats/${conversationId}/media`, formData, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "multipart/form-data",
-                    },
-                    onUploadProgress: (progressEvent) => {
-                        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                        setUploadProgress(percentCompleted);
-                    },
-                });
-
-                // Replace optimistic message with real one
-                setMessages((prev) => prev.map((msg) => 
-                    (msg.id === optimisticId ? { ...response.data, isNew: true } : msg)
-                ));
-
-                // Remove the isNew flag after animation
-                setTimeout(() => {
-                    setMessages((prevMessages) => 
-                        prevMessages.map((msg) => 
-                            (msg.id === response.data.id ? { ...msg, isNew: false } : msg)
-                        )
-                    );
-                }, 1000);
-            } else {
-                // Handle text message
-                const messageContent = newMessage.trim();
-                
-                // Optimistically add message to UI first
-                const optimisticId = `temp-${Date.now()}`;
-                const optimisticMessage = {
-                    id: optimisticId,
-                    content: messageContent,
-                    sender_id: currentUserId,
-                    timestamp: new Date().toISOString(),
-                    read: null,
-                    optimistic: true, // Flag for optimistic update
-                    isNew: true, // For animation
                 };
 
                 setMessages((prev) => [...prev, optimisticMessage]);
                 setNewMessage("");
                 scrollToBottom();
 
-                // Try sending via WebSocket first
+            // Send message via WebSocket if connected
                 let messageSent = false;
-                if (webSocketRef.current && wsConnected) {
+            if (webSocketRef.current && webSocketRef.current.isConnected()) {
                     messageSent = webSocketRef.current.sendMessage({
                         type: "message",
-                        content: messageContent,
-                        conversation_id: conversationId,
+                    content: optimisticMessage.content,
+                    conversation_id: conversationId
                     });
                 }
 
-                // If WebSocket fails, fallback to REST API
+            // If WebSocket failed, fall back to REST API
                 if (!messageSent) {
-                    // Send the message via REST API
-                    const message = await chatApi.sendMessage(conversationId, messageContent);
+                const response = await chatApi.sendMessage(conversationId, optimisticMessage.content);
+                
+                // Add to received messages set
+                setReceivedMessages(prev => new Set(prev).add(response.id));
 
                     // Replace optimistic message with real one
-                    setMessages((prev) => prev.map((msg) => (msg.id === optimisticId ? { ...message, isNew: true } : msg)));
-
-                    // Remove the isNew flag after animation
-                    setTimeout(() => {
-                        setMessages((prevMessages) => prevMessages.map((msg) => (msg.id === message.id ? { ...msg, isNew: false } : msg)));
-                    }, 1000);
-                }
+                setMessages((prev) =>
+                    prev.map((msg) =>
+                        msg.id === optimisticId ? { ...response, isNew: true } : msg
+                    )
+                );
             }
-
-            inputRef.current?.focus();
-
-            // Clear typing indicator
-            sendTypingIndicator(false);
-            } catch (error) {
-            console.error("Error sending message:", error);
-            toast.error("Failed to send message. Please try again.");
-
-            // Remove optimistic message on error
+        } catch (err) {
+            console.error("Error sending message:", err);
+            
+            // Remove failed optimistic message
             setMessages((prev) => prev.filter((msg) => !msg.optimistic));
+            
+            toast.error("Failed to send message");
         } finally {
             setSending(false);
         }
@@ -478,16 +565,17 @@ const ChatWindow = ({ conversationId }) => {
             groups[date].push(message);
         });
 
-        return Object.entries(groups).map(([date, msgs]) => ({
+        // Convert to array of [date, messages] pairs
+        return Object.entries(groups).map(([date, messages]) => ({
             date,
-            messages: msgs,
+            messages
         }));
     };
 
     // Format message date for display
     const formatMessageDate = (dateString) => {
-        // Parse the UTC date and adjust for timezone
-        const date = parseISO(dateString);
+        try {
+            const date = new Date(dateString);
 
         if (isToday(date)) {
             return "Today";
@@ -495,275 +583,210 @@ const ChatWindow = ({ conversationId }) => {
             return "Yesterday";
         } else {
             return format(date, "MMMM d, yyyy");
+            }
+        } catch (err) {
+            console.error("Error formatting date", err);
+            return "Unknown date";
         }
     };
 
-    // Handle scrolling to load more messages
+    // Handle scroll for loading more messages
     const handleScroll = (e) => {
         const { scrollTop } = e.currentTarget;
 
-        if (scrollTop < 50 && hasMore && !loadingMore) {
+        if (scrollTop === 0 && hasMore && !loadingMore) {
             loadMoreMessages();
         }
     };
 
-    // Convert UTC timestamp to local time
-    const formatMessageTime = (timestamp) => {
-        const date = parseISO(timestamp);
-        return format(date, "h:mm a");
-    };
-
-    // Render messages grouped by date
-    const renderMessages = () => {
-        const messageGroups = groupMessagesByDate(messages);
-
-        return messageGroups.map((group) => (
-            <div key={group.date} className="message-group mb-6">
-                <div className="message-date-divider flex justify-center mb-4">
-                    <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs rounded-full">{formatMessageDate(group.messages[0].timestamp)}</span>
-                </div>
-
-                {group.messages.map((message, msgIndex) => {
-                    const isCurrentUser = message.sender_id === currentUserId;
-                    const previousMessage = msgIndex > 0 ? group.messages[msgIndex - 1] : null;
-                    const isFirstInSequence = !previousMessage || previousMessage.sender_id !== message.sender_id;
-                    const nextMessage = msgIndex < group.messages.length - 1 ? group.messages[msgIndex + 1] : null;
-                    const isLastInSequence = !nextMessage || nextMessage.sender_id !== message.sender_id;
-
-                    const sender = participants.find((p) => p.id === message.sender_id);
-                    const username = sender ? sender.username : "Unknown User";
-
-                    return <MessageBubble key={message.id} message={message} isCurrentUser={isCurrentUser} showAvatar={isLastInSequence} isFirstInSequence={isFirstInSequence} isLastInSequence={isLastInSequence} username={username} />;
-                })}
-            </div>
-        ));
-    };
-
-    // Get username by ID
+    // Get username by user id
     const getUsernameById = (userId) => {
-        const user = participants.find((p) => p.id === userId);
-        return user ? user.username : "Unknown User";
+        const participant = participants.find(p => p.id === userId);
+        return participant ? participant.username : "Unknown";
     };
+
+    // Memoize grouped messages to prevent re-renders during typing
+    const messageGroups = useMemo(() => {
+        return groupMessagesByDate(messages);
+    }, [messages]);
 
     // Handle input change and send typing indicator
     const handleInputChange = (e) => {
-        const value = e.target.value;
-        setNewMessage(value);
-
-        // Send typing indicator if changed from empty to non-empty or vice versa
-        const wasEmpty = !newMessage.trim();
-        const nowEmpty = !value.trim();
-
-        if (wasEmpty !== nowEmpty) {
-            sendTypingIndicator(!nowEmpty);
+        setNewMessage(e.target.value);
+        
+        // Send typing indicator over WebSocket
+        if (webSocketRef.current && webSocketRef.current.isConnected()) {
+            sendTypingIndicator(e.target.value.length > 0);
         }
     };
-
-    // Focus input when conversation changes
-    useEffect(() => {
-        if (conversationId && fullyLoaded) {
-            if (inputRef.current) {
-                inputRef.current.focus();
+    
+    // Debounce typing indicator to avoid too many messages
+    const sendTypingIndicator = useCallback(
+        debounce((isTyping) => {
+            if (webSocketRef.current && webSocketRef.current.isConnected()) {
+                webSocketRef.current.sendMessage({
+                    type: "typing",
+                    is_typing: isTyping,
+                    conversation_id: conversationId
+                });
             }
-        }
-    }, [conversationId, fullyLoaded]);
+        }, 500),
+        [webSocketRef.current, conversationId]
+    );
 
-    // Scroll to bottom when new messages are added
-    useEffect(() => {
-        if (messages.length > 0 && !loadingMore) {
-            scrollToBottom();
-        }
-    }, [messages.length, loadingMore]);
-
-    // Message bubble component (updated to support media)
-    const MessageBubble = ({ message, isCurrentUser, showAvatar, isFirstInSequence, isLastInSequence, username }) => {
-        const sender = participants.find((p) => p.id === message.sender_id);
-        const isNew = message.isNew;
-        const hasMedia = message.media_url || message.media_type;
-
-    return (
-            <motion.div initial={isNew ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"} ${isFirstInSequence ? "mt-4" : "mt-1"}`}>
-                {!isCurrentUser && showAvatar && (
-                    <div className="flex-shrink-0 mr-2">
-                        {sender?.avatar_url ? (
-                            <img src={sender.avatar_url} alt={username} className="w-8 h-8 rounded-full object-cover" />
-                        ) : (
-                            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center text-green-800 dark:text-green-300 text-sm font-medium">{username[0].toUpperCase()}</div>
-                        )}
-                    </div>
-                )}
-
-                <div className={`relative max-w-[75%] ${isCurrentUser ? "bg-green-500 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white"} px-4 py-2 rounded-lg ${isCurrentUser ? "rounded-tr-none" : "rounded-tl-none"} ${isLastInSequence ? "mb-2" : "mb-0.5"}`}>
-                    {!isCurrentUser && isFirstInSequence && <div className="absolute -top-5 left-0 text-xs text-gray-500 dark:text-gray-400 font-medium">{username}</div>}
-                    
-                    {/* Media content */}
-                    {hasMedia && message.media_type?.startsWith("image/") && (
-                        <div className="mb-2">
-                            <img src={message.media_url} alt={message.media_name || "Image"} className="max-w-full rounded-lg" />
-                        </div>
-                    )}
-                    
-                    {hasMedia && !message.media_type?.startsWith("image/") && (
-                        <div className="mb-2 flex items-center text-sm">
-                            <FontAwesomeIcon icon={faImage} className="mr-2" />
-                            <span className="truncate">{message.media_name || "File"}</span>
-                        </div>
-                    )}
-                    
-                    {/* Text content */}
-                    {message.content && <p className="whitespace-pre-wrap break-words">{message.content}</p>}
-                    
-                    <div className="text-right mt-1">
-                        <span className={`text-xs ${isCurrentUser ? "text-green-100" : "text-gray-500 dark:text-gray-400"}`}>{formatMessageTime(message.timestamp)}</span>
-                        {isCurrentUser && message.read && <FontAwesomeIcon icon={faCheckCircle} className="ml-1 text-green-100" />}
-                    </div>
+    // Memoize message rendering to prevent re-renders during typing
+    const renderedMessages = useMemo(() => {
+        if (messages.length === 0) {
+            return (
+                <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                    <p>No messages yet. Start the conversation!</p>
                 </div>
+            );
+        }
 
-                {isCurrentUser && showAvatar && (
-                    <div className="flex-shrink-0 ml-2">
-                        {sender?.avatar_url ? (
-                            <img src={sender.avatar_url} alt={username} className="w-8 h-8 rounded-full object-cover" />
-                        ) : (
-                            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center text-green-800 dark:text-green-300 text-sm font-medium">{username[0].toUpperCase()}</div>
-                        )}
+        return messageGroups.map((group, groupIndex) => (
+            <div key={`group-${group.date}-${groupIndex}`} className="message-group mb-4">
+                <div className="date-separator flex items-center justify-center my-3">
+                    <div className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-full">
+                        {formatMessageDate(group.date)}
                     </div>
-                )}
-            </motion.div>
-        );
-    };
+                        </div>
+                {group.messages.map((message, index) => {
+                    const isCurrentUser = message.sender_id === currentUserId;
+                    const prevMessage = index > 0 ? group.messages[index - 1] : null;
+                    const nextMessage = index < group.messages.length - 1 ? group.messages[index + 1] : null;
+                    
+                    const isFirstInSequence = !prevMessage || prevMessage.sender_id !== message.sender_id;
+                    const isLastInSequence = !nextMessage || nextMessage.sender_id !== message.sender_id;
+                    
+                    return (
+                        <MessageBubble
+                            key={`msg-${message.id}-${groupIndex}-${index}`}
+                            message={message}
+                            isCurrentUser={isCurrentUser}
+                            isFirstInSequence={isFirstInSequence}
+                            showAvatar={isLastInSequence}
+                            username={getUsernameById(message.sender_id)}
+                        />
+                    );
+                })}
+                    </div>
+        ));
+    }, [messageGroups, currentUserId, participants]);
 
-    // Render main component
     if (error) {
         return (
-            <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">
-                <div className="text-center p-6">
-                    <div className="text-4xl mb-4">😕</div>
-                    <p className="mb-2">{error}</p>
-                    <p className="text-sm">Please try again or select another conversation</p>
+            <div className="h-full flex flex-col items-center justify-center">
+                <div className="text-red-500 mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                 </div>
+                <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Error Loading Chat</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-center mb-4">{error}</p>
+                <button 
+                    onClick={() => window.location.reload()} 
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                >
+                    Refresh
+                </button>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col h-full overflow-hidden bg-white dark:bg-gray-800">
-            {/* Conversation header */}
-            <div className="flex items-center p-4 border-b dark:border-gray-700">
-                {participants.length > 0 && (
-                    <>
-                        <div className="flex-shrink-0 mr-3">
-                            {participants[0]?.avatar_url ? (
-                                <img src={participants[0].avatar_url} alt={participants[0].username} className="w-10 h-10 rounded-full object-cover" />
+        <div className="flex flex-col h-full">
+            {/* Chat header with participant info */}
+            <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 p-3 flex items-center justify-between">
+                <div className="flex items-center">
+                    <div>
+                        <h3 className="font-medium text-gray-800 dark:text-white">
+                            {participants.map(p => p.username).join(", ")}
+                        </h3>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {wsStatus === "connected" ? (
+                                <span>WebSocket Connected</span>
+                            ) : wsStatus === "fallback" ? (
+                                <span>Using HTTP Fallback</span>
+                            ) : wsStatus === "connecting" ? (
+                                <span>Connecting...</span>
                             ) : (
-                                <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center text-green-800 dark:text-green-300 font-medium">{participants[0]?.username?.[0]?.toUpperCase() || "?"}</div>
+                                <span>Disconnected</span>
                             )}
                         </div>
-                        <div className="flex-1">
-                            <h3 className="font-medium dark:text-white">{participants.map((p) => p.username).join(", ")}</h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {typingIndicator ? (
-                                    `${getUsernameById(typingIndicator.user_id)} is typing...`
-                                ) : wsStatus === "connected" ? (
-                                    <span className="text-green-500">Connected</span>
-                                ) : wsStatus === "connecting" ? (
-                                    <span className="text-yellow-500">Connecting...</span>
-                                ) : wsStatus === "fallback" ? (
-                                    <span className="text-orange-500">Using HTTP (WebSocket unavailable)</span>
-                                ) : (
-                                    <span className="text-red-500">Disconnected</span>
-                                )}
-                            </p>
+                    </div>
                         </div>
-                    </>
-                )}
             </div>
 
-            {/* Messages area */}
-            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3" onScroll={handleScroll} style={{ height: "calc(100vh - 170px)" }}>
-                {loading || !fullyLoaded ? (
+            {/* Messages container with scroll */}
+            <div
+                ref={messagesContainerRef}
+                className="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-900"
+                onScroll={handleScroll}
+            >
+                {loading ? (
                     <div className="flex justify-center items-center h-full">
-                        <FontAwesomeIcon icon={faSpinner} className="text-green-500 text-xl animate-spin" />
-                    </div>
-                ) : messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
-                        <div className="mb-4 text-5xl">💬</div>
-                        <p className="mb-2">No messages yet</p>
-                        <p className="text-sm">Send the first message to start the conversation</p>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
                     </div>
                 ) : (
-                    <>
+                    <div className="space-y-2">
                         {loadingMore && (
-                            <div className="text-center py-2">
-                                <FontAwesomeIcon icon={faSpinner} className="text-green-500 animate-spin" />
+                            <div className="flex justify-center py-2">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-500"></div>
                             </div>
                         )}
-                        <AnimatePresence>{renderMessages()}</AnimatePresence>
-                        <div ref={messagesEndRef} />
-                    </>
-                )}
-            </div>
-
-            {/* Input area */}
-            <div className="border-t dark:border-gray-700 p-3">
-                {/* Media preview */}
-                {mediaFile && (
-                    <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center">
-                                {mediaPreview ? (
-                                    <div className="w-12 h-12 mr-2 rounded overflow-hidden">
-                                        <img src={mediaPreview} alt="Preview" className="w-full h-full object-cover" />
-                                    </div>
-                                ) : (
-                                    <div className="w-12 h-12 mr-2 rounded bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                                        <FontAwesomeIcon icon={faImage} className="text-gray-500 dark:text-gray-400" />
-                                    </div>
-                                )}
-                                <div>
-                                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate max-w-[150px]">{mediaFile.name}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">{(mediaFile.size / 1024).toFixed(1)} KB</p>
-                                </div>
-                            </div>
-                            <button 
-                                onClick={clearMediaSelection}
-                                className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                            >
-                                <FontAwesomeIcon icon={faTimes} />
-                            </button>
-                        </div>
                         
-                        {uploadProgress > 0 && uploadProgress < 100 && (
-                            <div className="mt-2">
-                                <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
-                                    <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
+                        {renderedMessages}
+                        
+                        {/* Show typing indicator */}
+                        {typingIndicator && (
+                            <div className="flex items-center text-gray-500 dark:text-gray-400 text-sm animate-pulse mt-2">
+                                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-gray-700 dark:text-gray-200 font-medium text-sm mr-2">
+                                    {typingIndicator.username[0].toUpperCase()}
                                 </div>
+                                <div className="typing-indicator">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                                <span className="ml-2">{typingIndicator.username} is typing...</span>
                             </div>
                         )}
+                        
+                        {/* Element to scroll to */}
+                        <div ref={messagesEndRef} />
                     </div>
                 )}
+            </div>
                 
+            {/* Message input */}
+            <div className="border-t dark:border-gray-700 p-3">                
                 <form onSubmit={handleSendMessage} className="flex items-center">
-                    <label className="p-2 text-gray-500 dark:text-gray-400 hover:text-green-500 dark:hover:text-green-400 cursor-pointer">
-                        <FontAwesomeIcon icon={faImage} />
-                        <input type="file" className="hidden" onChange={handleFileSelect} accept="image/*,audio/*,video/*,application/pdf" />
-                    </label>
                     <div className="flex-1 mx-2">
                     <input
                             ref={inputRef}
                         type="text"
                         value={newMessage}
                             onChange={handleInputChange}
-                            placeholder={wsStatus === "fallback" ? "Using HTTP mode (typing indicators disabled)" : "Type a message..."}
+                            placeholder="Type a message..."
                             className="w-full p-2 border dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-gray-50 dark:bg-gray-700 dark:text-white"
-                            disabled={sending || (wsStatus !== "connected" && wsStatus !== "fallback")}
+                            disabled={sending}
                         />
                     </div>
                     <button
                         type="submit"
-                        disabled={(!newMessage.trim() && !mediaFile) || sending || (wsStatus !== "connected" && wsStatus !== "fallback")}
-                        className={`p-2 rounded-full ${(newMessage.trim() || mediaFile) && !sending && (wsStatus === "connected" || wsStatus === "fallback") ? "bg-green-500 text-white hover:bg-green-600" : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"}`}
+                        disabled={!newMessage.trim() || sending}
+                        className={`p-2 rounded-full ${
+                            !newMessage.trim() || sending
+                                ? "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400"
+                                : "bg-green-500 text-white hover:bg-green-600"
+                        }`}
                     >
-                        {sending ? <FontAwesomeIcon icon={faSpinner} className="animate-spin" /> : <FontAwesomeIcon icon={faPaperPlane} />}
+                        {sending ? (
+                            <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                        ) : (
+                            <FontAwesomeIcon icon={faPaperPlane} />
+                        )}
                     </button>
                 </form>
             </div>

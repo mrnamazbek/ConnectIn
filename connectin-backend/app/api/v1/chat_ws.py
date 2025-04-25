@@ -173,13 +173,15 @@ async def websocket_endpoint(
                 message_type = message_data.get("type", "message")
                 
                 # Handle different message types
-                if message_type == "message" and "content" in message_data:
-                    if not message_data["content"].strip():
-                        continue  # Skip empty messages
+                if message_type == "message":
+                    # Get content and ensure it's not empty
+                    content = message_data.get("content", "").strip()
+                    if not content:
+                        content = "(empty message)"
                         
                     # Create and save message to database
                     message = Message(
-                        content=message_data["content"],
+                        content=content,
                         conversation_id=conversation_id,
                         sender_id=user.id,
                     )

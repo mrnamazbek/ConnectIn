@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict
-from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, and_, or_
 from app.database import get_db
@@ -18,16 +18,9 @@ from app.api.v1.auth import get_current_user
 from app.models import User
 from datetime import datetime
 import logging
-import os
-import shutil
-from pathlib import Path
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-# Create media directory if it doesn't exist
-MEDIA_DIR = Path("media/chats")
-MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 
 def get_user_basic_info(users) -> List[UserBasicInfo]:
     """Convert User objects to UserBasicInfo schemas"""
@@ -88,13 +81,21 @@ async def get_conversations(
             # Get unread messages count
             unread_count = get_unread_count(conv.id, current_user.id, db)
             
+            # Ensure we have a valid last_message
+            last_message = None
+            if conv.messages:
+                last_message = conv.messages[0]
+                # Ensure content is never empty
+                if last_message.content is None or last_message.content == "":
+                    last_message.content = "(empty message)"
+            
             result.append(
                 ConversationList(
                     id=conv.id,
                     type=conv.type,
                     participants=[user.id for user in conv.participants],
                     participants_info=get_user_basic_info(other_participants),
-                    last_message=conv.messages[0] if conv.messages else None,
+                    last_message=last_message,
                     updated_at=conv.updated_at,
                     unread_count=unread_count
                 )
@@ -132,6 +133,12 @@ async def get_conversation(
         # Get unread messages count
         unread_count = get_unread_count(conversation_id, current_user.id, db)
         
+        # Ensure messages have valid content
+        messages = conversation.messages[:50]  # Limit to most recent 50 messages
+        for msg in messages:
+            if msg.content is None or msg.content == "":
+                msg.content = "(empty message)"
+        
         return ConversationOut(
             id=conversation.id,
             type=conversation.type,
@@ -139,7 +146,7 @@ async def get_conversation(
             participants_info=get_user_basic_info(other_participants),
             created_at=conversation.created_at,
             updated_at=conversation.updated_at,
-            messages=conversation.messages[:50],  # Limit to most recent 50 messages
+            messages=messages,
             unread_count=unread_count
         )
     except HTTPException:
@@ -180,6 +187,12 @@ async def create_conversation(
                     other_participants = [user for user in conv.participants if user.id != current_user.id]
                     unread_count = get_unread_count(conv.id, current_user.id, db)
                     
+                    # Ensure messages have valid content
+                    messages = conv.messages[:50]  # Limit to most recent 50 messages
+                    for msg in messages:
+                        if msg.content is None or msg.content == "":
+                            msg.content = "(empty message)"
+                    
                     return ConversationOut(
                         id=conv.id,
                         type=conv.type,
@@ -187,7 +200,7 @@ async def create_conversation(
                         participants_info=get_user_basic_info(other_participants),
                         created_at=conv.created_at,
                         updated_at=conv.updated_at,
-                        messages=conv.messages[:50],  # Limit to most recent 50 messages
+                        messages=messages,
                         unread_count=unread_count
                     )
 
@@ -263,6 +276,11 @@ async def get_messages(
         has_more = len(messages) > per_page
         messages = messages[:per_page]
         
+        # Ensure messages have valid content
+        for msg in messages:
+            if msg.content is None or msg.content == "":
+                msg.content = "(empty message)"
+        
         # Mark unread messages as read
         unread_messages = (
             db.query(Message)
@@ -314,8 +332,13 @@ async def send_message(
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
 
+        # Ensure content is never empty
+        content = message_data.content
+        if content is None or content == "":
+            content = "(empty message)"
+
         message = Message(
-            content=message_data.content,
+            content=content,
             conversation_id=conversation_id,
             sender_id=current_user.id,
         )
@@ -391,69 +414,4 @@ async def mark_as_read(
         raise
     except Exception as e:
         logger.error(f"Error marking messages as read in conversation {conversation_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to mark messages as read")
-
-@router.post("/{conversation_id}/media", response_model=MessageOut)
-async def upload_media(
-    conversation_id: int,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Upload a media file to a conversation."""
-    try:
-        # Verify conversation access
-        conversation = (
-            db.query(Conversation)
-            .join(Conversation.participants)
-            .filter(
-                Conversation.id == conversation_id,
-                User.id == current_user.id,
-            )
-            .first()
-        )
-
-        if not conversation:
-            raise HTTPException(status_code=404, detail="Conversation not found")
-            
-        # Create directory for this conversation if it doesn't exist
-        conversation_dir = MEDIA_DIR / str(conversation_id)
-        conversation_dir.mkdir(exist_ok=True)
-        
-        # Generate unique filename to prevent overwriting
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        safe_filename = f"{timestamp}_{file.filename.replace(' ', '_')}"
-        file_path = conversation_dir / safe_filename
-        
-        # Save the file
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
-        # Get file content type (media type)
-        media_type = file.content_type or "application/octet-stream"
-        
-        # Create a message with the media information
-        message = Message(
-            content="",  # Empty content for media messages
-            conversation_id=conversation_id,
-            sender_id=current_user.id,
-            media_url=str(file_path),
-            media_type=media_type,
-            media_name=file.filename
-        )
-        
-        db.add(message)
-        
-        # Update conversation timestamp
-        conversation.updated_at = datetime.utcnow()
-        db.commit()
-        db.refresh(message)
-        
-        logger.info(f"Media uploaded: {file.filename} to conversation {conversation_id}")
-        
-        return message
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error uploading media to conversation {conversation_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to upload media") 
+        raise HTTPException(status_code=500, detail="Failed to mark messages as read") 

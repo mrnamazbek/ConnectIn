@@ -30,10 +30,24 @@ class MessageBase(BaseModel):
     media_type: Optional[str] = Field(None, max_length=100) # e.g., 'image/jpeg', 'application/pdf'
     media_name: Optional[str] = Field(None, max_length=255) # Original filename
 
-class MessageCreate(MessageBase):
-    """Схема для СОЗДАНИЯ сообщения (передается в сервис)."""
-    # conversation_id передается через URL параметр в router
-    pass
+
+# connectin-backend/app/schemas/chat.py
+
+class MessageCreate(BaseModel):
+    """Схема для создания сообщения."""
+    content: Optional[str] = Field(None, max_length=5000)
+    # Поля для медиафайлов
+    media_url: Optional[str] = Field(None, max_length=2048)
+    media_type: Optional[str] = Field(None, max_length=100)
+    media_name: Optional[str] = Field(None, max_length=255)
+
+    @field_validator('content', 'media_url')
+    def validate_not_both_empty(cls, v, info):
+        # Проверяем, что хотя бы одно поле заполнено
+        values = info.data
+        if not v and not values.get('content') and not values.get('media_url'):
+            raise ValueError("Сообщение должно содержать текст или медиафайл")
+        return v
 
 class MessageUpdate(BaseModel):
     """Схема для обновления сообщения (если нужно)."""

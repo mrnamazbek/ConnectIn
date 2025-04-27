@@ -1,11 +1,13 @@
 from fastapi import FastAPI, APIRouter
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1 import todos, auth, chat_ws, projects, skills, teams, posts, users, tags, chats
+from app.api.v1 import todos, auth, chat_ws, projects, skills, teams, posts, users, tags
+from app.api.v1 import chats, chat_uploads  # Импортируем новые модули для чата и загрузок
 from app.core.config import settings
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from app.api.v1 import resume as resumes_v1
+
 
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -40,7 +42,7 @@ def create_app() -> FastAPI:
 
     # Create main API router with /api/v1 prefix
     api_router = APIRouter(prefix="/api/v1")
-    
+
     # Include all routers in the main API router
     api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
     api_router.include_router(projects.router, prefix="/projects", tags=["Projects"])
@@ -50,13 +52,18 @@ def create_app() -> FastAPI:
     api_router.include_router(tags.router, prefix="/tags", tags=["Tags"])
     api_router.include_router(skills.router, prefix="/skills", tags=["Skills"])
     api_router.include_router(todos.router, prefix="/todos", tags=["Todos"])
-    api_router.include_router(chats.router, prefix="/chats", tags=["Chats"])
-    api_router.include_router(chat_ws.router, prefix="/chats/ws", tags=["Chat WebSocket"])
+
+    # Подключаем новые маршруты для чатов и загрузки файлов
+    api_router.include_router(chats.router, prefix="/chat", tags=["Chat"])  # REST API для чатов
+    api_router.include_router(chat_ws.router, prefix="/chat/ws", tags=["Chat WebSocket"])  # WebSockets для чата
+    api_router.include_router(chat_uploads.router, prefix="/uploads", tags=["Uploads"])  # Маршруты для загрузки файлов
+
     api_router.include_router(resumes_v1.router, prefix="/resume", tags=["Resume Generator"])
-    
+
     # Include the main API router in the app
     app.include_router(api_router)
 
     return app
+
 
 app = create_app()

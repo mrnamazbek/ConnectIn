@@ -51,14 +51,16 @@ class ChatService:
             return False
 
     # --- Сообщения ---
+    # connectin-backend/app/services/chat_service.py
+
     @staticmethod
     async def save_message(db: Session, msg_data: MessageCreate, sender_id: int, conversation_id: int) -> Optional[
         Message]:
         """
-        Сохраняет новое сообщение и обновляет время последнего обновления разговора.
+        Сохраняет новое сообщение с поддержкой медиафайлов и обновляет время последнего обновления разговора.
 
         :param db: Сессия базы данных
-        :param msg_data: Данные сообщения
+        :param msg_data: Данные сообщения (включая медиа)
         :param sender_id: ID отправителя
         :param conversation_id: ID разговора
         :return: Созданное сообщение или None при ошибке
@@ -81,18 +83,26 @@ class ChatService:
 
                 # Создаем и сохраняем сообщение
                 now_utc = datetime.now(timezone.utc)
+
+                # Проверяем тип сообщения (текст или медиа)
+                is_media_message = bool(getattr(msg_data, 'media_url', None))
+
+                # Убедимся, что у медиа-сообщения всегда есть какое-то содержимое
+                content = msg_data.content if msg_data.content else ""
+                if is_media_message and not content:
+                    content = "[Медиа файл]"  # Добавляем заглушку для пустых медиа-сообщений
+
+                # Создаем объект сообщения
                 db_msg = Message(
                     sender_id=sender_id,
                     conversation_id=conversation_id,
-                    content=msg_data.content,
-                    timestamp=now_utc
+                    content=content,
+                    timestamp=now_utc,
+                    # Добавляем медиа-данные, если они есть
+                    media_url=getattr(msg_data, 'media_url', None),
+                    media_type=getattr(msg_data, 'media_type', None),
+                    media_name=getattr(msg_data, 'media_name', None)
                 )
-
-                # Добавляем медиа-данные если они есть
-                if hasattr(msg_data, 'media_url') and msg_data.media_url:
-                    db_msg.media_url = msg_data.media_url
-                    db_msg.media_type = getattr(msg_data, 'media_type', None)
-                    db_msg.media_name = getattr(msg_data, 'media_name', None)
 
                 db.add(db_msg)
 
@@ -102,7 +112,8 @@ class ChatService:
                 db.commit()
                 db.refresh(db_msg)
 
-                logger.info(f"Сообщение сохранено: ID={db_msg.id} в C:{conversation_id} от U:{sender_id}")
+                logger.info(f"Сообщение сохранено: ID={db_msg.id} в C:{conversation_id} от U:{sender_id}" +
+                            (f" (с медиа: {db_msg.media_type})" if is_media_message else ""))
                 return db_msg
             except SQLAlchemyError as e:
                 logger.exception(f"Ошибка БД при сохранении сообщения U:{sender_id} C:{conversation_id}: {e}")

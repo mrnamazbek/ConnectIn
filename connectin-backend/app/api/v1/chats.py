@@ -15,6 +15,8 @@ from app.schemas.chat import (
     ReadReceipt
 )
 from app.api.v1.auth import get_current_user
+from app.services.chat_service import ChatService
+from app.utils.s3_chat_client import create_presigned_get_url
 from app.models import User
 from datetime import datetime
 import logging
@@ -414,4 +416,66 @@ async def mark_as_read(
         raise
     except Exception as e:
         logger.error(f"Error marking messages as read in conversation {conversation_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to mark messages as read") 
+        raise HTTPException(status_code=500, detail="Failed to mark messages as read")
+
+# starting media to chat
+
+
+# connectin-backend/app/api/v1/chat.py
+
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, Body
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.models.user import User
+from app.models.chat import Message, Conversation, ConversationType
+from app.schemas.chat import (
+    MessageCreate, MessageOut, MessageList, ConversationCreate,
+    ConversationOut, ConversationList, ReadReceipt
+)
+from app.api.v1.auth import get_current_user
+from app.services.chat_service import ChatService
+from app.utils.s3_chat_client import create_presigned_get_url
+from typing import Dict, Optional, List
+import logging
+
+router = APIRouter()
+logger = logging.getLogger(__name__)
+
+
+# Все существующие маршруты остаются без изменений
+
+# Добавляем новый маршрут для получения signed URL для скачивания/просмотра медиа
+@router.get("/media/access-url")
+async def get_media_access_url(
+        media_url: str = Query(..., description="Полный URL медиафайла в S3"),
+        current_user: User = Depends(get_current_user)
+):
+    """
+    Генерирует временную ссылку для доступа к приватному медиафайлу.
+
+    Клиент должен использовать эту ссылку для просмотра/скачивания приватных медиафайлов.
+    Ссылка действительна ограниченное время (обычно 1 час).
+    """
+    try:
+        # Извлекаем key из полного URL
+        # Пример media_url: https://bucket-name.s3.region.amazonaws.com/chat_media/123/file.jpg
+        # Нам нужно получить: chat_media/123/file.jpg
+
+        # Проверяем что URL относится к нашему бакету S3
+        if "amazonaws.com" not in media_url:
+            raise HTTPException(status_code=400, detail="Недопустимый URL медиафайла")
+
+        # Извлекаем ключ объекта из URL
+        object_key = media_url.split(".amazonaws.com/")[1]
+
+        # Получаем временную ссылку для доступа
+        presigned_url = create_presigned_get_url(object_key)
+
+        if not presigned_url:
+            raise HTTPException(status_code=404, detail="Не удалось получить доступ к медиафайлу")
+
+        return {"access_url": presigned_url}
+
+    except Exception as e:
+        logger.error(f"Ошибка при создании access URL: {str(e)}")
+        raise HTTPException(status_code=500, detail="Ошибка при создании ссылки для доступа")

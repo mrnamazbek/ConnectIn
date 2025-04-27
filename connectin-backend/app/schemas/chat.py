@@ -6,7 +6,7 @@ from enum import Enum
 
 # --- Базовые Типы ---
 
-class ConversationTypeEnum(str, Enum):
+class ConversationType(str, Enum):
     """Типы разговоров (можно расширить: group, project, team)."""
     DIRECT = "direct"
     # GROUP = "group" # Пример
@@ -114,7 +114,7 @@ class ConversationCreate(BaseModel):
     """Схема для СОЗДАНИЯ разговора."""
     # ID участников, не включая создателя (добавляется в сервисе)
     participant_ids: List[int]
-    type: str = ConversationTypeEnum.DIRECT.value
+    type: str = ConversationType.DIRECT.value
 
     @field_validator('participant_ids')
     def check_participants(cls, v):

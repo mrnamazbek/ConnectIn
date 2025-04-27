@@ -9,9 +9,11 @@ from app.models import User
 from app.api.v1.auth import get_current_user_ws
 from datetime import datetime
 from pydantic import ValidationError
+from app.utils.logger import get_logger
+
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class ConnectionManager:
     def __init__(self):

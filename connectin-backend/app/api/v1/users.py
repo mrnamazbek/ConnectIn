@@ -21,8 +21,8 @@ from app.core.config import settings
 from app.utils.s3 import s3_service
 from app.utils.logger import get_logger
 
-logger = get_logger(__name__)
 router = APIRouter()
+logger = get_logger(__name__)
 
 @router.get("/", response_model=List[UserOut], summary="Получить список всех пользователей")
 def read_users(db: Session = Depends(get_db)):

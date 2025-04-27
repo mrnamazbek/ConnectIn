@@ -19,10 +19,12 @@ from app.services.chat_service import ChatService
 from app.utils.s3_chat_client import create_presigned_get_url
 from app.models import User
 from datetime import datetime
-import logging
+#import logging
+from app.utils.logger import get_logger
+
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def get_user_basic_info(users) -> List[UserBasicInfo]:
     """Convert User objects to UserBasicInfo schemas"""
@@ -437,9 +439,10 @@ from app.services.chat_service import ChatService
 from app.utils.s3_chat_client import create_presigned_get_url
 from typing import Dict, Optional, List
 import logging
+from app.utils.logger import get_logger
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Все существующие маршруты остаются без изменений

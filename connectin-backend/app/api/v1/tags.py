@@ -12,9 +12,10 @@ from app.database.connection import get_db
 from app.models.tag import Tag
 from app.schemas.tag import TagCreate, TagOut
 from app.api.v1.auth import get_current_user
+from app.utils.logger import get_logger
 
 router = APIRouter()
-
+logger = get_logger(__name__)
 
 @router.get("/", response_model=List[TagOut], summary="Получить список всех тегов")
 def read_tags(db: Session = Depends(get_db)):

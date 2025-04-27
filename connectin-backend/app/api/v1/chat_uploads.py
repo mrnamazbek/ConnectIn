@@ -6,9 +6,10 @@ from typing import Dict, Optional
 from app.utils.s3_chat_client import create_presigned_post_url  # Импорт из утилиты
 from app.models.user import User
 from app.api.v1.auth import get_current_user
+from app.utils.logger import get_logger
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @router.post("/chat/presigned-url", response_model=Dict)

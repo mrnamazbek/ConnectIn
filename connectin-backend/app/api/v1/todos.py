@@ -16,8 +16,10 @@ from app.models.todo import Todo
 from app.schemas.todo import TodoInDB, TodoCreate, TodoUpdate
 from app.api.v1.auth import get_current_user
 from app.models.user import User  # Предполагается, что модель User уже определена
+from app.utils.logger import get_logger
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
 @router.post("/", response_model=TodoInDB, summary="Создать новое Todo")

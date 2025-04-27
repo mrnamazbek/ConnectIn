@@ -18,8 +18,10 @@ from app.utils.logger import get_logger
 from datetime import datetime
 from math import ceil
 from app.models.recommendation import Recommendation
+from app.utils.logger import get_logger
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 # Create a Post
 @router.post("/", response_model=PostOut)
@@ -315,7 +317,6 @@ def search_posts(
     Search for posts by title, content, or tags with pagination.
     Returns an empty list for empty queries.
     """
-    logger = get_logger(__name__)
     logger.info(f"Searching posts: query='{query}', page={page}, page_size={page_size}")
 
     # Only perform search if query is not empty and has meaningful content

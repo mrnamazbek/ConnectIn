@@ -1,67 +1,40 @@
-# Use Alpine for a significantly smaller base image
-FROM python:3.11-alpine AS builder
+# Use a newer Debian version with updated Pango
+FROM python:3.11-bullseye
 
-# Set build arguments for potential customization
-ARG APP_ENV=production
-ARG APP_DIR=/app
-
-# Set work directory
-WORKDIR ${APP_DIR}
-
-# Install only the necessary build dependencies
-# Use --no-cache to avoid storing the package index
-RUN apk add --no-cache --virtual .build-deps \
-    gcc \
-    musl-dev \
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y \
+    build-essential \
     python3-dev \
+    python3-pip \
+    python3-setuptools \
+    python3-wheel \
+    libpango-1.0-0 \
+    libharfbuzz0b \
+    libpangoft2-1.0-0 \
+    libharfbuzz-gobject0 \
     libffi-dev \
-    openssl-dev \
-    jpeg-dev
+    libjpeg-dev \
+    libopenjp2-7-dev
 
-# Copy and install requirements first (for better layer caching)
+# Install fonts
+RUN fc-cache -f -v
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements first to leverage Docker cache
 COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Create a second stage with minimal runtime dependencies
-FROM python:3.11-alpine
-
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    APP_DIR=/app
-
-WORKDIR ${APP_DIR}
-
-# Install only runtime dependencies
-RUN apk add --no-cache \
-    pango \
-    harfbuzz \
-    jpeg \
-    fontconfig \
-    ttf-liberation \
-    freetype \
-    libpng \
-    cairo \
-    bash
-
-# Create a non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-# Copy installed packages from builder stage
-COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
-COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
 # Copy application code
 COPY . .
 
-# Fix line endings and make start script executable
-RUN sed -i 's/\r$//' start.sh && chmod +x start.sh
-
-# Set correct ownership
-RUN chown -R appuser:appgroup ${APP_DIR}
-
-# Switch to non-root user
-USER appuser
+# Copy and make the start script executable
+COPY start.sh .
+RUN chmod +x start.sh
 
 # Run the application
 CMD ["./start.sh"]

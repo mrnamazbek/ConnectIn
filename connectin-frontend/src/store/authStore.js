@@ -59,7 +59,7 @@ const useAuthStore = create((set, get) => ({
             if (error.response?.status === 401) {
                 // Try refreshing token first
                 try {
-                    await get().refreshToken();
+                    await get().refreshTokenMethod();
                     // If refresh successful, try fetching user again
                     const response = await axios.get(`${import.meta.env.VITE_API_URL}/auth/me`);
                     const userData = response.data;
@@ -72,6 +72,7 @@ const useAuthStore = create((set, get) => ({
                     set({ user: userData });
                     return userData;
                 } catch (refreshError) {
+                    console.error("Failed to refresh token:", refreshError);
                     // If refresh fails, logout
                     get().logout();
                 }
@@ -204,14 +205,14 @@ const useAuthStore = create((set, get) => ({
 
             // Token already expired
             if (timeLeft <= 0) {
-                get().refreshToken();
+                get().refreshTokenMethod();
                 return;
             }
 
             // Set timeout to refresh before expiration (1 minute before)
             const refreshTime = Math.max(0, timeLeft - 60000);
             const timeout = setTimeout(() => {
-                get().refreshToken();
+                get().refreshTokenMethod();
             }, refreshTime);
 
             set({ refreshTimeout: timeout });
@@ -235,7 +236,7 @@ const useAuthStore = create((set, get) => ({
     },
 
     // Refresh token
-    refreshToken: async () => {
+    refreshTokenMethod: async () => {
         const { refreshToken, refreshLock } = get();
 
         // If no refresh token available
@@ -395,7 +396,7 @@ const setupAxiosInterceptors = () => {
                 try {
                     // Get a fresh token
                     const authStore = useAuthStore.getState();
-                    const newAccessToken = await authStore.refreshToken();
+                    const newAccessToken = await authStore.refreshTokenMethod();
 
                     // Update the original request
                     originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;

@@ -41,7 +41,8 @@ RUN apk add --no-cache \
     ttf-liberation \
     freetype \
     libpng \
-    cairo
+    cairo \
+    bash
 
 # Create a non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
@@ -53,8 +54,8 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 # Copy application code
 COPY . .
 
-# Make start script executable
-RUN chmod +x start.sh
+# Fix line endings and make start script executable
+RUN sed -i 's/\r$//' start.sh && chmod +x start.sh
 
 # Set correct ownership
 RUN chown -R appuser:appgroup ${APP_DIR}

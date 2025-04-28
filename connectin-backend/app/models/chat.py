@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, func
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app.models.base import Base
 from app.models.relations.associations import conversation_participants
@@ -50,12 +50,6 @@ class Message(Base):
     id = Column(Integer, primary_key=True, index=True)
     content = Column(String, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
-    read = Column(DateTime, nullable=True)  # When the message was read
-    
-    # Media fields
-    media_url = Column(String, nullable=True)  # URL or path to the media file
-    media_type = Column(String, nullable=True)  # Type of media (image, video, etc.)
-    media_name = Column(String, nullable=True)  # Original filename of the media
     
     # Foreign keys
     conversation_id = Column(Integer, ForeignKey("conversations.id", ondelete="CASCADE"))

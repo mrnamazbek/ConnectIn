@@ -1,20 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import axios from "../utils/axiosConfig";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Link, useNavigate, useLocation } from "react-router";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
-import Cookies from "js-cookie";
 import { toast } from "react-toastify";
 import { ReactTyped } from "react-typed";
 import { faLightbulb, faHandshakeSimple, faRocket } from "@fortawesome/free-solid-svg-icons";
-import TokenService from "../services/tokenService";
+import useAuthStore from "../store/authStore";
 
 const LoginPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const [loading, setLoading] = useState(false);
+    const { login, loading } = useAuthStore();
 
     const validationSchema = Yup.object({
         username: Yup.string().required("Username is required").min(3, "Username must be at least 3 characters long"),
@@ -30,59 +28,17 @@ const LoginPage = () => {
         validateOnBlur: false,
         validateOnChange: true,
         onSubmit: async (values, { setSubmitting }) => {
-            setLoading(true);
-            try {
-                const response = await axios.post(
-                    `${import.meta.env.VITE_API_URL}/auth/login`,
-                    {
-                        username: values.username,
-                        password: values.password,
-                    },
-                    {
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    }
-                );
-
-                // Use TokenService to handle tokens
-                TokenService.setTokens(response.data.access_token, response.data.refresh_token);
-
-                toast.success("Login successful!", {
-                    position: "bottom-left",
-                    autoClose: 5000,
-                });
-
+            const success = await login(values.username, values.password);
+            
+            if (success) {
                 // Redirect to the page user was trying to access, or home
                 const from = location.state?.from || "/";
                 navigate(from);
-            } catch (error) {
-                console.error("Login failed:", error.response?.data || error.message);
-                const errorMessage = error.response?.data?.message || "Invalid username or password. Please try again.";
-                toast.error(errorMessage, {
-                    position: "bottom-left",
-                    autoClose: 5000,
-                });
-            } finally {
-                setLoading(false);
-                setSubmitting(false);
             }
+            
+            setSubmitting(false);
         },
     });
-
-    useEffect(() => {
-        // Handle OAuth redirect
-        const accessTokenCookie = Cookies.get("access_token");
-        const refreshTokenCookie = Cookies.get("refresh_token");
-        if (accessTokenCookie && refreshTokenCookie) {
-            TokenService.setTokens(accessTokenCookie, refreshTokenCookie);
-            Cookies.remove("access_token");
-            Cookies.remove("refresh_token");
-            toast.success("Login successful via OAuth!", {
-                position: "bottom-left",
-                autoClose: 5000,
-            });
-            navigate("/");
-        }
-    }, [navigate]);
 
     return (
         <div className="flex justify-center items-center min-h-screen -mt-13 px-4">

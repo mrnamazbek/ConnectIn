@@ -4,13 +4,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSun, faMoon, faMagnifyingGlass, faUser, faComments, faNewspaper, faPen, faBars, faTimes, faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import Logo from "../assets/images/connectin-logo-png.png";
 import axios from "axios";
-import TokenService from "../services/tokenService";
 import { toast } from "react-toastify";
-import { useAuth } from "../contexts/AuthContext";
+import useAuthStore from "../store/authStore";
 import { useModeAnimation } from "react-theme-switch-animation";
 
 const NavBar = () => {
-    const { isAuthenticated, updateAuthState } = useAuth();
+    const { isAuthenticated, logout } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();
     const noStickyRoutes = ["/news", "/projects", "/teams", "/post", "/search"];
@@ -30,8 +29,6 @@ const NavBar = () => {
             localStorage.setItem("theme", "light");
         }
 
-        updateAuthState(TokenService.isUserLoggedIn());
-
         const handleClickOutside = (event) => {
             if (isMenuOpen && !event.target.closest(".user-button")) {
                 setIsMenuOpen(false);
@@ -43,34 +40,31 @@ const NavBar = () => {
 
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [isDarkMode, isMenuOpen, isMobileMenuOpen, updateAuthState]);
+    }, [isDarkMode, isMenuOpen, isMobileMenuOpen]);
 
     useEffect(() => {
         const checkAuth = async () => {
             try {
                 await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
                     headers: {
-                        Authorization: `Bearer ${TokenService.getAccessToken()}`,
+                        Authorization: `Bearer ${useAuthStore.getState().accessToken}`,
                     },
                 });
-                updateAuthState(true);
             } catch (error) {
                 if (error.response?.status === 401) {
-                    updateAuthState(false);
-                    TokenService.clearTokens();
+                    logout();
                     navigate("/login");
                 }
             }
         };
 
-        if (TokenService.isUserLoggedIn()) {
+        if (isAuthenticated) {
             checkAuth();
         }
-    }, [navigate, updateAuthState]);
+    }, [navigate, logout, isAuthenticated]);
 
     const handleLogout = () => {
-        TokenService.clearTokens();
-        updateAuthState(false);
+        logout();
         navigate("/login");
     };
 
@@ -98,7 +92,7 @@ const NavBar = () => {
             to={to}
             onClick={onClick}
             className={({ isActive }) => `
-                flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                flex flex-col items-center justify-center space-y-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
                 ${isActive ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-green-700 dark:hover:text-green-400"}
             `}
         >
@@ -130,7 +124,7 @@ const NavBar = () => {
                         <button
                             ref={themeRef}
                             onClick={toggleSwitchTheme}
-                            className="flex items-center cursor-pointer space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 ml-1 text-gray-600 dark:text-gray-300"
+                            className="flex flex-col items-center justify-center space-y-1 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 ml-1 text-gray-600 dark:text-gray-300"
                             aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
                         >
                             <FontAwesomeIcon icon={isDarkMode ? faSun : faMoon} className="w-5 h-5 transition-transform duration-300" />
@@ -142,11 +136,13 @@ const NavBar = () => {
                             <div className="relative user-button ml-1">
                                 <button
                                     onClick={() => setIsMenuOpen(!isMenuOpen)}
-                                    className="flex items-center space-x-2 px-4 py-2 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 hover:text-green-700 dark:hover:text-green-400 transition-colors duration-200"
+                                    className="flex flex-col items-center space-y-1 px-4 py-2 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 hover:text-green-700 dark:hover:text-green-400 transition-colors duration-200"
                                 >
-                                    <FontAwesomeIcon icon={faUser} className="w-5 h-5" />
+                                    <div className="flex items-center">
+                                        <FontAwesomeIcon icon={faUser} className="w-5 h-5" />
+                                        <FontAwesomeIcon icon={faChevronDown} className={`w-3 h-3 transition-transform ml-1 ${isMenuOpen ? "rotate-180" : ""}`} />
+                                    </div>
                                     <span>Profile</span>
-                                    <FontAwesomeIcon icon={faChevronDown} className={`w-3 h-3 transition-transform ${isMenuOpen ? "rotate-180" : ""}`} />
                                 </button>
                                 {isMenuOpen && (
                                     <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 border border-gray-200 dark:border-gray-700 z-40">
@@ -185,11 +181,13 @@ const NavBar = () => {
 
                     {/* Mobile menu button */}
                     <div className="md:hidden flex items-center space-x-2">
-                        <button ref={themeRef} onClick={toggleSwitchTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}>
+                        <button ref={themeRef} onClick={toggleSwitchTheme} className="flex flex-col items-center p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}>
                             <FontAwesomeIcon icon={isDarkMode ? faSun : faMoon} className="w-5 h-5 text-gray-600 dark:text-white transition-transform duration-300" />
+                            <span className="text-xs mt-1">Theme</span>
                         </button>
-                        <button onClick={handleMobileMenuClick} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" aria-label="Toggle menu" aria-expanded={isMobileMenuOpen}>
+                        <button onClick={handleMobileMenuClick} className="flex flex-col items-center p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" aria-label="Toggle menu" aria-expanded={isMobileMenuOpen}>
                             <FontAwesomeIcon icon={isMobileMenuOpen ? faTimes : faBars} className="w-5 h-5 text-gray-600 dark:text-white" />
+                            <span className="text-xs mt-1">Menu</span>
                         </button>
                     </div>
                 </div>
@@ -227,7 +225,7 @@ const NavBar = () => {
                                     handleMobileMenuClick();
                                     handleLogout();
                                 }}
-                                className="w-full flex items-center space-x-2 px-4 py-2 rounded-lg text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                                className="w-full flex flex-col items-center justify-center space-y-1 px-4 py-2 rounded-lg text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                             >
                                 <FontAwesomeIcon icon={faUser} className="w-5 h-5" />
                                 <span>Logout</span>

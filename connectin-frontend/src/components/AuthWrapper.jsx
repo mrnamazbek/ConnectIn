@@ -1,10 +1,10 @@
-import AccessTokenManager from "./AccessTokenManager";
+import AuthInitializer from "./AuthInitializer";
 
-// AuthWrapper now just wraps the children with access token management
+// AuthWrapper now wraps the children with the Zustand-based auth initializer
 const AuthWrapper = ({ children }) => {
     return (
         <>
-            <AccessTokenManager />
+            <AuthInitializer />
             {children}
         </>
     );

@@ -13,8 +13,10 @@ from app.models.team import Team
 from app.models.user import User
 from app.schemas.team import TeamCreate, TeamOut, TeamUpdate
 from app.api.v1.auth import get_current_user
+from app.utils.logger import get_logger
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 @router.post("/", response_model=TeamOut, summary="Создать новую команду")
 def create_team(

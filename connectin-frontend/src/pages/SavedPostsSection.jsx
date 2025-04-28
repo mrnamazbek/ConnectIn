@@ -82,7 +82,7 @@ const SavedPostsSection = ({ posts: propPosts, loading, isStatic }) => {
                                         <FontAwesomeIcon icon={faBookmark} />
                                         Unsave
                                     </button>
-                                    <NavLink to={`/posts/${post.id}`} className="bg-green-700 dark:bg-green-600 text-white px-3 py-1 rounded hover:bg-green-600 dark:hover:bg-green-500">
+                                    <NavLink to={`/feed/post/${post.id}`} className="bg-green-700 dark:bg-green-600 text-white px-3 py-1 rounded hover:bg-green-600 dark:hover:bg-green-500">
                                         View
                                     </NavLink>
                                 </div>

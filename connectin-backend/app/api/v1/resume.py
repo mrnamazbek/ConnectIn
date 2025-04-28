@@ -14,13 +14,15 @@ from app.models.user import User, Experience, Education
 from app.models.skill import Skill
 from app.api.v1.auth import get_current_user
 from app.core.config import settings
+from app.schemas.user import UserCreate
+from app.utils.logger import get_logger
 
 # --- AI & Форматирование ---
 import openai
 import markdown
 
 # --- Настройка ---
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # --- Роутер ---
 router = APIRouter(tags=["resume"])

@@ -1,23 +1,19 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import TokenService from '../services/tokenService';
+import { createContext, useContext } from 'react';
+import useAuthStore from '../store/authStore';
 
+// Create context for compatibility with existing code
 const AuthContext = createContext();
 
+// AuthProvider now just provides values from our Zustand store
 export const AuthProvider = ({ children }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(TokenService.isUserLoggedIn());
+    // Get auth state from Zustand store
+    const { isAuthenticated, logout } = useAuthStore();
 
-    useEffect(() => {
-        // Update authentication state when token changes
-        const handleStorageChange = () => {
-            setIsAuthenticated(TokenService.isUserLoggedIn());
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
-
+    // For backwards compatibility, provide the same interface
     const updateAuthState = (authenticated) => {
-        setIsAuthenticated(authenticated);
+        if (!authenticated) {
+            logout();
+        }
     };
 
     return (
@@ -27,6 +23,7 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
+// useAuth hook remains the same, but now just provides access to Zustand store
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {

@@ -5,7 +5,7 @@
 - Удаление своей учетной записи.
 """
 #fix
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from typing import List, Union
 
@@ -21,8 +21,8 @@ from app.core.config import settings
 from app.utils.s3 import s3_service
 from app.utils.logger import get_logger
 
-logger = get_logger(__name__)
 router = APIRouter()
+logger = get_logger(__name__)
 
 @router.get("/", response_model=List[UserOut], summary="Получить список всех пользователей")
 def read_users(db: Session = Depends(get_db)):
@@ -41,7 +41,7 @@ def read_own_profile(current_user: User = Depends(get_current_user)):
 
 @router.get("/search", response_model=List[UserOut], summary="Поиск пользователей")
 def search_users(
-    query: str,
+    query: str = Query(..., min_length=3),
     db: Session = Depends(get_db)
 ):
     if not query:

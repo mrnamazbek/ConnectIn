@@ -1,5 +1,6 @@
 # connectin-backend/app/utils/s3_client.py (Пример)
 import logging
+from typing import Dict, Optional
 import boto3
 from botocore.exceptions import ClientError
 from botocore.config import Config
@@ -19,7 +20,7 @@ s3_client = boto3.client(
     region_name=settings.N_AWS_REGION, # Добавьте в config.py / .env
     config=Config(signature_version='s3v4') # Рекомендуется для presigned URLs
 )
-S3_BUCKET_NAME = settings.N_S3_BUCKET_NAME # Добавьте в config.py / .env
+S3_BUCKET_NAME = settings.N_AWS_BUCKET_NAME # Добавьте в config.py / .env
 S3_CHAT_FOLDER = "chat_media/" # Папка для медиа чата
 
 def create_presigned_post_url(file_name: str, file_type: str, user_id: int) -> Optional[Dict]:

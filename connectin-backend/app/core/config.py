@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     REDIS_URL: str = Field("redis://localhost:6379", env="REDIS_URL")
 
     ELASTICSEARCH_URL: str = Field("http://127.0.0.1:9200", env="ELASTICSEARCH_URL")
+    
+    N_AWS_ACCESS_KEY_ID: str = Field(..., env="N_AWS_ACCESS_KEY_ID")
+    N_AWS_SECRET_ACCESS_KEY: str = Field(..., env="N_AWS_SECRET_ACCESS_KEY")
+    N_AWS_BUCKET_NAME: str = Field(..., env="N_AWS_BUCKET_NAME")
+    N_AWS_REGION: str = Field(..., env="N_AWS_REGION")
 
     model_config = SettingsConfigDict(
         env_file=".env",

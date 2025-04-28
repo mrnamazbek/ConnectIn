@@ -171,22 +171,30 @@ async def get_current_user(
         raise credentials_exception
     return user
 
-async def get_current_user_ws(websocket: WebSocket) -> Optional[User]:
+async def get_current_user_ws(websocket: WebSocket, token: str = None) -> Optional[User]:
+    """
+    Authenticate user for WebSocket connections.
+    If token is provided, use it directly. Otherwise, try to get it from the WebSocket.
+    """
     try:
-        token = websocket.query_params.get("access_token")
         if not token:
-            return None
+            # Try to get token from WebSocket query parameters
+            token = websocket.query_params.get("token")
+            if not token:
+                return None
 
+        # Verify token
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
             return None
 
-        # Get database session
+        # Get user from database using email
         db = next(get_db())
         user = db.query(User).filter(User.email == email).first()
         return user
-    except (JWTError, Exception):
+    except Exception as e:
+        logger.error(f"WebSocket authentication error: {e}")
         return None
 
 # ---------------------- Регистрация и Логин ----------------------

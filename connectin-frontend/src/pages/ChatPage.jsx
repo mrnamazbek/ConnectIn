@@ -1,530 +1,278 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { 
-    faSpinner, 
-    faExclamationTriangle, 
-    faSearch, 
-    faUser, 
-    faUsers, 
-    faTimes,
-    faEllipsisVertical,
-    faComments
-} from "@fortawesome/free-solid-svg-icons";
-import ChatWindow from "../components/Chat/ChatWindow";
-import ChatList from "../components/Chat/ChatList";
-import TokenService from "../services/tokenService";
-import { toast } from "react-toastify";
+import { motion, AnimatePresence } from "framer-motion";
+import useAuthStore from "../store/authStore";
+import { format } from "date-fns";
 
 const ChatPage = () => {
-    const [selectedConversation, setSelectedConversation] = useState(null);
-    const [users, setUsers] = useState([]);
-    const [searchedUsers, setSearchedUsers] = useState([]);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [currentUser, setCurrentUser] = useState(null);
     const [conversations, setConversations] = useState([]);
-    const [isSearching, setIsSearching] = useState(false);
-    const [loadingUsers, setLoadingUsers] = useState(false);
-    const [isStartingConversation, setIsStartingConversation] = useState(false); 
+    const [activeConversation, setActiveConversation] = useState(null);
+    const [messages, setMessages] = useState([]);
+    const [newMessage, setNewMessage] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [showUserSearch, setShowUserSearch] = useState(false);
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-    const [showConversations, setShowConversations] = useState(true);
+    const [socket, setSocket] = useState(null);
+    const messagesEndRef = useRef(null);
+    const { accessToken, user } = useAuthStore();
 
-    const searchInputRef = useRef(null);
-    const navigate = useNavigate();
-
-    // Handle resize
+    // Fetch all conversations
     useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth < 768);
-            if (window.innerWidth >= 768) {
-                setShowConversations(true);
-            }
-        };
-        
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-    
-    // Debounce utility
-    const debounce = (func, delay) => {
-        let timeoutId;
-        return (...args) => {
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(() => func(...args), delay);
-        };
-    };
-
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            setError(null);
-
-            // Check if user is authenticated
-            if (!TokenService.isUserLoggedIn()) {
-                setError("You need to be logged in to access chats");
-                setLoading(false);
-                return;
-            }
-
+        const fetchConversations = async () => {
             try {
-                // Try to load cached users first
-                const cachedUsers = localStorage.getItem("cachedUsers");
-                if (cachedUsers) {
-                    setUsers(JSON.parse(cachedUsers));
-                } else {
-                    await fetchUsers();
-                }
-
-                // Fetch current user and conversations
-                const userResult = await fetchCurrentUser();
-                if (userResult) {
-                    await fetchConversations();
-                }
-            } catch (err) {
-                console.error("Error initializing chat page:", err);
-                setError("Failed to load chat data. Please try again later.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, []);
-
-    const fetchUsers = async () => {
-        setLoadingUsers(true);
-        try {
-            const token = TokenService.getAccessToken();
-            if (!token) {
-                toast.error("Authentication required");
-                navigate("/login");
-                return;
-            }
-
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            const newUsers = response.data;
-            setUsers(newUsers);
-            // Update cache with fresh data
-            localStorage.setItem("cachedUsers", JSON.stringify(newUsers));
-            return true;
-        } catch (error) {
-            console.error("Failed to fetch users", error);
-            if (error.response?.status === 401) {
-                toast.error("Your session has expired. Please log in again.");
-                navigate("/login");
-            }
-            return false;
-        } finally {
-            setLoadingUsers(false);
-        }
-    };
-
-    // Update fetchConversations to filter out empty conversations
-    const fetchConversations = async () => {
-        try {
-            const token = TokenService.getAccessToken();
-            if (!token) {
-                navigate("/login");
-                return;
-            }
-
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/chats/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            
-            // Filter out conversations with no messages
-            const filteredConversations = response.data.filter(
-                conv => conv.last_message !== null
-            );
-            
-            // Sort by most recent message
-            filteredConversations.sort((a, b) => {
-                if (!a.last_message) return 1;
-                if (!b.last_message) return -1;
-                return new Date(b.last_message.timestamp) - new Date(a.last_message.timestamp);
-            });
-            
-            setConversations(filteredConversations);
-            return true;
-        } catch (error) {
-            console.error("Failed to fetch conversations", error);
-            if (error.response?.status === 401) {
-                toast.error("Your session has expired. Please log in again.");
-                navigate("/login");
-            } else if (error.response?.status === 404) {
-                // API endpoint not found
-                setError("Chat service is currently unavailable");
-            }
-            return false;
-        }
-    };
-
-    // Improve search functionality
-    const debouncedSearchUsers = useCallback(
-        debounce(async () => {
-            if (!searchQuery.trim()) {
-                setSearchedUsers([]);
-                return;
-            }
-            setIsSearching(true);
-            try {
-                const token = TokenService.getAccessToken();
-                if (!token) {
-                    navigate("/login");
-                    return;
-                }
-
-                // If search API doesn't support partial matching, we can filter locally from all users
-                const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                
-                // Filter users based on partial search query match (case insensitive)
-                const filteredUsers = response.data.filter(user => 
-                    user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    (user.email && user.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                    (user.first_name && user.first_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                    (user.last_name && user.last_name.toLowerCase().includes(searchQuery.toLowerCase()))
-                );
-                
-                setSearchedUsers(filteredUsers);
-            } catch (error) {
-                console.error("Error searching users", error);
-                if (error.response?.status === 401) {
-                    toast.error("Your session has expired. Please log in again.");
-                    navigate("/login");
-                }
-            } finally {
-                setIsSearching(false);
-            }
-        }, 300),
-        [searchQuery, navigate]
-    );
-
-    const fetchCurrentUser = async () => {
-        try {
-            const token = TokenService.getAccessToken();
-            if (!token) {
-                toast.error("Authentication required");
-                navigate("/login");
-                return null;
-            }
-
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setCurrentUser(response.data);
-            return response.data;
-        } catch (error) {
-            console.error("Failed to fetch current user", error);
-
-            if (error.response?.status === 401) {
-                TokenService.clearTokens();
-                toast.error("Your session has expired. Please log in again.");
-                navigate("/login");
-            }
-            return null;
-        }
-    };
-
-    const startConversation = async (user) => {
-        if (isStartingConversation) return; // Prevent multiple calls
-        setIsStartingConversation(true);
-
-        try {
-            const token = localStorage.getItem("access_token");
-            if (!token) {
-                toast.error("Authentication required");
-                navigate("/login");
-                return;
-            }
-
-            if (!currentUser) {
-                console.warn("Current user not loaded yet, trying again...");
-                const userResult = await fetchCurrentUser();
-                if (!userResult) {
-                    toast.error("Unable to load your profile data");
-                    return;
-                }
-            }
-
-            setShowUserSearch(false);
-            
-            // Display loading toast
-            const loadingToastId = toast.loading("Starting conversation...");
-            
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/chats/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            const existingConversation = response.data.find(
-                (conv) => conv.type === "direct" && 
-                conv.participants.includes(currentUser.id) && 
-                conv.participants.includes(user.id)
-            );
-
-            if (existingConversation) {
-                // Update conversations list to ensure it's in sync
-                setConversations((prev) => {
-                    const exists = prev.some((c) => c.id === existingConversation.id);
-                    if (!exists) {
-                        return [...prev, existingConversation];
-                    }
-                    return prev;
-                });
-                setSelectedConversation(existingConversation.id);
-                toast.update(loadingToastId, { 
-                    render: "Conversation found", 
-                    type: "success", 
-                    isLoading: false, 
-                    autoClose: 1500 
-                });
-                
-                if (isMobile) {
-                    setShowConversations(false);
-                }
-            } else {
-                const newConversation = await axios.post(
-                    `${import.meta.env.VITE_API_URL}/chats/`,
-                    {
-                        type: "direct",
-                        participant_ids: [user.id],
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/chats/conversations`, {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
                     },
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
-
-                if (newConversation.data) {
-                    // Update conversations list with the new conversation
-                    setConversations((prev) => [...prev, newConversation.data]);
-                    setSelectedConversation(newConversation.data.id);
-                    toast.update(loadingToastId, { 
-                        render: "Conversation created", 
-                        type: "success", 
-                        isLoading: false, 
-                        autoClose: 1500 
-                    });
-                    
-                    if (isMobile) {
-                        setShowConversations(false);
-                    }
-                }
+                });
+                setConversations(response.data);
+                setLoading(false);
+            } catch (err) {
+                console.error("Error fetching conversations:", err);
+                setError("Failed to load conversations");
+                setLoading(false);
             }
-        } catch (error) {
-            console.error("Error starting conversation:", error);
-            if (error.response?.status === 401) {
-                toast.error("Your session has expired. Please log in again.");
-                navigate("/login");
-            } else {
-                toast.error("Failed to start conversation. Please try again.");
+        };
+
+        fetchConversations();
+    }, [accessToken]);
+
+    // Fetch messages for active conversation
+    useEffect(() => {
+        if (!activeConversation) return;
+
+        const fetchMessages = async () => {
+            try {
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/chats/conversations/${activeConversation.id}/messages`, {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                });
+                // Reverse to show oldest first
+                setMessages(response.data.reverse());
+            } catch (err) {
+                console.error("Error fetching messages:", err);
+                setError("Failed to load messages");
             }
-        } finally {
-            setIsStartingConversation(false);
+        };
+
+        fetchMessages();
+
+        // Connect to WebSocket
+        const wsUrl = `${import.meta.env.VITE_WS_URL}/api/v1/chat/ws/${activeConversation.id}?token=${accessToken}`;
+        const newSocket = new WebSocket(wsUrl);
+
+        newSocket.onopen = () => {
+            console.log("WebSocket connection established");
+        };
+
+        newSocket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            setMessages((prevMessages) => [...prevMessages, data]);
+        };
+
+        newSocket.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+
+        newSocket.onclose = () => {
+            console.log("WebSocket connection closed");
+        };
+
+        setSocket(newSocket);
+
+        // Cleanup
+        return () => {
+            if (newSocket) {
+                newSocket.close();
+            }
+        };
+    }, [activeConversation, accessToken]);
+
+    // Auto-scroll to bottom when messages change
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
+
+    const handleSendMessage = (e) => {
+        e.preventDefault();
+
+        if (!newMessage.trim() || !socket || socket.readyState !== WebSocket.OPEN) return;
+
+        const messageData = {
+            content: newMessage,
+        };
+
+        socket.send(JSON.stringify(messageData));
+        setNewMessage("");
+    };
+
+    const formatTime = (timestamp) => {
+        try {
+            return format(new Date(timestamp), "h:mm a");
+        } catch {
+            return "";
         }
     };
 
-    // Handle search input change with debouncing
-    const handleSearchChange = (e) => {
-        setSearchQuery(e.target.value);
-        debouncedSearchUsers();
+    const getConversationName = (conversation) => {
+        if (!conversation || !conversation.participants) return "Chat";
+
+        // Filter out current user and get the other participant(s)
+        const otherParticipants = conversation.participants.filter((p) => p.id !== user.id);
+
+        if (otherParticipants.length === 0) return "Just you";
+
+        return otherParticipants.map((p) => `${p.first_name || ""} ${p.last_name || ""}`.trim() || p.username).join(", ");
     };
 
-    const toggleUserSearch = () => {
-        setShowUserSearch(!showUserSearch);
-        setSearchQuery("");
-        setSearchedUsers([]);
-        if (!showUserSearch) {
-            setTimeout(() => {
-                searchInputRef.current?.focus();
-            }, 100);
-        }
+    const getParticipantAvatar = (conversation) => {
+        if (!conversation || !conversation.participants) return null;
+
+        // Find the other participant
+        const otherParticipant = conversation.participants.find((p) => p.id !== user.id);
+
+        return otherParticipant?.avatar_url;
     };
 
-    const handleSelectConversation = (conversationId) => {
-        setSelectedConversation(conversationId);
-        if (isMobile) {
-            setShowConversations(false);
-        }
-    };
-
-    const backToConversations = () => {
-        setShowConversations(true);
-    };
-
-    // If there's an error or still loading
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-screen bg-gray-50 dark:bg-gray-900">
-                <div className="text-center">
-                    <div className="flex justify-center mb-4">
-                        <div className="animate-spin h-12 w-12 border-4 border-green-500 border-t-transparent rounded-full"></div>
-                    </div>
-                    <p className="text-gray-700 dark:text-gray-300 text-lg">Loading conversations...</p>
-                </div>
+            <div className="flex h-full items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="flex justify-center items-center h-screen bg-gray-100 dark:bg-gray-900">
-                <div className="text-center max-w-md mx-auto p-6 bg-white dark:bg-gray-800 shadow-md rounded-lg">
-                    <FontAwesomeIcon icon={faExclamationTriangle} className="text-yellow-500 text-4xl mb-4" />
-                    <h2 className="text-xl font-semibold mb-2 dark:text-white">Unable to Load Chats</h2>
-                    <p className="text-gray-700 dark:text-gray-300 mb-4">{error}</p>
-                    <div className="flex justify-center space-x-4">
-                        <button onClick={() => navigate("/login")} className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
-                            Log In
-                        </button>
-                        <button onClick={() => navigate("/")} className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white">
-                            Return Home
-                        </button>
-                    </div>
-                </div>
+            <div className="flex h-full items-center justify-center">
+                <div className="text-red-500">{error}</div>
             </div>
         );
     }
 
     return (
-        <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
-            {/* Header */}
-            <header className="bg-white dark:bg-gray-800 shadow-sm py-3 px-4 flex items-center justify-between">
-                <div className="flex items-center">
-                    <FontAwesomeIcon icon={faComments} className="text-green-600 text-xl mr-2" />
-                    <h1 className="text-xl font-semibold text-gray-800 dark:text-white">Messages</h1>
+        <div className="flex h-full">
+            {/* Conversations Sidebar */}
+            <div className="w-1/4 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Messages</h2>
                 </div>
-                <div className="flex items-center space-x-2">
-                    <button 
-                        className="p-2 text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-500 transition-colors"
-                        onClick={toggleUserSearch}
-                        title="New Message"
-                    >
-                        <FontAwesomeIcon icon={faUsers} className="text-lg" />
-                    </button>
-                </div>
-            </header>
-
-            {/* Main content */}
-            <div className="flex flex-1 overflow-hidden">
-                {/* Conversations sidebar - conditionally shown on mobile */}
-                {(showConversations || !isMobile) && (
-                    <div className={`${isMobile ? 'w-full' : 'w-80'} border-r border-gray-200 dark:border-gray-700 flex flex-col bg-white dark:bg-gray-800`}>
-                        {/* User search overlay */}
-                        {showUserSearch && (
-                            <div className="absolute inset-0 z-10 bg-white dark:bg-gray-800 flex flex-col">
-                                <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center">
-                                    <button 
-                                        onClick={toggleUserSearch}
-                                        className="p-2 mr-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                                    >
-                                        <FontAwesomeIcon icon={faTimes} />
-                                    </button>
-                                    <div className="relative flex-1">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            {isSearching ? (
-                                                <FontAwesomeIcon icon={faSpinner} className="text-gray-400 animate-spin" />
-                                            ) : (
-                                                <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
-                                            )}
-                                        </div>
-                                        <input
-                                            ref={searchInputRef}
-                                            type="text"
-                                            placeholder="Search users..."
-                                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 dark:text-white"
-                                            value={searchQuery}
-                                            onChange={handleSearchChange}
-                                        />
-                                    </div>
-                                </div>
-                                
-                                {/* Search results */}
-                                <div className="overflow-y-auto flex-1 p-2">
-                                    {searchQuery.trim() === "" ? (
-                                        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                                            <FontAwesomeIcon icon={faSearch} className="text-3xl mb-2" />
-                                            <p>Search for users to start a conversation</p>
-                                        </div>
-                                    ) : searchedUsers.length === 0 && !isSearching ? (
-                                        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                                            <FontAwesomeIcon icon={faUser} className="text-3xl mb-2" />
-                                            <p>No users found matching "{searchQuery}"</p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-1">
-                                            {searchedUsers.map((user) => (
-                                                <div
-                                                    key={user.id}
-                                                    className="flex items-center p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                                    onClick={() => startConversation(user)}
-                                                >
-                                                    <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center text-green-700 dark:text-green-300 font-semibold mr-3">
-                                                        {user.username[0].toUpperCase()}
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-medium text-gray-800 dark:text-white">{user.username}</p>
-                                                        {user.email && (
-                                                            <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Conversation list */}
-                        <ChatList 
-                            onSelectConversation={handleSelectConversation}
-                            selectedConversationId={selectedConversation}
-                        />
-                    </div>
-                )}
-
-                {/* Chat content area */}
-                <div className={`${isMobile && showConversations ? 'hidden' : 'flex flex-1'} flex-col h-full`}>
-                    {selectedConversation ? (
-                        <>
-                            {isMobile && (
-                                <div className="bg-white dark:bg-gray-800 p-2 shadow-sm flex items-center border-b border-gray-200 dark:border-gray-700">
-                                    <button 
-                                        onClick={backToConversations}
-                                        className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                                            <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
-                                        </svg>
-                                    </button>
-                                    <span className="ml-2 text-gray-800 dark:text-white font-medium">Back to conversations</span>
-                                </div>
-                            )}
-                            <ChatWindow conversationId={selectedConversation} key={selectedConversation} />
-                        </>
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {conversations.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500">No conversations yet</div>
                     ) : (
-                        <div className="flex-1 flex flex-col justify-center items-center bg-gray-50 dark:bg-gray-900">
-                            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-sm text-center max-w-md">
-                                <div className="w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <FontAwesomeIcon icon={faComments} className="text-green-600 dark:text-green-400 text-3xl" />
+                        conversations.map((conversation) => (
+                            <motion.div
+                                key={conversation.id}
+                                className={`p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${activeConversation?.id === conversation.id ? "bg-gray-100 dark:bg-gray-700" : ""}`}
+                                onClick={() => setActiveConversation(conversation)}
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.99 }}
+                            >
+                                <div className="flex items-center space-x-3">
+                                    <img
+                                        src={getParticipantAvatar(conversation)}
+                                        alt="Avatar"
+                                        className="w-10 h-10 rounded-full object-cover"
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = "https://via.placeholder.com/40";
+                                        }}
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-gray-900 dark:text-white truncate">{getConversationName(conversation)}</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{conversation.last_message?.content || "No messages yet"}</p>
+                                    </div>
+                                    {conversation.last_message && <span className="text-xs text-gray-400 dark:text-gray-500">{formatTime(conversation.last_message.timestamp)}</span>}
                                 </div>
-                                <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">Your Messages</h2>
-                                <p className="text-gray-600 dark:text-gray-300 mb-6">Select a conversation or start a new one to begin messaging</p>
-                                <button 
-                                    onClick={toggleUserSearch}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                                >
-                                    Start a new conversation
-                                </button>
-                            </div>
-                        </div>
+                            </motion.div>
+                        ))
                     )}
                 </div>
+            </div>
+
+            {/* Chat Area */}
+            <div className="flex-1 flex flex-col">
+                {activeConversation ? (
+                    <>
+                        {/* Chat Header */}
+                        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                            <div className="flex items-center space-x-3">
+                                <img
+                                    src={getParticipantAvatar(activeConversation)}
+                                    alt="Avatar"
+                                    className="w-10 h-10 rounded-full object-cover"
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = "https://via.placeholder.com/40";
+                                    }}
+                                />
+                                <div>
+                                    <h2 className="font-medium text-gray-900 dark:text-white">{getConversationName(activeConversation)}</h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Messages */}
+                        <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900">
+                            <AnimatePresence>
+                                {messages.length === 0 ? (
+                                    <div className="flex h-full items-center justify-center text-gray-500">No messages yet</div>
+                                ) : (
+                                    messages.map((message) => (
+                                        <motion.div key={message.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`mb-4 flex ${message.sender_id === user.id ? "justify-end" : "justify-start"}`}>
+                                            {message.sender_id !== user.id && (
+                                                <img
+                                                    src={message.sender_avatar || "https://via.placeholder.com/32"}
+                                                    alt="Avatar"
+                                                    className="w-8 h-8 rounded-full mr-2 self-end"
+                                                    onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.src = "https://via.placeholder.com/32";
+                                                    }}
+                                                />
+                                            )}
+                                            <div className={`max-w-xs md:max-w-md lg:max-w-lg rounded-lg px-4 py-2 ${message.sender_id === user.id ? "bg-green-500 text-white rounded-br-none" : "bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-bl-none"}`}>
+                                                <p>{message.content}</p>
+                                                <div className={`text-xs mt-1 ${message.sender_id === user.id ? "text-green-100" : "text-gray-500 dark:text-gray-400"}`}>{formatTime(message.timestamp)}</div>
+                                            </div>
+                                            {message.sender_id === user.id && (
+                                                <img
+                                                    src={user.avatar_url || "https://via.placeholder.com/32"}
+                                                    alt="Your Avatar"
+                                                    className="w-8 h-8 rounded-full ml-2 self-end"
+                                                    onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.src = "https://via.placeholder.com/32";
+                                                    }}
+                                                />
+                                            )}
+                                        </motion.div>
+                                    ))
+                                )}
+                                <div ref={messagesEndRef} />
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Message Input */}
+                        <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                            <form onSubmit={handleSendMessage} className="flex space-x-2">
+                                <input
+                                    type="text"
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    placeholder="Type a message..."
+                                    className="flex-1 rounded-full border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white px-4 py-2"
+                                />
+                                <motion.button type="submit" className="bg-green-500 hover:bg-green-600 text-white rounded-full px-5 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} disabled={!newMessage.trim()}>
+                                    Send
+                                </motion.button>
+                            </form>
+                        </div>
+                    </>
+                ) : (
+                    <div className="flex h-full items-center justify-center text-gray-500 bg-gray-50 dark:bg-gray-900">Select a conversation to start chatting</div>
+                )}
             </div>
         </div>
     );

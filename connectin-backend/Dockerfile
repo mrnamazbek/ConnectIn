@@ -1,40 +1,66 @@
-# Use a newer Debian version with updated Pango
-FROM python:3.11-bullseye
+# Use Alpine for a significantly smaller base image
+FROM python:3.11-alpine AS builder
 
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y \
-    build-essential \
+# Set build arguments for potential customization
+ARG APP_ENV=production
+ARG APP_DIR=/app
+
+# Set work directory
+WORKDIR ${APP_DIR}
+
+# Install only the necessary build dependencies
+# Use --no-cache to avoid storing the package index
+RUN apk add --no-cache --virtual .build-deps \
+    gcc \
+    musl-dev \
     python3-dev \
-    python3-pip \
-    python3-setuptools \
-    python3-wheel \
+    libffi-dev \
+    openssl-dev \
+    jpeg-dev
+
+# Copy and install requirements first (for better layer caching)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Create a second stage with minimal runtime dependencies
+FROM python:3.11-alpine
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    APP_DIR=/app
+
+WORKDIR ${APP_DIR}
+
+# Install only runtime dependencies
+RUN apk add --no-cache \
     libpango-1.0-0 \
     libharfbuzz0b \
     libpangoft2-1.0-0 \
-    libharfbuzz-gobject0 \
-    libffi-dev \
-    libjpeg-dev \
-    libopenjp2-7-dev
+    libjpeg
 
-# Install fonts
-RUN fc-cache -f -v
+# Create a non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Set working directory
-WORKDIR /app
-
-# Copy requirements first to leverage Docker cache
-COPY requirements.txt .
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy installed packages from builder stage
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
 # Copy application code
 COPY . .
 
-# Copy and make the start script executable
-COPY start.sh .
+# Make start script executable
 RUN chmod +x start.sh
+
+# Set correct ownership
+RUN chown -R appuser:appgroup ${APP_DIR}
+
+# Switch to non-root user
+USER appuser
+
+# Add health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8000/health || exit 1
 
 # Run the application
 CMD ["./start.sh"]

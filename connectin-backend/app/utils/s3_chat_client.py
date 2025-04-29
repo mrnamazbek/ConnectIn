@@ -1,4 +1,4 @@
-# connectin-backend/app/utils/s3_client.py (Пример)
+# connectin-backend/app/utils/s3_chat_client.py (Пример)
 import logging
 from typing import Dict, Optional
 import boto3
@@ -15,13 +15,13 @@ logger = logging.getLogger(__name__)
 # Учетные данные должны быть настроены в окружении (через IAM роль или ключи)
 s3_client = boto3.client(
     "s3",
-    aws_access_key_id=settings.N_AWS_ACCESS_KEY_ID, # Добавьте в config.py / .env
-    aws_secret_access_key=settings.N_AWS_SECRET_ACCESS_KEY, # Добавьте в config.py / .env
-    region_name=settings.N_AWS_REGION, # Добавьте в config.py / .env
+    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+    region_name=settings.AWS_REGION,
     config=Config(signature_version='s3v4') # Рекомендуется для presigned URLs
 )
-S3_BUCKET_NAME = settings.N_AWS_BUCKET_NAME # Добавьте в config.py / .env
-S3_CHAT_FOLDER = "chat_media/" # Папка для медиа чата
+S3_BUCKET_NAME = settings.AWS_BUCKET_NAME # Добавьте в config.py / .env
+S3_CHAT_FOLDER = "chat-media/" # Папка для медиа чата
 
 def create_presigned_post_url(file_name: str, file_type: str, user_id: int) -> Optional[Dict]:
     """Генерирует pre-signed URL для ЗАГРУЗКИ файла с фронтенда в S3."""
@@ -29,30 +29,34 @@ def create_presigned_post_url(file_name: str, file_type: str, user_id: int) -> O
     object_name = f"{S3_CHAT_FOLDER}{user_id}/{uuid.uuid4()}_{file_name}"
 
     # Ограничения (пример)
-    allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf']
+    allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
     if file_type not in allowed_types:
         logger.warning(f"Disallowed file type attempted upload: {file_type}")
         return None
     max_size = 10 * 1024 * 1024 # 10 MB
 
-    conditions = [
-        {"acl": "private"}, # Или 'public-read', если файлы должны быть доступны по прямой ссылке
-        ["content-length-range", 1, max_size], # Ограничение размера
-        # ["starts-with", "$Content-Type", "image/"] # Ограничение типа (менее надежно, чем проверка выше)
-    ]
-    fields = {"acl": "private"} # Или 'public-read'
-
     try:
+        # Note: Remove ACL settings since the bucket doesn't support ACLs
         response = s3_client.generate_presigned_post(
             Bucket=S3_BUCKET_NAME,
             Key=object_name,
-            Fields=fields,
-            Conditions=conditions,
-            ExpiresIn=3600 # Ссылка действительна 1 час
+            Fields={
+                'Content-Type': file_type
+            },
+            Conditions=[
+                {'Content-Type': file_type},
+                ['content-length-range', 1, max_size]
+            ],
+            ExpiresIn=3600 # URL valid for 1 hour
         )
+        
         # Добавляем полный URL объекта для сохранения в БД после загрузки
-        response['object_url'] = f"https://{S3_BUCKET_NAME}.s3.{settings.N_AWS_REGION}.amazonaws.com/{object_name}"
+        response['object_url'] = f"https://{S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{object_name}"
         logger.info(f"Generated presigned POST URL for object: {object_name}")
+        
+        # Log the response structure for debugging
+        logger.debug(f"Presigned POST response: {response}")
+        
         return response
     except ClientError as e:
         logger.exception(f"Failed to generate presigned POST URL: {e}")
@@ -66,9 +70,9 @@ def upload_file_to_s3(file: UploadFile, user_id: int) -> Optional[str]:
                file.file,
                S3_BUCKET_NAME,
                object_name,
-               ExtraArgs={'ACL': 'private', 'ContentType': file.content_type}
+               ExtraArgs={'ContentType': file.content_type}
           )
-          file_url = f"https://{S3_BUCKET_NAME}.s3.{settings.N_AWS_REGION}.amazonaws.com/{object_name}"
+          file_url = f"https://{S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{object_name}"
           logger.info(f"File uploaded via backend to: {file_url}")
           return file_url
      except ClientError as e:

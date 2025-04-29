@@ -71,14 +71,23 @@ async def websocket_endpoint(
             data = await websocket.receive_json()
             content = data.get("content", "")
             
-            if not content.strip():
+            # Extract media information if present
+            media_url = data.get("media_url")
+            media_type = data.get("media_type")
+            media_name = data.get("media_name")
+            
+            # Skip empty messages without media
+            if not content.strip() and not media_url:
                 continue
                 
             # Create and save the message to the database
             message = Message(
                 content=content,
                 conversation_id=conversation_id,
-                sender_id=user.id
+                sender_id=user.id,
+                media_url=media_url,
+                media_type=media_type,
+                media_name=media_name
             )
             db.add(message)
             db.commit()
@@ -92,7 +101,10 @@ async def websocket_endpoint(
                 "sender_id": user.id,
                 "sender_name": f"{user.first_name} {user.last_name}",
                 "sender_avatar": user.avatar_url,
-                "conversation_id": conversation_id
+                "conversation_id": conversation_id,
+                "media_url": message.media_url,
+                "media_type": message.media_type,
+                "media_name": message.media_name
             }
             
             # Broadcast the message to all participants

@@ -8,6 +8,7 @@ from app.api.v1.auth import get_current_user
 from sqlalchemy import and_, or_, desc
 from pydantic import BaseModel
 from datetime import datetime
+from app.utils.s3_chat_client import create_presigned_post_url
 
 router = APIRouter()
 
@@ -20,6 +21,9 @@ class MessageSchema(BaseModel):
     conversation_id: int
     sender_name: Optional[str] = None
     sender_avatar: Optional[str] = None
+    media_url: Optional[str] = None
+    media_type: Optional[str] = None
+    media_name: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -37,6 +41,10 @@ class ConversationSchema(BaseModel):
 
 class CreateConversationRequest(BaseModel):
     participant_ids: List[int]
+
+class GetUploadUrlRequest(BaseModel):
+    file_name: str
+    file_type: str
     
 # Helper function to serialize a User model to dict
 def serialize_user(user: User) -> Dict[str, Any]:
@@ -62,7 +70,10 @@ def serialize_message(message: Message) -> Dict[str, Any]:
         "sender_id": message.sender_id,
         "conversation_id": message.conversation_id,
         "sender_name": f"{sender.first_name} {sender.last_name}" if sender else "Unknown User",
-        "sender_avatar": sender.avatar_url if sender else None
+        "sender_avatar": sender.avatar_url if sender else None,
+        "media_url": message.media_url,
+        "media_type": message.media_type,
+        "media_name": message.media_name
     }
 
 # Helper function to serialize a Conversation model to dict
@@ -180,4 +191,24 @@ async def get_conversation_messages(
     # Format the response with sender information
     result = [serialize_message(message) for message in messages]
     
-    return result 
+    return result
+
+@router.post("/upload_url")
+async def get_upload_url(
+    request: GetUploadUrlRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Get a presigned URL for uploading images to S3"""
+    presigned_data = create_presigned_post_url(
+        file_name=request.file_name,
+        file_type=request.file_type,
+        user_id=current_user.id
+    )
+    
+    if not presigned_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not generate upload URL"
+        )
+    
+    return presigned_data 

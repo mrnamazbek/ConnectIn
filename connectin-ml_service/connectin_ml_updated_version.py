@@ -163,9 +163,8 @@ def create_feature_vector(item_features: List[int], feature_map: Dict[int, int],
 
 def generate_project_recommendations(conn, all_skills_map: Dict[int, int], all_user_data: Dict[int, Dict[str, Any]]) -> \
 List[Dict]:
-    """Генерирует рекомендации проектов (Content-Based: Skills)."""
     logger.info("Generating project recommendations...")
-    projects_dict, project_skills_dict = load_project_data(conn)  # Загружаем здесь
+    projects_dict, project_skills_dict = load_project_data(conn)  
     if not all_skills_map or not projects_dict or not all_user_data: return []
 
     vector_len = len(all_skills_map)
@@ -206,9 +205,8 @@ List[Dict]:
 
 def generate_team_recommendations(conn, all_skills_map: Dict[int, int], all_user_data: Dict[int, Dict[str, Any]]) -> \
 List[Dict]:
-    """Генерирует рекомендации команд (Content-Based: Skills)."""
     logger.info("Generating team recommendations...")
-    teams_list, team_members_dict_by_team = load_team_data(conn)  # Загружаем здесь
+    teams_list, team_members_dict_by_team = load_team_data(conn)
     if not all_skills_map or not teams_list or not all_user_data: return []
 
     vector_len = len(all_skills_map)

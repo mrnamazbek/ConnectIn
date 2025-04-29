@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import useAuthStore from "../store/authStore";
 import { format } from "date-fns";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faPlus, faTimes, faPaperPlane, faUserCircle } from "@fortawesome/free-solid-svg-icons";
+import { faSearch, faPlus, faTimes, faPaperPlane, faUserCircle, faImage, faSpinner, faTimes as faClose } from "@fortawesome/free-solid-svg-icons";
 
 const ChatPage = () => {
     const [conversations, setConversations] = useState([]);
@@ -20,6 +20,11 @@ const ChatPage = () => {
     const [userSearchResults, setUserSearchResults] = useState([]);
     const [userSearchTerm, setUserSearchTerm] = useState("");
     const [userSearchLoading, setUserSearchLoading] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
+    const [expandedImage, setExpandedImage] = useState(null);
+    const fileInputRef = useRef(null);
     const messagesEndRef = useRef(null);
     const { accessToken, user } = useAuthStore();
 
@@ -237,17 +242,229 @@ const ChatPage = () => {
         }
     };
 
-    const handleSendMessage = (e) => {
+    // Handle image selection
+    const handleImageSelect = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Check file type and size
+        const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+        const maxSize = 10 * 1024 * 1024; // 10MB
+
+        if (!validTypes.includes(file.type)) {
+            alert("Please select a valid image file (JPEG, PNG, GIF, or WebP)");
+            return;
+        }
+
+        if (file.size > maxSize) {
+            alert("Image size should be less than 10MB");
+            return;
+        }
+
+        // Compress and resize the image before upload
+        compressImage(file).then((compressedFile) => {
+            setSelectedImage(compressedFile);
+            const imageUrl = URL.createObjectURL(compressedFile);
+            setImagePreview(imageUrl);
+        });
+    };
+
+    // Compress and resize image
+    const compressImage = (file) => {
+        return new Promise((resolve) => {
+            // Create an image element to load the file
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+
+            img.onload = () => {
+                // Create a canvas to resize the image
+                const canvas = document.createElement("canvas");
+                let width = img.width;
+                let height = img.height;
+
+                // Define max dimensions
+                const MAX_WIDTH = 1200;
+                const MAX_HEIGHT = 1200;
+
+                // Calculate new dimensions while maintaining aspect ratio
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height = Math.round(height * (MAX_WIDTH / width));
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width = Math.round(width * (MAX_HEIGHT / height));
+                        height = MAX_HEIGHT;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                // Draw resized image on canvas
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Convert canvas to blob
+                canvas.toBlob(
+                    (blob) => {
+                        // Create a new File object from the blob
+                        const compressedFile = new File([blob], file.name, {
+                            type: file.type,
+                            lastModified: new Date().getTime(),
+                        });
+                        resolve(compressedFile);
+                    },
+                    file.type,
+                    0.8
+                ); // 0.8 quality (80%)
+            };
+        });
+    };
+
+    // Cancel image selection
+    const clearImageSelection = () => {
+        setSelectedImage(null);
+        setImagePreview(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
+    // Upload image to S3 and send message
+    const uploadImageAndSendMessage = async () => {
+        if (!selectedImage) return;
+
+        setUploadingImage(true);
+        try {
+            // Get presigned URL
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/chats/upload_url`,
+                {
+                    file_name: selectedImage.name,
+                    file_type: selectedImage.type,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                }
+            );
+
+            console.log("Presigned URL response:", response.data);
+            console.log("Uploading to S3 URL:", response.data.url);
+            console.log("Fields from presigned URL:", response.data.fields);
+
+            // Check if we have the expected structure
+            if (!response.data.url || !response.data.fields) {
+                throw new Error("Invalid presigned URL response structure");
+            }
+
+            // Upload to S3 - S3 is very picky about form order
+            const formDataForS3 = new FormData();
+
+            // Add all fields from the presigned post data in the right order
+            // Don't include any ACL fields as the bucket doesn't support them
+            if (response.data.fields.key) {
+                formDataForS3.append("key", response.data.fields.key);
+            }
+
+            // Add all other fields except ACL
+            Object.entries(response.data.fields || {}).forEach(([key, value]) => {
+                if (key !== "key" && key !== "acl") {
+                    // Skip key and acl
+                    formDataForS3.append(key, value);
+                }
+            });
+
+            // File must be the last field
+            formDataForS3.append("file", selectedImage);
+
+            // Debug the form data we're sending
+            console.log("Form data entries:");
+            for (let pair of formDataForS3.entries()) {
+                console.log(pair[0] + ": " + (pair[0] === "file" ? "[File object]" : pair[1]));
+            }
+
+            // Use native fetch API instead of axios for S3 upload
+            // This gives us complete control over headers
+            const s3UploadResponse = await fetch(response.data.url, {
+                method: "POST",
+                // No headers - let the browser set the right Content-Type with boundary
+                body: formDataForS3,
+            });
+
+            if (!s3UploadResponse.ok) {
+                // If S3 responds with error
+                const errorText = await s3UploadResponse.text();
+                console.error("S3 upload failed:", errorText);
+                throw new Error(`S3 upload failed: ${s3UploadResponse.status} ${s3UploadResponse.statusText}`);
+            }
+
+            console.log("S3 upload successful", s3UploadResponse);
+
+            // Send message with image through WebSocket
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                const messageData = {
+                    content: newMessage.trim(),
+                    media_url: response.data.object_url,
+                    media_type: selectedImage.type,
+                    media_name: selectedImage.name,
+                };
+                socket.send(JSON.stringify(messageData));
+                setNewMessage("");
+                clearImageSelection();
+            }
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            // Show more details about the error
+            if (error.response) {
+                console.error("Error response:", error.response.data);
+                console.error("Status:", error.response.status);
+            }
+            alert("Failed to upload image. Please try again.");
+        } finally {
+            setUploadingImage(false);
+        }
+    };
+
+    // Handle message submission (with or without image)
+    const handleSendMessage = async (e) => {
         e.preventDefault();
 
-        if (!newMessage.trim() || !socket || socket.readyState !== WebSocket.OPEN) return;
+        if ((!newMessage.trim() && !selectedImage) || !socket || socket.readyState !== WebSocket.OPEN) return;
 
+        if (selectedImage) {
+            await uploadImageAndSendMessage();
+            return;
+        }
+
+        // Text-only message
         const messageData = {
-            content: newMessage,
+            content: newMessage.trim(),
         };
 
         socket.send(JSON.stringify(messageData));
         setNewMessage("");
+    };
+
+    // Open image click handler
+    const handleImageClick = (imageUrl) => {
+        setExpandedImage(imageUrl);
+    };
+
+    // Close expanded image
+    const closeExpandedImage = () => {
+        setExpandedImage(null);
+    };
+
+    // Wrapper function for setActiveConversation to add safety
+    const handleSetActiveConversation = (conversation) => {
+        if (conversation && conversation.id) {
+            setActiveConversation(conversation);
+            localStorage.setItem("activeConversationId", conversation.id);
+        }
     };
 
     const formatTime = (timestamp) => {
@@ -315,14 +532,6 @@ const ChatPage = () => {
         const otherParticipant = conversation.participants.find((p) => p?.id !== user?.id);
 
         return otherParticipant?.avatar_url;
-    };
-
-    // Wrapper function for setActiveConversation to add safety
-    const handleSetActiveConversation = (conversation) => {
-        if (conversation && conversation.id) {
-            setActiveConversation(conversation);
-            localStorage.setItem("activeConversationId", conversation.id);
-        }
     };
 
     if (loading) {
@@ -521,7 +730,7 @@ const ChatPage = () => {
                         {/* Messages */}
                         <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900">
                             <AnimatePresence>
-                                {messages.length === 0 ? (
+                                {messages.length === 0 && !loading ? (
                                     <div className="flex h-full items-center justify-center text-gray-500">
                                         <div className="text-center">
                                             <div className="mb-2">
@@ -555,7 +764,56 @@ const ChatPage = () => {
                                                     </div>
                                                 ))}
                                             <div className={`max-w-xs md:max-w-md lg:max-w-lg rounded-lg px-4 py-2 ${message.sender_id === user.id ? "bg-green-500 text-white rounded-br-none" : "bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-bl-none"}`}>
-                                                <p className="whitespace-pre-wrap break-words overflow-hidden">{message.content}</p>
+                                                {message.content && <p className="whitespace-pre-wrap break-words overflow-hidden">{message.content}</p>}
+
+                                                {message.media_url && (
+                                                    <div className="mt-2 mb-1 relative">
+                                                        <img
+                                                            src={message.media_url}
+                                                            alt={message.media_name || "Image"}
+                                                            className="max-w-full rounded cursor-pointer hover:opacity-90 transition-opacity"
+                                                            onClick={() => handleImageClick(message.media_url)}
+                                                            loading="lazy"
+                                                            onLoad={(e) => {
+                                                                // Remove loading indicator when image loads
+                                                                const parent = e.target.parentNode;
+                                                                if (parent) {
+                                                                    const loadingIndicator = parent.querySelector(".loading-indicator");
+                                                                    if (loadingIndicator) {
+                                                                        loadingIndicator.style.display = "none";
+                                                                    }
+                                                                }
+                                                            }}
+                                                            onError={(e) => {
+                                                                e.target.onerror = null;
+                                                                e.target.style.display = "none";
+                                                                // Also hide loading indicator if present
+                                                                const parent = e.target.parentNode;
+                                                                if (parent) {
+                                                                    const loadingIndicator = parent.querySelector(".loading-indicator");
+                                                                    if (loadingIndicator) {
+                                                                        loadingIndicator.style.display = "none";
+                                                                    }
+                                                                }
+                                                            }}
+                                                        />
+                                                        {/* Loading indicator with automatic timeout */}
+                                                        <div
+                                                            className="loading-indicator absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-60 dark:bg-gray-700 dark:bg-opacity-60 rounded"
+                                                            ref={(el) => {
+                                                                if (el) {
+                                                                    // Auto-hide after 15 seconds as a safety measure
+                                                                    setTimeout(() => {
+                                                                        el.style.display = "none";
+                                                                    }, 15000);
+                                                                }
+                                                            }}
+                                                        >
+                                                            <div className="animate-spin h-8 w-8 border-4 border-green-500 rounded-full border-t-transparent"></div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
                                                 <div className={`text-xs mt-1 ${message.sender_id === user.id ? "text-green-100" : "text-gray-500 dark:text-gray-400"}`}>{formatTime(message.timestamp)}</div>
                                             </div>
                                             {message.sender_id === user.id &&
@@ -587,6 +845,18 @@ const ChatPage = () => {
 
                         {/* Message Input */}
                         <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                            {/* Image Preview */}
+                            {imagePreview && (
+                                <div className="mb-3 relative">
+                                    <div className="relative inline-block">
+                                        <img src={imagePreview} alt="Preview" className="max-h-32 max-w-xs rounded border border-gray-300 dark:border-gray-600" />
+                                        <button onClick={clearImageSelection} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 focus:outline-none">
+                                            <FontAwesomeIcon icon={faClose} className="text-xs" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             <form onSubmit={handleSendMessage} className="flex space-x-2">
                                 <input
                                     type="text"
@@ -595,14 +865,28 @@ const ChatPage = () => {
                                     placeholder="Type a message..."
                                     className="flex-1 rounded-full border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white px-4 py-2"
                                 />
+
+                                {/* Image Upload Button */}
+                                <input type="file" ref={fileInputRef} onChange={handleImageSelect} accept="image/jpeg,image/png,image/gif,image/webp" className="hidden" />
+                                <motion.button
+                                    type="button"
+                                    onClick={() => fileInputRef.current.click()}
+                                    className="bg-blue-500 hover:bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    disabled={uploadingImage}
+                                >
+                                    <FontAwesomeIcon icon={faImage} />
+                                </motion.button>
+
                                 <motion.button
                                     type="submit"
                                     className="bg-green-500 hover:bg-green-600 text-white rounded-full w-10 h-10 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    disabled={!newMessage.trim()}
+                                    disabled={(!newMessage.trim() && !selectedImage) || uploadingImage}
                                 >
-                                    <FontAwesomeIcon icon={faPaperPlane} />
+                                    {uploadingImage ? <FontAwesomeIcon icon={faSpinner} className="animate-spin" /> : <FontAwesomeIcon icon={faPaperPlane} />}
                                 </motion.button>
                             </form>
                         </div>
@@ -623,6 +907,39 @@ const ChatPage = () => {
                     </div>
                 )}
             </div>
+
+            {/* Image Lightbox Modal */}
+            {expandedImage && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75" onClick={closeExpandedImage}>
+                    <div className="relative max-w-4xl max-h-screen p-2">
+                        <button className="absolute top-4 right-4 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 focus:outline-none" onClick={closeExpandedImage}>
+                            <FontAwesomeIcon icon={faClose} />
+                        </button>
+
+                        {/* Loading indicator for lightbox */}
+                        <div className="loading-indicator-lightbox absolute inset-0 flex items-center justify-center">
+                            <div className="animate-spin h-12 w-12 border-4 border-white rounded-full border-t-transparent"></div>
+                        </div>
+
+                        <img
+                            src={expandedImage}
+                            alt="Enlarged image"
+                            className="max-w-full max-h-[90vh] object-contain"
+                            onClick={(e) => e.stopPropagation()}
+                            onLoad={(e) => {
+                                // Hide loading indicator when image loads
+                                const parent = e.target.parentNode;
+                                if (parent) {
+                                    const loadingIndicator = parent.querySelector(".loading-indicator-lightbox");
+                                    if (loadingIndicator) {
+                                        loadingIndicator.style.display = "none";
+                                    }
+                                }
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

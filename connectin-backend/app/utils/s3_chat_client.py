@@ -6,8 +6,10 @@ from botocore.exceptions import ClientError
 from botocore.config import Config
 from fastapi import UploadFile
 import uuid # Для генерации уникальных имен
+import io
 
 from app.core.config import settings # Ваши настройки
+from app.utils.image_processor import compress_image
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +68,17 @@ def upload_file_to_s3(file: UploadFile, user_id: int) -> Optional[str]:
      """Загружает файл через бэкенд (Вариант Б - менее предпочтителен)."""
      object_name = f"{S3_CHAT_FOLDER}{user_id}/{uuid.uuid4()}_{file.filename}"
      try:
+          # Check if it's an image that should be compressed
+          if file.content_type.startswith('image/'):
+               # Compress the image before uploading
+               logger.info(f"Compressing image before upload: {file.filename}")
+               file_data = compress_image(file)
+          else:
+               # For non-image files, use the original
+               file_data = file.file
+           
           s3_client.upload_fileobj(
-               file.file,
+               file_data,
                S3_BUCKET_NAME,
                object_name,
                ExtraArgs={'ContentType': file.content_type}
@@ -79,7 +90,9 @@ def upload_file_to_s3(file: UploadFile, user_id: int) -> Optional[str]:
           logger.exception(f"Failed to upload file via backend: {e}")
           return None
      finally:
-         file.file.close() # Закрываем файл
+         # Only close if it's the original file
+         if not file.content_type.startswith('image/'):
+             file.file.close() # Закрываем файл
 
 def create_presigned_get_url(object_key: str) -> Optional[str]:
      """Генерирует временную ссылку для СКАЧИВАНИЯ приватного файла."""

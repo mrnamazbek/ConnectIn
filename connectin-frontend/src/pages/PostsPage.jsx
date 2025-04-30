@@ -116,10 +116,31 @@ const PostsPage = () => {
         }
     };
 
-    // Combined function to fetch both like and save statuses in a single request
+    const fetchCurrentUser = async () => {
+        try {
+            const token = TokenService.getAccessToken();
+            if (!token) return null;
+
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching current user:", error);
+            return null;
+        }
+    };
+
     const fetchPostStatuses = async (posts) => {
         const token = TokenService.getAccessToken();
-        if (!token) return;
+        if (!token) {
+            // For non-authenticated users, set default statuses
+            const defaultStatuses = {};
+            posts.forEach(post => {
+                defaultStatuses[post.id] = { is_liked: false, is_saved: false };
+            });
+            return defaultStatuses;
+        }
 
         try {
             const postIds = posts.map((post) => post.id);
@@ -158,8 +179,10 @@ const PostsPage = () => {
 
             setLikedPosts(newLikedPosts);
             setSavedPosts(newSavedPosts);
+            return newLikedPosts;
         } catch (error) {
             console.error("Error updating post statuses:", error);
+            return {};
         }
     };
 
@@ -198,21 +221,6 @@ const PostsPage = () => {
     useEffect(() => {
         fetchAllData();
     }, [fetchAllData]);
-
-    const fetchCurrentUser = async () => {
-        try {
-            const token = TokenService.getAccessToken();
-            if (!token) return null;
-
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            return response.data;
-        } catch (error) {
-            console.error("Error fetching current user:", error);
-            return null;
-        }
-    };
 
     const handleLike = async (postId, isLiked, likesCount) => {
         // Update posts state with new likes count

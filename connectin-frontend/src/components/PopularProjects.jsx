@@ -11,15 +11,12 @@ const PopularProjects = () => {
     useEffect(() => {
         const fetchPopularProjects = async () => {
             try {
-                const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/`, {
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/popular-projects`, {
                     params: {
-                        page: 1,
-                        page_size: 3,
-                        sort_by: "vote_count",
-                        sort_order: "desc",
+                        limit: 3
                     },
                 });
-                setPopularProjects(response.data.items);
+                setPopularProjects(response.data);
             } catch (error) {
                 console.error("Error fetching popular projects:", error);
             } finally {
@@ -51,12 +48,16 @@ const PopularProjects = () => {
                                     ))}
                                 </div>
                             )}
-                            <h3 className="font-semibold text-sm">{project.name}</h3>
-                            <p className="text-sm mb-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: project.description }}></p>
+                            <h3 className="font-semibold text-sm mb-2">{project.name}</h3>
+                            <p className="text-sm mb-2 line-clamp-2">{project.description}</p>
                             <div className="flex justify-between items-center text-xs">
-                                <NavLink to={`/feed/project/${project.id}`} className="text-green-700 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
+                                <NavLink to={`/projects/${project.id}`} className="border border-green-700 px-2 py-1 rounded-md text-green-700 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
                                     View Project
                                 </NavLink>
+                                <div className="text-gray-500">
+                                    <span>Votes: {project.vote_count}</span>
+                                    <span className="ml-2">Comments: {project.comments_count}</span>
+                                </div>
                             </div>
                         </div>
                     ))

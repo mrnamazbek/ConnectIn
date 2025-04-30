@@ -11,15 +11,12 @@ const PopularPosts = () => {
     useEffect(() => {
         const fetchPopularPosts = async () => {
             try {
-                const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts/`, {
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts/popular-posts`, {
                     params: {
-                        page: 1,
-                        page_size: 3,
-                        sort_by: "likes_count",
-                        sort_order: "desc",
+                        limit: 3,
                     },
                 });
-                setPopularPosts(response.data.items);
+                setPopularPosts(response.data);
             } catch (error) {
                 console.error("Error fetching popular posts:", error);
             } finally {
@@ -45,7 +42,7 @@ const PopularPosts = () => {
                                 <div className="my-1 flex flex-wrap gap-1">
                                     {post.tags.map((tag, index) => (
                                         <span key={index} className="text-xs text-gray-500">
-                                            {tag.name}
+                                            {tag}
                                             {index < post.tags.length - 1 && <span className="mx-1">•</span>}
                                         </span>
                                     ))}
@@ -54,9 +51,13 @@ const PopularPosts = () => {
                             <h3 className="font-semibold text-sm mb-2">{post.title}</h3>
                             <p className="text-sm mb-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: post.content }}></p>
                             <div className="flex justify-between items-center text-xs">
-                                <NavLink to={`/feed/post/${post.id}`} className="text-green-700 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
+                                <NavLink to={`/feed/post/${post.id}`} className="border border-green-700 px-2 py-1 rounded-md text-green-700 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
                                     View Post
                                 </NavLink>
+                                <div className="text-gray-500">
+                                    <span>Likes: {post.likes_count}</span>
+                                    <span className="ml-2">Comments: {post.comments_count}</span>
+                                </div>
                             </div>
                         </div>
                     ))

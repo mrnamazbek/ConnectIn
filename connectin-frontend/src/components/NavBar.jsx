@@ -1,7 +1,7 @@
 import { NavLink, useLocation, useNavigate } from "react-router";
 import { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSun, faMoon, faMagnifyingGlass, faUser, faComments, faNewspaper, faPen, faBars, faTimes, faChevronDown } from "@fortawesome/free-solid-svg-icons";
+import { faSun, faMoon, faMagnifyingGlass, faUser, faComments, faNewspaper, faPen, faBars, faTimes, faChevronDown, faThumbsUp } from "@fortawesome/free-solid-svg-icons";
 import Logo from "../assets/images/connectin-logo-png.png";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -118,6 +118,7 @@ const NavBar = () => {
                         <NavItem to="/search" icon={faMagnifyingGlass} label="Search" />
                         <NavItem to="/post" icon={faPen} label="New Post" />
                         <NavItem to="/feed" icon={faNewspaper} label="Feed" />
+                        <NavItem to="/recommendations" icon={faThumbsUp} label="For You" onClick={() => handleNavigation("/recommendations")} />
                         <NavItem to="/chats" icon={faComments} label="Chat" onClick={() => handleNavigation("/chats")} />
 
                         {/* Theme Toggle */}
@@ -199,15 +200,14 @@ const NavBar = () => {
                     <NavItem to="/search" icon={faMagnifyingGlass} label="Search" onClick={handleMobileMenuClick} />
                     <NavItem to="/post" icon={faPen} label="New Post" onClick={handleMobileMenuClick} />
                     <NavItem to="/feed" icon={faNewspaper} label="Feed" onClick={handleMobileMenuClick} />
-                    <NavItem
-                        to="/chats"
-                        icon={faComments}
-                        label="Chat"
-                        onClick={() => {
-                            handleMobileMenuClick();
-                            handleNavigation("/chats/");
-                        }}
-                    />
+                    <NavItem to="/recommendations" icon={faThumbsUp} label="For You" onClick={() => {
+                        handleNavigation("/recommendations");
+                        handleMobileMenuClick();
+                    }} />
+                    <NavItem to="/chats" icon={faComments} label="Chat" onClick={() => {
+                        handleNavigation("/chats");
+                        handleMobileMenuClick();
+                    }} />
 
                     {isAuthenticated ? (
                         <>

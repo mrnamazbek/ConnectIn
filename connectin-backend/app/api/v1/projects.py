@@ -314,6 +314,109 @@ def get_applied_projects(
         logger.error(f"Error fetching applied projects: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/search", response_model=List[ProjectOut])
+def search_projects(
+    query: str = Query(""),  # Default to empty string with no validation constraints
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    """
+    Search for projects by name, description, or tags with pagination.
+    Returns an empty list for empty queries.
+    """
+    logger = get_logger(__name__)
+    logger.info(f"Searching projects: query='{query}', page={page}, page_size={page_size}")
+
+    # Only perform search if query is not empty and has meaningful content
+    if query and len(query.strip()) > 0:
+        projects_query = db.query(Project).options(
+            joinedload(Project.owner),
+            joinedload(Project.tags),
+            joinedload(Project.skills),
+            joinedload(Project.members)
+        ).filter(
+            (Project.name.ilike(f"%{query}%")) |
+            (Project.description.ilike(f"%{query}%")) |
+            (Project.tags.any(Tag.name.ilike(f"%{query}%")))
+        )
+        
+        # Apply pagination
+        total = projects_query.count()
+        projects = projects_query.offset((page - 1) * page_size).limit(page_size).all()
+        
+        logger.info(f"Found projects: {total} for query='{query}', returning page {page} with {len(projects)} projects")
+
+        # Format the results
+        result = []
+        for project in projects:
+            # Calculate vote count
+            vote_count = db.query(
+                func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
+            ).filter(ProjectVote.project_id == project.id).scalar() or 0
+            
+            # Create and populate the ProjectOut model
+            project_out = ProjectOut(
+                id=project.id,
+                name=project.name,
+                description=project.description,
+                owner=UserOut.model_validate(project.owner) if project.owner else None,
+                tags=[TagOut.model_validate(tag, from_attributes=True) for tag in project.tags],
+                skills=[SkillOut.model_validate(skill, from_attributes=True) for skill in project.skills],
+                members=[UserOut.model_validate(user, from_attributes=True) for user in project.members],
+                comments_count=len(project.comments),
+                vote_count=vote_count
+            )
+            result.append(project_out)
+
+        return result
+    else:
+        # For empty queries, return an empty list without hitting the database
+        logger.info(f"Empty query provided, returning empty results")
+        return []
+
+@router.get("/popular-projects", response_model=List[ProjectOut])
+def get_popular_projects(
+    limit: int = Query(3, ge=1, le=10),
+    db: Session = Depends(get_db)
+):
+    """
+    Retrieves the most popular projects based on votes and comments.
+    """
+    # Get projects with most votes
+    projects = db.query(Project)\
+        .options(
+            joinedload(Project.owner),
+            joinedload(Project.tags),
+            joinedload(Project.skills),
+            joinedload(Project.members)
+        )\
+        .outerjoin(ProjectVote, Project.id == ProjectVote.project_id)\
+        .group_by(Project.id)\
+        .order_by(func.sum(case((ProjectVote.is_upvote, 1), else_=-1)).desc().nullslast())\
+        .limit(limit)\
+        .all()
+
+    # Format the results
+    formatted_projects = [
+        ProjectOut(
+            id=project.id,
+            name=project.name,
+            description=project.description,
+            owner=UserOut.model_validate(project.owner) if project.owner else None,
+            tags=[TagOut.model_validate(tag, from_attributes=True) for tag in project.tags],
+            skills=[SkillOut.model_validate(skill, from_attributes=True) for skill in project.skills],
+            members=[UserOut.model_validate(user, from_attributes=True) for user in project.members],
+            comments_count=len(project.comments),
+            vote_count=db.query(
+                func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
+            ).filter(ProjectVote.project_id == project.id).scalar() or 0
+        )
+        for project in projects
+    ]
+
+    return formatted_projects
+
 # 🔹 Получить проект по ID
 @router.get("/{project_id}", response_model=ProjectOut)
 def read_project(project_id: int, db: Session = Depends(get_db)):
@@ -733,65 +836,3 @@ def get_project_comments(
             user={"username": comment.user.username if comment.user else "Unknown", "avatar_url": comment.user.avatar_url if comment.user else None}        )
         for comment in comments
     ]
-
-#  added search request
-@router.get("/search", response_model=List[ProjectOut])
-def search_projects(
-    query: str = Query(""),  # Default to empty string with no validation constraints
-    page: int = Query(1, ge=1),
-    page_size: int = Query(10, ge=1, le=100),
-    db: Session = Depends(get_db)
-):
-    """
-    Search for projects by name, description, or tags with pagination.
-    Returns an empty list for empty queries.
-    """
-    logger = get_logger(__name__)
-    logger.info(f"Searching projects: query='{query}', page={page}, page_size={page_size}")
-
-    # Only perform search if query is not empty and has meaningful content
-    if query and len(query.strip()) > 0:
-        projects_query = db.query(Project).options(
-            joinedload(Project.owner),
-            joinedload(Project.tags),
-            joinedload(Project.skills),
-            joinedload(Project.members)
-        ).filter(
-            (Project.name.ilike(f"%{query}%")) |
-            (Project.description.ilike(f"%{query}%")) |
-            (Project.tags.any(Tag.name.ilike(f"%{query}%")))
-        )
-        
-        # Apply pagination
-        total = projects_query.count()
-        projects = projects_query.offset((page - 1) * page_size).limit(page_size).all()
-        
-        logger.info(f"Found projects: {total} for query='{query}', returning page {page} with {len(projects)} projects")
-
-        # Format the results
-        result = []
-        for project in projects:
-            # Calculate vote count
-            vote_count = db.query(
-                func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
-            ).filter(ProjectVote.project_id == project.id).scalar() or 0
-            
-            # Create and populate the ProjectOut model
-            project_out = ProjectOut(
-                id=project.id,
-                name=project.name,
-                description=project.description,
-                owner=UserOut.model_validate(project.owner) if project.owner else None,
-                tags=[TagOut.model_validate(tag, from_attributes=True) for tag in project.tags],
-                skills=[SkillOut.model_validate(skill, from_attributes=True) for skill in project.skills],
-                members=[UserOut.model_validate(user, from_attributes=True) for user in project.members],
-                comments_count=len(project.comments),
-                vote_count=vote_count
-            )
-            result.append(project_out)
-
-        return result
-    else:
-        # For empty queries, return an empty list without hitting the database
-        logger.info(f"Empty query provided, returning empty results")
-        return []

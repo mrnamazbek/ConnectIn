@@ -44,7 +44,10 @@ const ProjectPage = () => {
         setUserLoading(true);
         try {
             const token = localStorage.getItem("access_token");
-            if (!token) return;
+            if (!token) {
+                setUserLoading(false);
+                return null; // Continue without user data
+            }
 
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/me`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -52,6 +55,7 @@ const ProjectPage = () => {
             setCurrentUser(response.data);
         } catch (err) {
             console.error("Error fetching current user:", err);
+            // Continue without user data on error
         } finally {
             setUserLoading(false);
         }
@@ -178,6 +182,25 @@ const ProjectPage = () => {
         }
     };
 
+    // Render auth-required UI elements based on login status
+    const renderAuthRequiredUI = () => {
+        if (!currentUser) {
+            return (
+                <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">Sign in to comment, vote, or apply to this project</p>
+                    <button 
+                        onClick={() => navigate("/login", { state: { from: window.location.pathname } })}
+                        className="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition"
+                    >
+                        Sign In
+                    </button>
+                </div>
+            );
+        }
+        
+        return null;
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-[400px]">
@@ -226,40 +249,42 @@ const ProjectPage = () => {
             </div>
 
             {/* Comment Writing Form */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-4">
-                <h3 className="font-semibold text-lg mb-4">Write a Comment</h3>
-                <form
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        handleCommentSubmit();
-                    }}
-                    className="space-y-3"
-                >
-                    <textarea
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Add your comment..."
-                        className="w-full bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:text-white"
-                        rows="3"
-                        disabled={commentLoading || loading}
-                    />
-                    {commentError && <p className="text-red-500 text-sm">{commentError}</p>}
-                    <button 
-                        type="submit" 
-                        disabled={commentLoading || !newComment.trim() || loading} 
-                        className="rounded-md shadow-sm text-sm px-4 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            {currentUser ? (
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-4">
+                    <h3 className="font-semibold text-lg mb-4">Write a Comment</h3>
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            handleCommentSubmit();
+                        }}
+                        className="space-y-3"
                     >
-                        {commentLoading ? (
-                            <span className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
-                                Submitting...
-                            </span>
-                        ) : (
-                            "Submit"
-                        )}
-                    </button>
-                </form>
-            </div>
+                        <textarea
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            placeholder="Add your comment..."
+                            className="w-full bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:text-white"
+                            rows="3"
+                            disabled={commentLoading || loading}
+                        />
+                        {commentError && <p className="text-red-500 text-sm">{commentError}</p>}
+                        <button 
+                            type="submit" 
+                            disabled={commentLoading || !newComment.trim() || loading} 
+                            className="rounded-md shadow-sm text-sm px-4 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {commentLoading ? (
+                                <span className="flex items-center gap-2">
+                                    <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                                    Submitting...
+                                </span>
+                            ) : (
+                                "Submit"
+                            )}
+                        </button>
+                    </form>
+                </div>
+            ) : null}
 
             {/* Comments Section */}
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
@@ -310,6 +335,8 @@ const ProjectPage = () => {
                     </div>
                 )}
             </div>
+
+            {renderAuthRequiredUI()}
         </div>
     );
 };

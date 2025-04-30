@@ -23,6 +23,7 @@ import ProjectProfile from "./pages/ProjectProfile";
 import AboutPage from "./pages/AboutPage.jsx";
 import PublishPage from "./pages/PublishPage.jsx";
 import ProjectPage from "./pages/ProjectPage.jsx";
+import RecommendationsPage from "./pages/RecommendationsPage.jsx";
 // Убедитесь, что пути ко всем страницам и компонентам верны!
 
 function App() {
@@ -114,6 +115,14 @@ function App() {
                                     element={
                                         <MainContentWrapper>
                                             <AboutPage />
+                                        </MainContentWrapper>
+                                    }
+                                />
+                                <Route
+                                    path="/recommendations"
+                                    element={
+                                        <MainContentWrapper>
+                                            <RecommendationsPage />
                                         </MainContentWrapper>
                                     }
                                 />

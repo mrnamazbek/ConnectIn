@@ -6,7 +6,7 @@ import qs from "qs";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
-import { useSearchParams } from "react-router";
+import { useSearchParams, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ProjectsPage = () => {
@@ -22,6 +22,7 @@ const ProjectsPage = () => {
 
     const [searchParams, setSearchParams] = useSearchParams();
     const currentPage = parseInt(searchParams.get("page") || "1");
+    const navigate = useNavigate();
 
     // Set initial page parameter if it doesn't exist
     useEffect(() => {
@@ -310,6 +311,17 @@ const ProjectsPage = () => {
         },
     };
 
+    // Add a function to handle project click with navigation
+    const handleProjectClick = (project, e) => {
+        // If the click already has a target that handles it, don't navigate
+        if (e && e.defaultPrevented) {
+            return;
+        }
+        
+        // Navigate to project detail with state
+        navigate(`/projects/${project.id}`, { state: { project } });
+    };
+
     return (
         <div className="space-y-6">
             <TagsFilter allTags={allTags} selectedTags={selectedTags} onTagSelect={handleTagSelect} title="Filter Projects by Tags" />
@@ -337,7 +349,18 @@ const ProjectsPage = () => {
                         <div className="grid grid-cols-1 gap-4">
                             {projects.map((project) => (
                                 <motion.div key={project.id} variants={itemVariants}>
-                                    <ProjectCard key={project.id} project={project} currentUser={currentUser} handleApply={handleApply} handleUpvote={handleUpvote} handleDownvote={handleDownvote} showViewProject={true} showCommentsLink={true} />
+                                    <div onClick={(e) => handleProjectClick(project, e)} className="cursor-pointer">
+                                        <ProjectCard 
+                                            key={project.id} 
+                                            project={project} 
+                                            currentUser={currentUser} 
+                                            handleApply={handleApply} 
+                                            handleUpvote={handleUpvote} 
+                                            handleDownvote={handleDownvote} 
+                                            showViewProject={true} 
+                                            showCommentsLink={true} 
+                                        />
+                                    </div>
                                 </motion.div>
                             ))}
                         </div>

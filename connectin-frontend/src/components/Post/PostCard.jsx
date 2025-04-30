@@ -1,14 +1,16 @@
 import { faBookmark as faBookmarkRegular, faComment, faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
-import { faBookmark as faBookmarkSolid, faHeart as faHeartSolid, faUser } from "@fortawesome/free-solid-svg-icons";
+import { faBookmark as faBookmarkSolid, faHeart as faHeartSolid, faUser, faLink } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import usePostStore from "../../store/postStore";
+import { toast } from "react-toastify";
 
 export const PostCard = ({ post, showReadButton = true }) => {
     const { id, title, content, author, tags, comments_count } = post;
     const [isLikeLoading, setIsLikeLoading] = useState(false);
     const [isSaveLoading, setIsSaveLoading] = useState(false);
+    const [isCopyLoading, setIsCopyLoading] = useState(false);
     const navigate = useNavigate();
 
     // Select individual values from the store to prevent unnecessary re-renders
@@ -19,7 +21,8 @@ export const PostCard = ({ post, showReadButton = true }) => {
     const likePost = usePostStore((state) => state.likePost);
     const savePost = usePostStore((state) => state.savePost);
 
-    const handleLike = async () => {
+    const handleLike = async (e) => {
+        e.stopPropagation(); // Prevent card click navigation
         setIsLikeLoading(true);
         try {
             await likePost(id);
@@ -28,12 +31,28 @@ export const PostCard = ({ post, showReadButton = true }) => {
         }
     };
 
-    const handleSave = async () => {
+    const handleSave = async (e) => {
+        e.stopPropagation(); // Prevent card click navigation
         setIsSaveLoading(true);
         try {
             await savePost(id);
         } finally {
             setIsSaveLoading(false);
+        }
+    };
+
+    const handleCopyLink = async (e) => {
+        e.stopPropagation(); // Prevent card click navigation
+        setIsCopyLoading(true);
+        try {
+            const url = `${window.location.origin}/feed/post/${id}`;
+            await navigator.clipboard.writeText(url);
+            toast.success("Link copied to clipboard!");
+        } catch (error) {
+            toast.error("Failed to copy link");
+            console.error("Copy failed:", error);
+        } finally {
+            setIsCopyLoading(false);
         }
     };
 
@@ -76,7 +95,7 @@ export const PostCard = ({ post, showReadButton = true }) => {
                         <FontAwesomeIcon icon={isLiked ? faHeartSolid : faHeartRegular} className={`${isLikeLoading ? "animate-pulse" : ""}`} style={isLiked ? { color: "#ff0000" } : {}} />
                         <span className="ml-1">{likesCount}</span>
                     </button>
-                    <button className="group relative text-gray-500 hover:text-gray-700 transition cursor-pointer" title="View comments">
+                    <button onClick={(e) => e.stopPropagation()} className="group relative text-gray-500 hover:text-gray-700 transition cursor-pointer" title="View comments">
                         <FontAwesomeIcon icon={faComment} />
                         <span className="ml-1">{comments_count || 0}</span>
                     </button>
@@ -84,9 +103,15 @@ export const PostCard = ({ post, showReadButton = true }) => {
                         <FontAwesomeIcon icon={isSaved ? faBookmarkSolid : faBookmarkRegular} className={`${isSaveLoading ? "animate-pulse" : ""}`} style={isSaved ? { color: "#facc15" } : {}} />
                         <span className="ml-1">{savesCount}</span>
                     </button>
+                    <button onClick={handleCopyLink} disabled={isCopyLoading} className="group relative text-gray-500 hover:text-green-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" title={isCopyLoading ? "Copying..." : "Copy link"}>
+                        <FontAwesomeIcon icon={faLink} className={`${isCopyLoading ? "animate-pulse" : ""}`} />
+                    </button>
                 </div>
                 {showReadButton && (
-                    <button onClick={() => navigate(`/feed/post/${id}`)} className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition">
+                    <button onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/feed/post/${id}`);
+                    }} className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition">
                         Read
                     </button>
                 )}

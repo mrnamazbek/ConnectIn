@@ -1,16 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, useLocation } from "react-router";
 import axios from "axios";
 import ProjectCard from "../components/Project/ProjectCard";
 import { toast } from "react-toastify";
 import { formatDate, formatFullDate } from "../utils/dateFormat";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faClock, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faClock, faSpinner, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 
 const ProjectPage = () => {
     const { projectId } = useParams();
     const navigate = useNavigate();
-    const [project, setProject] = useState(null);
+    const location = useLocation();
+    const [project, setProject] = useState(location.state?.project || null);
     const [currentUser, setCurrentUser] = useState(null);
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
@@ -22,7 +23,24 @@ const ProjectPage = () => {
     const [userLoading, setUserLoading] = useState(false);
     const [voteLoading, setVoteLoading] = useState(false);
 
+    const handleGoBack = () => {
+        // Check if there's navigation history
+        if (window.history.length > 1) {
+            // Navigate back to preserve the scroll position and state
+            navigate(-1);
+        } else {
+            // Fallback to projects page
+            navigate('/projects');
+        }
+    };
+
     const fetchProject = useCallback(async () => {
+        // If project is already available from location state, don't fetch again
+        if (project) {
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         try {
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/${projectId}`);
@@ -38,7 +56,7 @@ const ProjectPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [projectId]);
+    }, [projectId, project]);
 
     const fetchCurrentUser = async () => {
         setUserLoading(true);
@@ -230,6 +248,14 @@ const ProjectPage = () => {
 
     return (
         <div className="space-y-6">
+            <button 
+                onClick={handleGoBack} 
+                className="mb-4 flex items-center text-gray-600 hover:text-green-700 transition-colors"
+            >
+                <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
+                <span>Back to Projects</span>
+            </button>
+
             <div className={`transition-opacity duration-300 ${userLoading || voteLoading ? 'opacity-70' : 'opacity-100'}`}>
                 <ProjectCard 
                     project={project} 

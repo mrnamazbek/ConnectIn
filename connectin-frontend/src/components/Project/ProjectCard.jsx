@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowUp, faArrowDown, faUser } from "@fortawesome/free-solid-svg-icons";
+import { faArrowUp, faArrowDown, faUser, faLink } from "@fortawesome/free-solid-svg-icons";
 import { faComment } from "@fortawesome/free-regular-svg-icons";
 import { NavLink } from "react-router";
 import { toast } from "react-toastify";
@@ -10,6 +10,7 @@ import useProjectVoteStore from "../../store/projectVoteStore";
 const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true, showCommentsLink = false, isLoading = false }) => {
     const [isVoteLoading, setIsVoteLoading] = useState(false);
     const [isApplyLoading, setIsApplyLoading] = useState(false);
+    const [isCopyLoading, setIsCopyLoading] = useState(false);
     const navigate = useNavigate();
     const { voteProject, getVoteStatus, initializeVoteState } = useProjectVoteStore();
     const { hasVoted, isUpvote, voteCount } = getVoteStatus(project.id);
@@ -41,7 +42,9 @@ const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true
         }
     };
 
-    const handleApplyClick = async () => {
+    const handleApplyClick = async (e) => {
+        if (e) e.stopPropagation(); // Prevent click propagation if event exists
+        
         const token = localStorage.getItem("access_token");
         if (!token) {
             toast.error("Please log in to apply");
@@ -58,6 +61,22 @@ const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true
             toast.error("Failed to apply. You may have already applied.");
         } finally {
             setIsApplyLoading(false);
+        }
+    };
+
+    const handleCopyLink = async (e) => {
+        if (e) e.stopPropagation(); // Prevent click propagation if event exists
+        
+        setIsCopyLoading(true);
+        try {
+            const url = `${window.location.origin}/projects/${project.id}`;
+            await navigator.clipboard.writeText(url);
+            toast.success("Project link copied to clipboard!");
+        } catch (error) {
+            toast.error("Failed to copy link");
+            console.error("Copy failed:", error);
+        } finally {
+            setIsCopyLoading(false);
         }
     };
 
@@ -118,7 +137,10 @@ const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true
             <div className="flex justify-between items-center mt-3">
                 <div className="space-x-3">
                     <button
-                        onClick={() => handleVote(true)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleVote(true);
+                        }}
                         disabled={isVoteLoading}
                         className={`group relative transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${hasVoted && isUpvote ? "text-green-700" : "text-gray-500 hover:text-green-700"}`}
                         title={isVoteLoading ? "Processing..." : "Upvote"}
@@ -128,7 +150,10 @@ const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true
                     </button>
                     <span className="text-gray-700 dark:text-gray-300 font-bold">{voteCount}</span>
                     <button
-                        onClick={() => handleVote(false)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleVote(false);
+                        }}
                         disabled={isVoteLoading}
                         className={`group relative transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${hasVoted && !isUpvote ? "text-red-700" : "text-gray-500 hover:text-red-700"}`}
                         title={isVoteLoading ? "Processing..." : "Downvote"}
@@ -137,18 +162,32 @@ const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true
                         <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{hasVoted && !isUpvote ? "Remove downvote" : "Downvote"}</span>
                     </button>
                     {showCommentsLink && (
-                        <NavLink to={`/project/${project.id}`} className="group relative text-gray-500 hover:text-blue-700 transition cursor-pointer" title="View comments">
+                        <NavLink 
+                            to={`/project/${project.id}`} 
+                            onClick={(e) => e.stopPropagation()}
+                            className="group relative text-gray-500 hover:text-blue-700 transition cursor-pointer" 
+                            title="View comments"
+                        >
                             <FontAwesomeIcon icon={faComment} />
                             <span className="ml-1">{project.comments_count || ""}</span>
                             <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Comments</span>
                         </NavLink>
                     )}
+                    <button
+                        onClick={(e) => handleCopyLink(e)}
+                        disabled={isCopyLoading}
+                        className="group relative text-gray-500 hover:text-blue-500 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={isCopyLoading ? "Copying..." : "Copy link"}
+                    >
+                        <FontAwesomeIcon icon={faLink} className={`${isCopyLoading ? "animate-pulse" : ""}`} />
+                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Copy link</span>
+                    </button>
                 </div>
 
                 <div className="space-x-3">
                     {currentUser && currentUser.id !== owner.id && (
                         <button
-                            onClick={handleApplyClick}
+                            onClick={(e) => handleApplyClick(e)}
                             disabled={isApplyLoading}
                             className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                             title={isApplyLoading ? "Processing..." : "Apply to project"}
@@ -157,7 +196,12 @@ const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true
                         </button>
                     )}
                     {showViewProject && (
-                        <NavLink to={`/feed/project/${project.id}`} className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition" title="View project details">
+                        <NavLink 
+                            to={`/feed/project/${project.id}`} 
+                            onClick={(e) => e.stopPropagation()}
+                            className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition" 
+                            title="View project details"
+                        >
                             View Project
                         </NavLink>
                     )}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import { PostCard } from "../components/Post/PostCard";
 import TagsFilter from "../components/TagsFilter";
@@ -7,9 +7,18 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
 import TokenService from "../services/tokenService";
-import { useSearchParams } from "react-router";
+import { useSearchParams, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import usePostStore from "../store/postStore";
+
+// Create a global cache object that persists between renders and navigation
+const globalCache = {
+    tags: null,
+    user: null,
+    posts: {},
+    statuses: {},
+    scrollPosition: 0
+};
 
 const PostsPage = () => {
     const [posts, setPosts] = useState([]);
@@ -24,20 +33,40 @@ const PostsPage = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [searchParams, setSearchParams] = useSearchParams();
     const pageSize = 5;
+    const contentRef = useRef(null);
+    const navigate = useNavigate();
 
     // Get current page from URL or default to 1
     const currentPage = parseInt(searchParams.get("page")) || 1;
 
-    // Cache for storing fetched data
-    const [cache, setCache] = useState({
-        tags: null,
-        user: null,
-        posts: {},
-        statuses: {},
-    });
+    // Cache for storing fetched data is now using the global cache
+    const [cache, setCache] = useState(globalCache);
 
     // Initialize post store
     const initializePostState = usePostStore((state) => state.initializePostState);
+
+    // Restore scroll position when returning to the page
+    useEffect(() => {
+        if (globalCache.scrollPosition && contentRef.current) {
+            setTimeout(() => {
+                window.scrollTo(0, globalCache.scrollPosition);
+            }, 100);
+        }
+    }, []);
+    
+    // Save scroll position before leaving the page
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            globalCache.scrollPosition = window.scrollY;
+        };
+        
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        
+        return () => {
+            globalCache.scrollPosition = window.scrollY;
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, []);
 
     // Update URL when page changes
     useEffect(() => {
@@ -51,15 +80,21 @@ const PostsPage = () => {
             setLoading(true);
 
             // Fetch tags and user data in parallel if not cached
-            const [tagsRes, userRes] = await Promise.all([cache.tags ? Promise.resolve({ data: cache.tags }) : axios.get(`${import.meta.env.VITE_API_URL}/tags/`), cache.user ? Promise.resolve({ data: cache.user }) : fetchCurrentUser()]);
+            const [tagsRes, userRes] = await Promise.all([
+                globalCache.tags ? Promise.resolve({ data: globalCache.tags }) : axios.get(`${import.meta.env.VITE_API_URL}/tags/`), 
+                globalCache.user ? Promise.resolve({ data: globalCache.user }) : fetchCurrentUser()
+            ]);
 
-            // Update cache with fetched data
-            if (!cache.tags) {
-                setCache((prev) => ({ ...prev, tags: tagsRes.data }));
+            // Update global cache with fetched data
+            if (!globalCache.tags) {
+                globalCache.tags = tagsRes.data;
             }
-            if (!cache.user) {
-                setCache((prev) => ({ ...prev, user: userRes }));
+            if (!globalCache.user) {
+                globalCache.user = userRes;
             }
+
+            // Update local cache state
+            setCache(globalCache);
 
             // Fetch posts with pagination
             await fetchPosts(currentPage);
@@ -73,14 +108,14 @@ const PostsPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [currentPage, cache.tags, cache.user]);
+    }, [currentPage]);
 
     const fetchPosts = async (page) => {
         try {
             // Check if posts for this page are already cached
-            if (cache.posts[page]) {
-                setPosts(cache.posts[page].items);
-                setTotalPages(cache.posts[page].total_pages);
+            if (globalCache.posts[page]) {
+                setPosts(globalCache.posts[page].items);
+                setTotalPages(globalCache.posts[page].total_pages);
                 return;
             }
 
@@ -92,14 +127,8 @@ const PostsPage = () => {
                 },
             });
 
-            // Cache the fetched posts
-            setCache((prev) => ({
-                ...prev,
-                posts: {
-                    ...prev.posts,
-                    [page]: postsRes.data,
-                },
-            }));
+            // Cache the fetched posts in the global cache
+            globalCache.posts[page] = postsRes.data;
 
             setPosts(postsRes.data.items);
             setTotalPages(postsRes.data.total_pages);
@@ -146,20 +175,17 @@ const PostsPage = () => {
             const postIds = posts.map((post) => post.id);
 
             // Check cache first
-            const uncachedPostIds = postIds.filter((id) => !cache.statuses[id]);
+            const uncachedPostIds = postIds.filter((id) => !globalCache.statuses[id]);
 
             if (uncachedPostIds.length > 0) {
                 try {
                     const response = await axios.post(`${import.meta.env.VITE_API_URL}/posts/batch_status`, { post_ids: uncachedPostIds }, { headers: { Authorization: `Bearer ${token}` } });
 
-                    // Update cache with new statuses
-                    setCache((prev) => ({
-                        ...prev,
-                        statuses: {
-                            ...prev.statuses,
-                            ...response.data,
-                        },
-                    }));
+                    // Update global cache with new statuses
+                    Object.assign(globalCache.statuses, response.data);
+                    
+                    // Update local cache state
+                    setCache({...globalCache});
                 } catch (error) {
                     console.error("Error fetching batch status:", error);
                     // If batch status fails, fetch individual statuses
@@ -172,7 +198,7 @@ const PostsPage = () => {
             const newSavedPosts = {};
 
             postIds.forEach((id) => {
-                const status = cache.statuses[id] || { is_liked: false, is_saved: false };
+                const status = globalCache.statuses[id] || { is_liked: false, is_saved: false };
                 newLikedPosts[id] = status.is_liked;
                 newSavedPosts[id] = status.is_saved;
             });
@@ -202,16 +228,14 @@ const PostsPage = () => {
                     }),
                 ]);
 
-                setCache((prev) => ({
-                    ...prev,
-                    statuses: {
-                        ...prev.statuses,
-                        [postId]: {
-                            is_liked: likeRes.data.is_liked,
-                            is_saved: saveRes.data.is_saved,
-                        },
-                    },
-                }));
+                // Update global cache
+                globalCache.statuses[postId] = {
+                    is_liked: likeRes.data.is_liked,
+                    is_saved: saveRes.data.is_saved,
+                };
+                
+                // Update local cache state
+                setCache({...globalCache});
             } catch (error) {
                 console.error(`Error fetching status for post ${postId}:`, error);
             }
@@ -232,18 +256,29 @@ const PostsPage = () => {
             [postId]: isLiked,
         }));
 
-        // Update cache with new status
-        setCache((prev) => ({
-            ...prev,
-            statuses: {
-                ...prev.statuses,
-                [postId]: {
-                    ...prev.statuses[postId],
-                    is_liked: isLiked,
-                    likes_count: likesCount,
-                },
-            },
-        }));
+        // Update global cache with new status
+        if (globalCache.statuses[postId]) {
+            globalCache.statuses[postId].is_liked = isLiked;
+            globalCache.statuses[postId].likes_count = likesCount;
+        } else {
+            globalCache.statuses[postId] = {
+                is_liked: isLiked,
+                likes_count: likesCount,
+                is_saved: false,
+            };
+        }
+        
+        // Update relevant posts in cache
+        Object.keys(globalCache.posts).forEach(pageKey => {
+            const page = globalCache.posts[pageKey];
+            if (page && page.items) {
+                page.items = page.items.map(post => 
+                    post.id === postId ? {...post, likes_count: likesCount} : post
+                );
+            }
+        });
+        
+        setCache({...globalCache});
     };
 
     const handleSave = async (postId, isSaved, savesCount) => {
@@ -256,18 +291,29 @@ const PostsPage = () => {
             [postId]: isSaved,
         }));
 
-        // Update cache with new status
-        setCache((prev) => ({
-            ...prev,
-            statuses: {
-                ...prev.statuses,
-                [postId]: {
-                    ...prev.statuses[postId],
-                    is_saved: isSaved,
-                    saves_count: savesCount,
-                },
-            },
-        }));
+        // Update global cache with new status
+        if (globalCache.statuses[postId]) {
+            globalCache.statuses[postId].is_saved = isSaved;
+            globalCache.statuses[postId].saves_count = savesCount;
+        } else {
+            globalCache.statuses[postId] = {
+                is_saved: isSaved,
+                saves_count: savesCount,
+                is_liked: false,
+            };
+        }
+        
+        // Update relevant posts in cache
+        Object.keys(globalCache.posts).forEach(pageKey => {
+            const page = globalCache.posts[pageKey];
+            if (page && page.items) {
+                page.items = page.items.map(post => 
+                    post.id === postId ? {...post, saves_count: savesCount} : post
+                );
+            }
+        });
+        
+        setCache({...globalCache});
     };
 
     const handleTagSelect = (tagId) => {
@@ -281,6 +327,9 @@ const PostsPage = () => {
     const filterPostsByTags = async (tags) => {
         setFilterLoading(true);
         try {
+            // Clear cache for filtered results
+            globalCache.posts = {};
+            
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts/filter_by_tags`, {
                 params: {
                     tag_ids: tags,
@@ -291,6 +340,9 @@ const PostsPage = () => {
                     return qs.stringify(params, { arrayFormat: "repeat" });
                 },
             });
+
+            // Cache the filtered results
+            globalCache.posts[1] = response.data;
 
             setPosts(response.data.items || response.data);
             setTotalPages(response.data.total_pages);
@@ -313,6 +365,19 @@ const PostsPage = () => {
 
         // Scroll to top of the page
         window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+    
+    const handlePostClick = (post, e) => {
+        // If the click already has a target that handles it, don't navigate
+        if (e && e.defaultPrevented) {
+            return;
+        }
+        
+        // Save scroll position before navigating
+        globalCache.scrollPosition = window.scrollY;
+        
+        // Navigate to post detail with state
+        navigate(`/feed/post/${post.id}`, { state: { post } });
     };
 
     const renderPagination = () => {
@@ -396,7 +461,7 @@ const PostsPage = () => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" ref={contentRef}>
             <TagsFilter allTags={allTags} selectedTags={selectedTags} onTagSelect={handleTagSelect} title="Filter Posts by Tags" />
 
             {/* Posts List */}
@@ -421,7 +486,19 @@ const PostsPage = () => {
                     <motion.div key={currentPage} variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
                         {posts.map((post) => (
                             <motion.div key={post.id} variants={itemVariants}>
-                                <PostCard key={post.id} post={post} currentUser={currentUser} showViewPost={true} showCommentsLink={true} onLike={handleLike} onSave={handleSave} isLiked={likedPosts[post.id] || false} isSaved={savedPosts[post.id] || false} />
+                                <div onClick={(e) => handlePostClick(post, e)} className="cursor-pointer">
+                                    <PostCard 
+                                        key={post.id} 
+                                        post={post} 
+                                        currentUser={currentUser} 
+                                        showViewPost={true} 
+                                        showCommentsLink={true} 
+                                        onLike={handleLike} 
+                                        onSave={handleSave} 
+                                        isLiked={likedPosts[post.id] || false} 
+                                        isSaved={savedPosts[post.id] || false} 
+                                    />
+                                </div>
                             </motion.div>
                         ))}
 

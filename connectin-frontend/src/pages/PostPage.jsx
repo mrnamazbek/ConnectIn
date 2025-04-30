@@ -3,7 +3,7 @@ import { useParams, useLocation, useNavigate } from "react-router";
 import axios from "axios";
 import { LoadingMessage, ErrorMessage, NoDataMessage } from "../components/Post/PostCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart as faHeartSolid, faBookmark as faBookmarkSolid, faClock, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as faHeartSolid, faBookmark as faBookmarkSolid, faClock, faSpinner, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { faHeart, faComment, faBookmark } from "@fortawesome/free-regular-svg-icons";
 import { toast } from "react-toastify";
 import { formatDate, formatFullDate } from "../utils/dateFormat";
@@ -26,7 +26,20 @@ export default function PostPage() {
     const [commentsLoading, setCommentsLoading] = useState(false);
     const [statusLoading, setStatusLoading] = useState(false);
 
+    const handleGoBack = () => {
+        if (window.history.length > 1) {
+            navigate(-1);
+        } else {
+            navigate('/feed');
+        }
+    };
+
     const fetchPost = useCallback(async () => {
+        if (post) {
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         try {
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts/${postId}`);
@@ -37,7 +50,7 @@ export default function PostPage() {
         } finally {
             setLoading(false);
         }
-    }, [postId]);
+    }, [postId, post]);
 
     const fetchComments = useCallback(async () => {
         setCommentsLoading(true);
@@ -86,7 +99,6 @@ export default function PostPage() {
     }, [postId]);
 
     useEffect(() => {
-        // Reset states on postId change
         setLoading(true);
         setCommentsLoading(true);
         setStatusLoading(true);
@@ -185,6 +197,14 @@ export default function PostPage() {
     return (
         <div className="flex flex-col space-y-6">
             <div className="flex-grow container mx-auto">
+                <button 
+                    onClick={handleGoBack} 
+                    className="mb-4 flex items-center text-gray-600 hover:text-green-700 transition-colors"
+                >
+                    <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
+                    <span>Back to Posts</span>
+                </button>
+
                 {loading ? (
                     <LoadingMessage />
                 ) : error ? (

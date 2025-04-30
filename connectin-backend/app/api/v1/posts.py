@@ -245,7 +245,109 @@ def get_user_posts(
     ]
 
     return formatted_posts
-    
+
+@router.get("/search", response_model=List[PostOut])
+def search_posts(
+    query: str = Query(""),  # Default to empty string with no validation constraints
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    """
+    Search for posts by title, content, or tags with pagination.
+    Returns an empty list for empty queries.
+    """
+    logger.info(f"Searching posts: query='{query}', page={page}, page_size={page_size}")
+
+    # Only perform search if query is not empty and has meaningful content
+    if query and len(query.strip()) > 0:
+        posts_query = db.query(Post).filter(
+            (Post.title.ilike(f"%{query}%")) |
+            (Post.content.ilike(f"%{query}%")) |
+            (Post.tags.any(Tag.name.ilike(f"%{query}%")))
+        )
+        
+        # Apply pagination
+        total = posts_query.count()
+        posts = posts_query.offset((page - 1) * page_size).limit(page_size).all()
+        
+        logger.info(f"Found posts: {total} for query='{query}', returning page {page} with {len(posts)} posts")
+
+        # Format the results
+        result = []
+        for post in posts:
+            # Count the number of likes, comments, and saves for each post
+            likes_count = db.query(PostLike).filter(PostLike.post_id == post.id).count()
+            comments_count = db.query(PostComment).filter(PostComment.post_id == post.id).count()
+            saves_count = db.query(SavedPost).filter(SavedPost.post_id == post.id).count()
+
+            # Create and populate the PostOut model
+            post_out = PostOut.model_validate(post)
+            post_out.likes_count = likes_count
+            post_out.comments_count = comments_count
+            post_out.saves_count = saves_count
+            result.append(post_out)
+
+        return result
+    else:
+        # For empty queries, return an empty list without hitting the database
+        logger.info(f"Empty query provided, returning empty results")
+        return []
+
+# Get Popular Posts
+@router.get("/popular-posts", response_model=List[PostOut])
+def get_popular_posts(
+    limit: int = Query(3, ge=1, le=10),
+    db: Session = Depends(get_db)
+):
+    """
+    Retrieves the most popular posts based on engagement metrics (likes, comments, saves).
+    """
+    # Subqueries for counts
+    likes_count_subquery = db.query(PostLike.post_id, func.count(PostLike.id).label('likes_count')).group_by(PostLike.post_id).subquery()
+    comments_count_subquery = db.query(PostComment.post_id, func.count(PostComment.id).label('comments_count')).group_by(PostComment.post_id).subquery()
+    saves_count_subquery = db.query(SavedPost.post_id, func.count(SavedPost.id).label('saves_count')).group_by(SavedPost.post_id).subquery()
+
+    # Get posts with engagement metrics
+    posts = db.query(Post)\
+        .outerjoin(likes_count_subquery, Post.id == likes_count_subquery.c.post_id)\
+        .outerjoin(comments_count_subquery, Post.id == comments_count_subquery.c.post_id)\
+        .outerjoin(saves_count_subquery, Post.id == saves_count_subquery.c.post_id)\
+        .with_entities(
+            Post,
+            func.coalesce(likes_count_subquery.c.likes_count, 0).label('likes_count'),
+            func.coalesce(comments_count_subquery.c.comments_count, 0).label('comments_count'),
+            func.coalesce(saves_count_subquery.c.saves_count, 0).label('saves_count')
+        )\
+        .filter(Post.post_type == "news")\
+        .order_by(func.coalesce(likes_count_subquery.c.likes_count, 0).desc())\
+        .limit(limit)\
+        .all()
+
+    # Format the posts
+    formatted_posts = [
+        PostOut(
+            id=post.id,
+            title=post.title,
+            content=post.content,
+            post_type=post.post_type,
+            author_id=post.author_id,
+            project_id=post.project_id,
+            team_id=post.team_id,
+            tags=[tag.name for tag in post.tags],
+            author={
+                "username": post.author.username if post.author else "Unknown",
+                "avatar_url": post.author.avatar_url if post.author else None
+            },
+            likes_count=likes_count,
+            comments_count=comments_count,
+            saves_count=saves_count
+        )
+        for post, likes_count, comments_count, saves_count in posts
+    ]
+
+    return formatted_posts
+
 # Get Single Post with Counts
 @router.get("/{post_id}", response_model=PostOut)
 def get_single_post(post_id: int, db: Session = Depends(get_db)):
@@ -305,54 +407,6 @@ def delete_post(
     db.commit()
     
     return {"message": "Post deleted successfully"}
-
-@router.get("/search", response_model=List[PostOut])
-def search_posts(
-    query: str = Query(""),  # Default to empty string with no validation constraints
-    page: int = Query(1, ge=1),
-    page_size: int = Query(10, ge=1, le=100),
-    db: Session = Depends(get_db)
-):
-    """
-    Search for posts by title, content, or tags with pagination.
-    Returns an empty list for empty queries.
-    """
-    logger.info(f"Searching posts: query='{query}', page={page}, page_size={page_size}")
-
-    # Only perform search if query is not empty and has meaningful content
-    if query and len(query.strip()) > 0:
-        posts_query = db.query(Post).filter(
-            (Post.title.ilike(f"%{query}%")) |
-            (Post.content.ilike(f"%{query}%")) |
-            (Post.tags.any(Tag.name.ilike(f"%{query}%")))
-        )
-        
-        # Apply pagination
-        total = posts_query.count()
-        posts = posts_query.offset((page - 1) * page_size).limit(page_size).all()
-        
-        logger.info(f"Found posts: {total} for query='{query}', returning page {page} with {len(posts)} posts")
-
-        # Format the results
-        result = []
-        for post in posts:
-            # Count the number of likes, comments, and saves for each post
-            likes_count = db.query(PostLike).filter(PostLike.post_id == post.id).count()
-            comments_count = db.query(PostComment).filter(PostComment.post_id == post.id).count()
-            saves_count = db.query(SavedPost).filter(SavedPost.post_id == post.id).count()
-
-            # Create and populate the PostOut model
-            post_out = PostOut.model_validate(post)
-            post_out.likes_count = likes_count
-            post_out.comments_count = comments_count
-            post_out.saves_count = saves_count
-            result.append(post_out)
-
-        return result
-    else:
-        # For empty queries, return an empty list without hitting the database
-        logger.info(f"Empty query provided, returning empty results")
-        return []
 
 # ✅ Like Post
 @router.post("/{post_id}/like")

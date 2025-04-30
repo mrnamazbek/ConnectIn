@@ -1,7 +1,7 @@
 from fastapi import FastAPI, APIRouter
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1 import todos, auth, chat_ws, projects, skills, teams, posts, users, tags
+from app.api.v1 import todos, auth, chat_ws, projects, skills, teams, posts, users, tags, recommendations
 from app.api.v1 import chats # Импортируем новые модули для чата и загрузок
 from app.core.config import settings
 from slowapi import Limiter
@@ -52,6 +52,7 @@ def create_app() -> FastAPI:
     api_router.include_router(tags.router, prefix="/tags", tags=["Tags"])
     api_router.include_router(skills.router, prefix="/skills", tags=["Skills"])
     api_router.include_router(todos.router, prefix="/todos", tags=["Todos"])
+    api_router.include_router(recommendations.router, prefix="/recommendations", tags=["Recommendations"])
 
     # Подключаем новые маршруты для чатов и загрузки файлов
     api_router.include_router(chats.router, prefix="/chats", tags=["Chat"])  # REST API для чатов

@@ -1611,7 +1611,7 @@ var FormikProvider = FormikContext.Provider;
 var FormikConsumer = FormikContext.Consumer;
 function useFormikContext() {
   var formik = (0, import_react.useContext)(FormikContext);
-  !!!formik ? true ? tiny_warning_esm_default(false, "Formik context is undefined, please verify you are calling useFormikContext() as child of a <Formik> component.") : tiny_warning_esm_default(false) : void 0;
+  !formik ? true ? tiny_warning_esm_default(false, "Formik context is undefined, please verify you are calling useFormikContext() as child of a <Formik> component.") : tiny_warning_esm_default(false) : void 0;
   return formik;
 }
 var isEmptyArray = function isEmptyArray2(value) {
@@ -1903,7 +1903,7 @@ function useFormik(_ref) {
       payload: true
     });
     return runAllValidations(values).then(function(combinedErrors) {
-      if (!!isMounted.current) {
+      if (isMounted.current) {
         dispatch({
           type: "SET_ISVALIDATING",
           payload: false
@@ -2218,21 +2218,21 @@ function useFormik(_ref) {
           throw error;
         }
         return Promise.resolve(promiseOrUndefined).then(function(result) {
-          if (!!isMounted.current) {
+          if (isMounted.current) {
             dispatch({
               type: "SUBMIT_SUCCESS"
             });
           }
           return result;
         })["catch"](function(_errors) {
-          if (!!isMounted.current) {
+          if (isMounted.current) {
             dispatch({
               type: "SUBMIT_FAILURE"
             });
             throw _errors;
           }
         });
-      } else if (!!isMounted.current) {
+      } else if (isMounted.current) {
         dispatch({
           type: "SUBMIT_FAILURE"
         });
@@ -2388,7 +2388,7 @@ function Formik(props) {
   });
   if (true) {
     (0, import_react.useEffect)(function() {
-      !!props.render ? true ? tiny_warning_esm_default(false, "<Formik render> has been deprecated and will be removed in future versions of Formik. Please use a child callback function instead. To get rid of this warning, replace <Formik render={(props) => ...} /> with <Formik>{(props) => ...}</Formik>") : tiny_warning_esm_default(false) : void 0;
+      props.render ? true ? tiny_warning_esm_default(false, "<Formik render> has been deprecated and will be removed in future versions of Formik. Please use a child callback function instead. To get rid of this warning, replace <Formik render={(props) => ...} /> with <Formik>{(props) => ...}</Formik>") : tiny_warning_esm_default(false) : void 0;
     }, []);
   }
   return (0, import_react.createElement)(FormikProvider, {
@@ -2548,10 +2548,10 @@ function Field(_ref) {
   var _useFormikContext = useFormikContext(), formik = _objectWithoutPropertiesLoose(_useFormikContext, ["validate", "validationSchema"]);
   if (true) {
     (0, import_react.useEffect)(function() {
-      !!render ? true ? tiny_warning_esm_default(false, '<Field render> has been deprecated and will be removed in future versions of Formik. Please use a child callback function instead. To get rid of this warning, replace <Field name="' + name + '" render={({field, form}) => ...} /> with <Field name="' + name + '">{({field, form, meta}) => ...}</Field>') : tiny_warning_esm_default(false) : void 0;
-      !!(is && children && isFunction2(children)) ? true ? tiny_warning_esm_default(false, "You should not use <Field as> and <Field children> as a function in the same <Field> component; <Field as> will be ignored.") : tiny_warning_esm_default(false) : void 0;
-      !!(component && children && isFunction2(children)) ? true ? tiny_warning_esm_default(false, "You should not use <Field component> and <Field children> as a function in the same <Field> component; <Field component> will be ignored.") : tiny_warning_esm_default(false) : void 0;
-      !!(render && children && !isEmptyChildren(children)) ? true ? tiny_warning_esm_default(false, "You should not use <Field render> and <Field children> in the same <Field> component; <Field children> will be ignored") : tiny_warning_esm_default(false) : void 0;
+      render ? true ? tiny_warning_esm_default(false, '<Field render> has been deprecated and will be removed in future versions of Formik. Please use a child callback function instead. To get rid of this warning, replace <Field name="' + name + '" render={({field, form}) => ...} /> with <Field name="' + name + '">{({field, form, meta}) => ...}</Field>') : tiny_warning_esm_default(false) : void 0;
+      is && children && isFunction2(children) ? true ? tiny_warning_esm_default(false, "You should not use <Field as> and <Field children> as a function in the same <Field> component; <Field as> will be ignored.") : tiny_warning_esm_default(false) : void 0;
+      component && children && isFunction2(children) ? true ? tiny_warning_esm_default(false, "You should not use <Field component> and <Field children> as a function in the same <Field> component; <Field component> will be ignored.") : tiny_warning_esm_default(false) : void 0;
+      render && children && !isEmptyChildren(children) ? true ? tiny_warning_esm_default(false, "You should not use <Field render> and <Field children> in the same <Field> component; <Field children> will be ignored") : tiny_warning_esm_default(false) : void 0;
     }, []);
   }
   var registerField = formik.registerField, unregisterField = formik.unregisterField;
@@ -2685,7 +2685,7 @@ function withFormik(_ref) {
 function connect(Comp) {
   var C = function C2(props) {
     return (0, import_react.createElement)(FormikConsumer, null, function(formik) {
-      !!!formik ? true ? tiny_warning_esm_default(false, "Formik context is undefined, please verify you are rendering <Form>, <Field>, <FastField>, <FieldArray>, or your custom context-using component as a child of a <Formik> component. Component name: " + Comp.name) : tiny_warning_esm_default(false) : void 0;
+      !formik ? true ? tiny_warning_esm_default(false, "Formik context is undefined, please verify you are rendering <Form>, <Field>, <FastField>, <FieldArray>, or your custom context-using component as a child of a <Formik> component. Component name: " + Comp.name) : tiny_warning_esm_default(false) : void 0;
       return (0, import_react.createElement)(Comp, _extends({}, props, {
         formik
       }));
@@ -2965,11 +2965,11 @@ var FastFieldInner = function(_React$Component) {
     var _this;
     _this = _React$Component.call(this, props) || this;
     var render = props.render, children = props.children, component = props.component, is = props.as, name = props.name;
-    !!render ? true ? tiny_warning_esm_default(false, "<FastField render> has been deprecated. Please use a child callback function instead: <FastField name={" + name + "}>{props => ...}</FastField> instead.") : tiny_warning_esm_default(false) : void 0;
-    !!(component && render) ? true ? tiny_warning_esm_default(false, "You should not use <FastField component> and <FastField render> in the same <FastField> component; <FastField component> will be ignored") : tiny_warning_esm_default(false) : void 0;
-    !!(is && children && isFunction2(children)) ? true ? tiny_warning_esm_default(false, "You should not use <FastField as> and <FastField children> as a function in the same <FastField> component; <FastField as> will be ignored.") : tiny_warning_esm_default(false) : void 0;
-    !!(component && children && isFunction2(children)) ? true ? tiny_warning_esm_default(false, "You should not use <FastField component> and <FastField children> as a function in the same <FastField> component; <FastField component> will be ignored.") : tiny_warning_esm_default(false) : void 0;
-    !!(render && children && !isEmptyChildren(children)) ? true ? tiny_warning_esm_default(false, "You should not use <FastField render> and <FastField children> in the same <FastField> component; <FastField children> will be ignored") : tiny_warning_esm_default(false) : void 0;
+    render ? true ? tiny_warning_esm_default(false, "<FastField render> has been deprecated. Please use a child callback function instead: <FastField name={" + name + "}>{props => ...}</FastField> instead.") : tiny_warning_esm_default(false) : void 0;
+    component && render ? true ? tiny_warning_esm_default(false, "You should not use <FastField component> and <FastField render> in the same <FastField> component; <FastField component> will be ignored") : tiny_warning_esm_default(false) : void 0;
+    is && children && isFunction2(children) ? true ? tiny_warning_esm_default(false, "You should not use <FastField as> and <FastField children> as a function in the same <FastField> component; <FastField as> will be ignored.") : tiny_warning_esm_default(false) : void 0;
+    component && children && isFunction2(children) ? true ? tiny_warning_esm_default(false, "You should not use <FastField component> and <FastField children> as a function in the same <FastField> component; <FastField component> will be ignored.") : tiny_warning_esm_default(false) : void 0;
+    render && children && !isEmptyChildren(children) ? true ? tiny_warning_esm_default(false, "You should not use <FastField render> and <FastField children> in the same <FastField> component; <FastField children> will be ignored") : tiny_warning_esm_default(false) : void 0;
     return _this;
   }
   var _proto = FastFieldInner2.prototype;

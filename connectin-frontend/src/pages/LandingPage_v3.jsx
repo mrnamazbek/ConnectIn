@@ -64,16 +64,12 @@ const LandingPage_v3 = () => {
                         </motion.h1>
 
                         <motion.p initial="hidden" animate="visible" variants={fadeIn} className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 mb-10 max-w-3xl mx-auto leading-relaxed">
-                            The dynamic ecosystem where developers find meaningful projects, build exceptional teams, and unlock career opportunities beyond just code.
+                            The dynamic ecosystem where developers find meaningful projects and unlock career opportunities beyond just code.
                         </motion.p>
 
                         <motion.div initial="hidden" animate="visible" variants={fadeIn} className="flex flex-col sm:flex-row gap-4 justify-center">
                             <NavLink to="/register" className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-10 py-4 rounded-full text-lg font-medium hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg hover:shadow-emerald-500/30 transform hover:translate-y-[-2px]">
                                 Get Started Free
-                            </NavLink>
-                            <NavLink to="/how-it-works" className="flex items-center justify-center gap-2 text-emerald-700 dark:text-emerald-400 px-8 py-4 text-lg font-medium hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors">
-                                See how it works
-                                <FontAwesomeIcon icon={faArrowRight} className="ml-1 text-sm" />
                             </NavLink>
                         </motion.div>
                     </motion.div>
@@ -121,8 +117,8 @@ const LandingPage_v3 = () => {
                                     },
                                     {
                                         icon: faUsers,
-                                        title: "Team up with the right people",
-                                        desc: "Connect with skilled developers who complement your strengths",
+                                        title: "Connect with skilled developers",
+                                        desc: "Build your network with professionals who complement your skillset",
                                     },
                                     {
                                         icon: faRocket,
@@ -227,8 +223,8 @@ const LandingPage_v3 = () => {
                             {
                                 icon: faNetworkWired,
                                 color: "teal",
-                                title: "Team Building & Management",
-                                desc: "Create or join teams with complementary skill sets. Communicate and collaborate seamlessly.",
+                                title: "Networking & Collaboration",
+                                desc: "Connect with developers who have complementary skills. Communicate and collaborate seamlessly.",
                             },
                             {
                                 icon: faBriefcase,
@@ -279,7 +275,7 @@ const LandingPage_v3 = () => {
                                 avatar: "/static/images/avatar1.jpg",
                             },
                             {
-                                quote: "I built my entire development team through ConnectIn. The quality of talent and the matching algorithm is far superior to any other platform I've used.",
+                                quote: "I built my entire professional network through ConnectIn. The quality of talent and the matching algorithm is far superior to any other platform I've used.",
                                 name: "Sarah Johnson",
                                 title: "Tech Lead at StartupX",
                                 avatar: "/static/images/avatar2.jpg",
@@ -357,13 +353,13 @@ const LandingPage_v3 = () => {
                             },
                             {
                                 icon: faUsers,
-                                title: "Team Formation",
-                                desc: "Build and manage teams with the right mix of skills and experience for your projects.",
+                                title: "Developer Networking",
+                                desc: "Connect with skilled developers who share your interests and complement your abilities.",
                             },
                             {
                                 icon: faComments,
                                 title: "Real-Time Chat",
-                                desc: "Seamless communication within your teams, with project-specific channels.",
+                                desc: "Seamless communication with other developers, with project-specific channels.",
                             },
                             {
                                 icon: faCalendarAlt,
@@ -426,25 +422,25 @@ const LandingPage_v3 = () => {
                                 price: "$0",
                                 period: "forever",
                                 description: "Perfect for exploring and getting started",
-                                features: ["Join up to 3 active projects", "Basic team collaboration tools", "Community support", "Personal profile"],
+                                features: ["Join up to 3 active projects", "Basic collaboration tools", "Community support", "Personal profile"],
                                 cta: "Get Started",
                                 highlighted: false,
                             },
                             {
                                 name: "Premium",
-                                price: "$2",
+                                price: "$5",
                                 period: "per month",
                                 description: "Everything you need for serious collaboration and AI features",
-                                features: ["Unlimited projects", "Advanced team management", "Priority matching algorithm", "Direct messaging", "Profile verification badge", "Email support"],
+                                features: ["Unlimited projects", "Advanced networking features", "Priority matching algorithm", "Direct messaging", "Profile verification badge", "Email support"],
                                 cta: "Upgrade Now",
                                 highlighted: true,
                             },
                             {
                                 name: "Premium Yearly",
-                                price: "$19",
+                                price: "$15",
                                 period: "per year",
-                                description: "Best for teams and long term support",
-                                features: ["All Developer features", "Team workspace", "Advanced analytics", "Custom branding", "API access", "Dedicated support"],
+                                description: "Best for long-term professional growth",
+                                features: ["All Developer features", "Personal workspace", "Advanced analytics", "Custom branding", "API access", "Dedicated support"],
                                 cta: "Contact Sales",
                                 highlighted: false,
                             },
@@ -508,7 +504,7 @@ const LandingPage_v3 = () => {
                             },
                             {
                                 q: "Can I list my own project and recruit a team?",
-                                a: "Absolutely! You can create a project listing, specify the skills you're looking for, and our platform will help connect you with suitable collaborators. You maintain full control over who joins your team.",
+                                a: "Absolutely! You can create a project listing, specify the skills you're looking for, and our platform will help connect you with suitable collaborators. You maintain full control over who you collaborate with.",
                             },
                             {
                                 q: "Is my data secure on ConnectIn?",

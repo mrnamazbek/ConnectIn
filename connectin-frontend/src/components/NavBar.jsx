@@ -118,13 +118,13 @@ const NavBar = () => {
                         <NavItem to="/search" icon={faMagnifyingGlass} label="Search" />
                         <NavItem to="/post" icon={faPen} label="New Post" />
                         <NavItem to="/feed" icon={faNewspaper} label="Feed" />
-                        <NavItem to="/chats" icon={faComments} label="Chats" onClick={() => handleNavigation("/chats")} />
+                        <NavItem to="/chats" icon={faComments} label="Chat" onClick={() => handleNavigation("/chats")} />
 
                         {/* Theme Toggle */}
                         <button
                             ref={themeRef}
                             onClick={toggleSwitchTheme}
-                            className="flex flex-col items-center justify-center space-y-1 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 ml-1 text-gray-600 dark:text-gray-300"
+                            className="flex flex-col cursor-pointer items-center justify-center space-y-1 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 ml-1 text-gray-600 dark:text-gray-300"
                             aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
                         >
                             <FontAwesomeIcon icon={isDarkMode ? faSun : faMoon} className="w-5 h-5 transition-transform duration-300" />

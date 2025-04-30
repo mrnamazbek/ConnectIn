@@ -113,13 +113,12 @@ const technologies = [
         category: "Cloud / Infrastructure", // Re-categorized
     },
     // --- Consider adding if still used ---
-{
-    "name": "AWS S3",
-    "logo": "https://cdn.worldvectorlogo.com/logos/amazon-s3.svg",
-    "description": "Provides scalable object storage for file management.",
-    "category": "Cloud Storage"
-}
-,
+    {
+        name: "AWS S3",
+        logo: "https://cdn.worldvectorlogo.com/logos/amazon-s3.svg",
+        description: "Provides scalable object storage for file management.",
+        category: "Cloud Storage",
+    },
     {
         name: "Elasticsearch", // Was in requirements.txt
         logo: "https://cdn.worldvectorlogo.com/logos/elasticsearch.svg",
@@ -162,13 +161,13 @@ const technologies = [
     },
     {
         name: "AWS EventBridge",
-        logo: "https://cdn.worldvectorlogo.com/logos/amazon-eventbridge.svg",
+        logo: "https://icon.icepanel.io/AWS/svg/App-Integration/EventBridge.svg",
         description: "Builds scalable event-driven applications with a central event bus.",
         category: "Cloud / Infrastructure",
     },
     {
         name: "Amazon CloudWatch",
-        logo: "https://cdn.worldvectorlogo.com/logos/amazon-cloudwatch.svg",
+        logo: "https://icon.icepanel.io/AWS/svg/Management-Governance/CloudWatch.svg",
         description: "Monitors resources and applications in real time, including logs.",
         category: "Cloud / Infrastructure",
     },

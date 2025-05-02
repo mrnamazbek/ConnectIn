@@ -118,6 +118,7 @@ class UserCreate(UserBase):
 class UserUpdate(UserBase):
     """Схема для обновления данных пользователя."""
     avatar_url: Optional[str] = Field(None, max_length=500)  # Добавлено URL аватара
+    cover_photo_url: Optional[str] = Field(None, max_length=500)  # Добавлено URL обложки
     status: Optional[str] = Field(None, max_length=100)  # Добавлено поле статуса
 
 class AvatarUpdate(BaseModel):
@@ -162,6 +163,7 @@ class UserOut(BaseModel):
     linkedin: Optional[str] = None
     telegram: Optional[str] = None
     avatar_url: Optional[str] = None  # ✅ Add this field
+    cover_photo_url: Optional[str] = None  # ✅ Add cover photo field
     skills: List[SkillBase] = []
     projects: List[ProjectBase] = []
     education: List[EducationOut] = []
@@ -182,6 +184,7 @@ class UserOut(BaseModel):
             linkedin=user.linkedin,
             telegram=user.telegram,
             avatar_url=user.avatar_url,  # ✅ Now frontend gets avatar
+            cover_photo_url=user.cover_photo_url,  # ✅ Now frontend gets cover photo
             skills=[SkillBase.model_validate(skill) for skill in user.skills],
             projects=[ProjectBase.model_validate(project) for project in user.projects],
             education=[EducationOut.model_validate(edu) for edu in user.education],

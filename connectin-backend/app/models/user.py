@@ -33,6 +33,7 @@ class User(Base):
     linkedin = Column(String(255), nullable=True)
     telegram = Column(String(255), nullable=True)
     avatar_url = Column(String, nullable=True)
+    cover_photo_url = Column(String, nullable=True)
     google_id = Column(String(255), unique=True)
     google_refresh_token = Column(String(255))
 

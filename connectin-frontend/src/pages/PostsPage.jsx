@@ -368,8 +368,8 @@ const PostsPage = () => {
     };
     
     const handlePostClick = (post, e) => {
-        // If the click already has a target that handles it, don't navigate
-        if (e && e.defaultPrevented) {
+        // If the click already has a target that handles it or if e.defaultPrevented is true, don't navigate
+        if (e && (e.defaultPrevented || e.target.closest('.author-clickable'))) {
             return;
         }
         

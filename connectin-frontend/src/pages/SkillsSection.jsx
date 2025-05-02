@@ -49,6 +49,8 @@ const SkillsSection = ({ setSkills, skills: propSkills, availableSkills: propAva
     }, [isStatic, propSkills, propAvailableSkills, fetchSkills]);
 
     const handleSelectSkill = async (skill) => {
+        if (isStatic) return; // Prevent adding skills if viewing another user's profile
+        
         try {
             setAddingSkill(skill.id);
             const token = localStorage.getItem("access_token");
@@ -70,6 +72,8 @@ const SkillsSection = ({ setSkills, skills: propSkills, availableSkills: propAva
     };
 
     const handleDeleteSkill = async (skillId) => {
+        if (isStatic) return; // Prevent deleting skills if viewing another user's profile
+        
         try {
             setDeletingSkill(skillId);
             const token = localStorage.getItem("access_token");
@@ -99,16 +103,20 @@ const SkillsSection = ({ setSkills, skills: propSkills, availableSkills: propAva
             ) : (
                 <>
                     <div className="flex justify-between items-center">
-                        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Your Skills</h2>
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setShowAddSkills(!showAddSkills)}
-                            className="text-green-700 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 cursor-pointer transition-colors flex items-center gap-2"
-                        >
-                            <FontAwesomeIcon icon={showAddSkills ? faMinus : faPlus} />
-                            <span className="text-sm">{showAddSkills ? "Close" : "Add Skills"}</span>
-                        </motion.button>
+                        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+                            {isStatic ? "Skills" : "Your Skills"}
+                        </h2>
+                        {!isStatic && (
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => setShowAddSkills(!showAddSkills)}
+                                className="text-green-700 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 cursor-pointer transition-colors flex items-center gap-2"
+                            >
+                                <FontAwesomeIcon icon={showAddSkills ? faMinus : faPlus} />
+                                <span className="text-sm">{showAddSkills ? "Close" : "Add Skills"}</span>
+                            </motion.button>
+                        )}
                     </div>
 
                     <div className="flex flex-wrap gap-2">
@@ -119,29 +127,35 @@ const SkillsSection = ({ setSkills, skills: propSkills, availableSkills: propAva
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.8 }}
-                                    className="bg-green-700 dark:bg-green-600 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2 group relative"
+                                    className={`${
+                                        isStatic 
+                                            ? "bg-green-600/80 dark:bg-green-600/60" 
+                                            : "bg-green-700 dark:bg-green-600"
+                                    } text-white px-3 py-1 rounded-full text-sm flex items-center gap-2 group relative`}
                                 >
                                     <span>{skill.name}</span>
-                                    <motion.button
-                                        whileHover={{ scale: 1.1 }}
-                                        whileTap={{ scale: 0.9 }}
-                                        onClick={() => handleDeleteSkill(skill.id)}
-                                        className="text-white cursor-pointer hover:text-red-200 dark:hover:text-red-300 transition-colors"
-                                        disabled={deletingSkill === skill.id}
-                                    >
-                                        {deletingSkill === skill.id ? (
-                                            <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
-                                        ) : (
-                                            <FontAwesomeIcon icon={faTrashAlt} className="text-xs" />
-                                        )}
-                                    </motion.button>
+                                    {!isStatic && (
+                                        <motion.button
+                                            whileHover={{ scale: 1.1 }}
+                                            whileTap={{ scale: 0.9 }}
+                                            onClick={() => handleDeleteSkill(skill.id)}
+                                            className="text-white cursor-pointer hover:text-red-200 dark:hover:text-red-300 transition-colors"
+                                            disabled={deletingSkill === skill.id}
+                                        >
+                                            {deletingSkill === skill.id ? (
+                                                <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                                            ) : (
+                                                <FontAwesomeIcon icon={faTrashAlt} className="text-xs" />
+                                            )}
+                                        </motion.button>
+                                    )}
                                 </motion.div>
                             ))}
                         </AnimatePresence>
                     </div>
 
                     <AnimatePresence>
-                        {showAddSkills && (
+                        {showAddSkills && !isStatic && (
                             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-6 space-y-4">
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

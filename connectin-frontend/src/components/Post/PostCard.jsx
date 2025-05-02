@@ -21,6 +21,16 @@ export const PostCard = ({ post, showReadButton = true }) => {
     const likePost = usePostStore((state) => state.likePost);
     const savePost = usePostStore((state) => state.savePost);
 
+    const handleAuthorClick = (e) => {
+        e.stopPropagation(); // Prevent card click navigation
+        if (!author || !author.id) {
+            console.error("Cannot navigate to profile: Missing author information", author);
+            toast.error("Cannot view profile: User information is missing");
+            return;
+        }
+        navigate(`/profile/${author.id}`);
+    };
+
     const handleLike = async (e) => {
         e.stopPropagation(); // Prevent card click navigation
         setIsLikeLoading(true);
@@ -59,7 +69,7 @@ export const PostCard = ({ post, showReadButton = true }) => {
     return (
         <div className="bg-white dark:bg-gray-800 dark:text-gray-300 border border-green-700 rounded-md shadow-md p-5 hover:shadow-lg transition-shadow">
             <div className="flex items-center mb-4">
-                <div className="relative w-8 h-8 flex items-center justify-center rounded-full border-2 border-green-700 dark:border-green-500 bg-gray-100 dark:bg-gray-700">
+                <div onClick={handleAuthorClick} className="author-clickable relative w-8 h-8 flex items-center justify-center rounded-full border-2 border-green-700 dark:border-green-500 bg-gray-100 dark:bg-gray-700 cursor-pointer hover:opacity-90 transition-opacity">
                     {author.avatar_url ? (
                         <img
                             src={author.avatar_url}
@@ -73,7 +83,9 @@ export const PostCard = ({ post, showReadButton = true }) => {
                         <FontAwesomeIcon icon={faUser} className="text-gray-500 dark:text-gray-400" />
                     )}
                 </div>
-                <p className="text-sm font-semibold ml-2">{author.username || "Unknown"}</p>
+                <p onClick={handleAuthorClick} className="author-clickable text-sm font-semibold ml-2 cursor-pointer hover:text-green-700 dark:hover:text-green-500 transition-colors">
+                    {author.username || "Unknown"}
+                </p>
             </div>
 
             {tags.length > 0 && (
@@ -108,10 +120,13 @@ export const PostCard = ({ post, showReadButton = true }) => {
                     </button>
                 </div>
                 {showReadButton && (
-                    <button onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/feed/post/${id}`);
-                    }} className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/feed/post/${id}`);
+                        }}
+                        className="rounded shadow-sm text-sm px-6 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition"
+                    >
                         Read
                     </button>
                 )}

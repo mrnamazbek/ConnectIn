@@ -23,6 +23,13 @@ const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true
         }
     }, [project.id, initializeVoteState]);
 
+    const handleOwnerClick = (e) => {
+        e.stopPropagation(); // Prevent card click propagation
+        if (owner && owner.id) {
+            navigate(`/profile/${owner.id}`);
+        }
+    };
+
     const handleVote = async (isUpvote) => {
         const token = localStorage.getItem("access_token");
         if (!token) {
@@ -89,7 +96,10 @@ const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true
     return (
         <div className={`bg-white dark:bg-gray-800 shadow-md rounded-md border border-green-700 p-5 hover:shadow-lg transition-shadow relative ${isLoading ? 'pointer-events-none' : ''}`}>
             <div className="flex items-center space-x-2 mb-4">
-                <div className="relative w-10 h-10 flex items-center justify-center rounded-full border-2 border-green-700 dark:border-green-500 bg-gray-100 dark:bg-gray-700">
+                <div 
+                    onClick={handleOwnerClick}
+                    className="relative w-10 h-10 flex items-center justify-center rounded-full border-2 border-green-700 dark:border-green-500 bg-gray-100 dark:bg-gray-700 cursor-pointer hover:opacity-90 transition-opacity"
+                >
                     {owner.avatar_url ? (
                         <img
                             src={owner.avatar_url}
@@ -105,7 +115,12 @@ const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true
                     )}
                 </div>
                 <div>
-                    <p className="font-semibold">{owner.username}</p>
+                    <p 
+                        onClick={handleOwnerClick}
+                        className="font-semibold cursor-pointer hover:text-green-700 dark:hover:text-green-500 transition-colors"
+                    >
+                        {owner.username}
+                    </p>
                 </div>
             </div>
 

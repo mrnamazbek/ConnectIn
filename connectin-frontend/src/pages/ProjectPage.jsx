@@ -5,7 +5,7 @@ import ProjectCard from "../components/Project/ProjectCard";
 import { toast } from "react-toastify";
 import { formatDate, formatFullDate } from "../utils/dateFormat";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faClock, faSpinner, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { faClock, faSpinner, faArrowLeft, faLink } from "@fortawesome/free-solid-svg-icons";
 
 const ProjectPage = () => {
     const { projectId } = useParams();
@@ -22,6 +22,7 @@ const ProjectPage = () => {
     const [commentsListLoading, setCommentsListLoading] = useState(false);
     const [userLoading, setUserLoading] = useState(false);
     const [voteLoading, setVoteLoading] = useState(false);
+    const [isCopyLoading, setIsCopyLoading] = useState(false);
 
     const handleGoBack = () => {
         // Check if there's navigation history
@@ -200,6 +201,20 @@ const ProjectPage = () => {
         }
     };
 
+    const handleCopyLink = async () => {
+        setIsCopyLoading(true);
+        try {
+            const url = `${window.location.origin}/projects/${projectId}`;
+            await navigator.clipboard.writeText(url);
+            toast.success("Project link copied to clipboard!");
+        } catch (error) {
+            toast.error("Failed to copy link");
+            console.error("Copy failed:", error);
+        } finally {
+            setIsCopyLoading(false);
+        }
+    };
+
     // Render auth-required UI elements based on login status
     const renderAuthRequiredUI = () => {
         if (!currentUser) {
@@ -248,13 +263,25 @@ const ProjectPage = () => {
 
     return (
         <div className="space-y-6">
-            <button 
-                onClick={handleGoBack} 
-                className="mb-4 flex items-center text-gray-600 hover:text-green-700 transition-colors"
-            >
-                <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
-                <span>Back to Projects</span>
-            </button>
+            <div className="flex items-center justify-between mb-4">
+                <button 
+                    onClick={handleGoBack} 
+                    className="flex items-center text-gray-600 hover:text-green-700 transition-colors"
+                >
+                    <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
+                    <span>Back</span>
+                </button>
+                
+                <button 
+                    onClick={handleCopyLink} 
+                    disabled={isCopyLoading} 
+                    className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 transition-colors disabled:opacity-50"
+                    title={isCopyLoading ? "Copying..." : "Copy project link"}
+                >
+                    <FontAwesomeIcon icon={faLink} className={`${isCopyLoading ? "animate-pulse" : ""}`} />
+                    <span>Share</span>
+                </button>
+            </div>
 
             <div className={`transition-opacity duration-300 ${userLoading || voteLoading ? 'opacity-70' : 'opacity-100'}`}>
                 <ProjectCard 

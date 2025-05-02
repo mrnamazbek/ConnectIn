@@ -3,7 +3,7 @@ import { useParams, useLocation, useNavigate } from "react-router";
 import axios from "axios";
 import { LoadingMessage, ErrorMessage, NoDataMessage } from "../components/Post/PostCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart as faHeartSolid, faBookmark as faBookmarkSolid, faClock, faSpinner, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as faHeartSolid, faBookmark as faBookmarkSolid, faClock, faSpinner, faArrowLeft, faLink, faUser } from "@fortawesome/free-solid-svg-icons";
 import { faHeart, faComment, faBookmark } from "@fortawesome/free-regular-svg-icons";
 import { toast } from "react-toastify";
 import { formatDate, formatFullDate } from "../utils/dateFormat";
@@ -22,6 +22,7 @@ export default function PostPage() {
     const [commentError, setCommentError] = useState(null);
     const [isLikeLoading, setIsLikeLoading] = useState(false);
     const [isSaveLoading, setIsSaveLoading] = useState(false);
+    const [isCopyLoading, setIsCopyLoading] = useState(false);
     const [isCommentLoading, setIsCommentLoading] = useState(false);
     const [commentsLoading, setCommentsLoading] = useState(false);
     const [statusLoading, setStatusLoading] = useState(false);
@@ -97,6 +98,15 @@ export default function PostPage() {
             setStatusLoading(false);
         }
     }, [postId]);
+
+    const handleAuthorClick = (author) => {
+        if (!author || !author.id) {
+            console.error("Cannot navigate to profile: Author ID is missing", author);
+            toast.error("Cannot view profile: User ID is missing");
+            return;
+        }
+        navigate(`/profile/${author.id}`);
+    };
 
     useEffect(() => {
         setLoading(true);
@@ -194,6 +204,20 @@ export default function PostPage() {
         }
     };
 
+    const handleCopyLink = async () => {
+        setIsCopyLoading(true);
+        try {
+            const url = `${window.location.origin}/feed/post/${postId}`;
+            await navigator.clipboard.writeText(url);
+            toast.success("Post link copied to clipboard!");
+        } catch (error) {
+            toast.error("Failed to copy link");
+            console.error("Copy failed:", error);
+        } finally {
+            setIsCopyLoading(false);
+        }
+    };
+
     return (
         <div className="flex flex-col space-y-6">
             <div className="flex-grow container mx-auto">
@@ -202,7 +226,7 @@ export default function PostPage() {
                     className="mb-4 flex items-center text-gray-600 hover:text-green-700 transition-colors"
                 >
                     <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
-                    <span>Back to Posts</span>
+                    <span>Back</span>
                 </button>
 
                 {loading ? (
@@ -215,13 +239,30 @@ export default function PostPage() {
                     <div className="flex flex-col space-y-5">
                         <div className="bg-white dark:bg-gray-800 border border-green-700 rounded-md shadow-md p-5">
                             <div className="flex items-center mb-4">
-                                <img
-                                    src={post.author.avatar_url || "default-avatar.png"}
-                                    alt={post.author.username || "User"}
-                                    className="w-8 h-8 rounded-full border hover:ring-2 hover:ring-green-500 transition"
-                                    onError={(e) => (e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png")}
-                                />
-                                <p className="text-sm font-semibold ml-2">{post.author.username || "Unknown"}</p>
+                                {post.author ? (
+                                    <>
+                                        <img
+                                            src={post.author.avatar_url || "default-avatar.png"}
+                                            alt={post.author.username || "User"}
+                                            className="w-8 h-8 rounded-full border hover:ring-2 hover:ring-green-500 transition cursor-pointer"
+                                            onError={(e) => (e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png")}
+                                            onClick={() => handleAuthorClick(post.author)}
+                                        />
+                                        <p 
+                                            className="text-sm font-semibold ml-2 cursor-pointer hover:text-green-700 dark:hover:text-green-500 transition-colors"
+                                            onClick={() => handleAuthorClick(post.author)}
+                                        >
+                                            {post.author.username || "Unknown"}
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                            <FontAwesomeIcon icon={faUser} className="text-gray-500" />
+                                        </div>
+                                        <p className="text-sm font-semibold ml-2">Unknown User</p>
+                                    </>
+                                )}
                             </div>
 
                             {post.tags.length > 0 && (
@@ -253,6 +294,15 @@ export default function PostPage() {
                                         <FontAwesomeIcon icon={isSaved ? faBookmarkSolid : faBookmark} className={`${isSaveLoading ? "animate-pulse" : ""}`} style={isSaved ? { color: "#facc15" } : {}} />
                                         <span className="ml-1">{post.saves_count || ""}</span>
                                         <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{isSaved ? "Unsave" : "Save"}</span>
+                                    </button>
+                                    <button 
+                                        onClick={handleCopyLink} 
+                                        disabled={isCopyLoading} 
+                                        className="group relative text-gray-500 hover:text-blue-500 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" 
+                                        title={isCopyLoading ? "Copying..." : "Copy link"}
+                                    >
+                                        <FontAwesomeIcon icon={faLink} className={`${isCopyLoading ? "animate-pulse" : ""}`} />
+                                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Copy link</span>
                                     </button>
                                 </div>
                             </div>
@@ -306,13 +356,19 @@ export default function PostPage() {
                                     <img
                                         src={comment.user?.avatar_url || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
                                         alt={comment.user?.username || "User"}
-                                        className="w-8 h-8 rounded-full border hover:ring-2 hover:ring-green-500 transition"
+                                        className="w-8 h-8 rounded-full border hover:ring-2 hover:ring-green-500 transition cursor-pointer"
                                         onError={(e) => (e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png")}
+                                        onClick={() => handleAuthorClick(comment.user)}
                                     />
                                     <div className="flex-1">
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <p className="font-semibold text-sm">{comment.user?.username || "Unknown User"}</p>
+                                                <p 
+                                                    className="font-semibold text-sm cursor-pointer hover:text-green-700 dark:hover:text-green-500 transition-colors"
+                                                    onClick={() => handleAuthorClick(comment.user)}
+                                                >
+                                                    {comment.user?.username || "Unknown User"}
+                                                </p>
                                                 <p className="text-xs text-gray-500 flex items-center gap-1">
                                                     <FontAwesomeIcon icon={faClock} className="text-gray-400" />
                                                     {formatDate(comment.created_at)}

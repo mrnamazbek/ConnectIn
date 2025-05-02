@@ -200,14 +200,24 @@ const NavBar = () => {
                     <NavItem to="/search" icon={faMagnifyingGlass} label="Search" onClick={handleMobileMenuClick} />
                     <NavItem to="/post" icon={faPen} label="New Post" onClick={handleMobileMenuClick} />
                     <NavItem to="/feed" icon={faNewspaper} label="Feed" onClick={handleMobileMenuClick} />
-                    <NavItem to="/recommendations" icon={faThumbsUp} label="For You" onClick={() => {
-                        handleNavigation("/recommendations");
-                        handleMobileMenuClick();
-                    }} />
-                    <NavItem to="/chats" icon={faComments} label="Chat" onClick={() => {
-                        handleNavigation("/chats");
-                        handleMobileMenuClick();
-                    }} />
+                    <NavItem
+                        to="/recommendations"
+                        icon={faThumbsUp}
+                        label="For You"
+                        onClick={() => {
+                            handleNavigation("/recommendations");
+                            handleMobileMenuClick();
+                        }}
+                    />
+                    <NavItem
+                        to="/chats"
+                        icon={faComments}
+                        label="Chat"
+                        onClick={() => {
+                            handleNavigation("/chats");
+                            handleMobileMenuClick();
+                        }}
+                    />
 
                     {isAuthenticated ? (
                         <>

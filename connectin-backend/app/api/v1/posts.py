@@ -68,7 +68,8 @@ def create_post(
         tags=[tag.name for tag in new_post.tags],  # Extract tag names
         author={
             "username": new_post.author.username if new_post.author else "Unknown",
-            "avatar_url": new_post.author.avatar_url if new_post.author else None
+            "avatar_url": new_post.author.avatar_url if new_post.author else None,
+            "id": str(new_post.author.id) if new_post.author else None
         },
         likes_count=0,  # New post starts with 0 likes
         comments_count=0,  # New post starts with 0 comments
@@ -123,7 +124,8 @@ def get_all_posts(
             tags=[tag.name for tag in post.tags],
             author={
                 "username": post.author.username if post.author else "Unknown",
-                "avatar_url": post.author.avatar_url if post.author else None
+                "avatar_url": post.author.avatar_url if post.author else None,
+                "id": str(post.author.id) if post.author else None
             },
             likes_count=likes_count,
             comments_count=comments_count,
@@ -198,7 +200,8 @@ def filter_posts_by_tags(
             tags=[tag.name for tag in post.tags],
             author={
                 "username": post.author.username if post.author else "Unknown",
-                "avatar_url": post.author.avatar_url if post.author else None
+                "avatar_url": post.author.avatar_url if post.author else None,
+                "id": str(post.author.id) if post.author else None
             },
             likes_count=likes_count,
             comments_count=comments_count,
@@ -337,7 +340,8 @@ def get_popular_posts(
             tags=[tag.name for tag in post.tags],
             author={
                 "username": post.author.username if post.author else "Unknown",
-                "avatar_url": post.author.avatar_url if post.author else None
+                "avatar_url": post.author.avatar_url if post.author else None,
+                "id": str(post.author.id) if post.author else None
             },
             likes_count=likes_count,
             comments_count=comments_count,
@@ -371,7 +375,8 @@ def get_single_post(post_id: int, db: Session = Depends(get_db)):
         # date=post.date.isoformat() if post.date else None,
         author={
             "username": post.author.username if post.author else "Unknown",
-            "avatar_url": post.author.avatar_url if post.author else None
+            "avatar_url": post.author.avatar_url if post.author else None,
+            "id": str(post.author.id) if post.author else None
         },
         likes_count=likes_count,
         comments_count=comments_count,
@@ -530,7 +535,12 @@ def get_post_comments(post_id: int, db: Session = Depends(get_db)):
             content=comment.content,
             user_id=comment.user_id,
             created_at=comment.created_at,
-            user={"username": comment.user.username if comment.user else "Unknown", "avatar_url": comment.user.avatar_url if comment.user else None}        )
+            user={
+                "username": comment.user.username if comment.user else "Unknown",
+                "avatar_url": comment.user.avatar_url if comment.user else None,
+                "id": str(comment.user.id) if comment.user else None
+            }
+        )
         for comment in comments
     ]
 
@@ -564,7 +574,8 @@ def comment_post(
         created_at=new_comment.created_at,
         user={
             "username": new_comment.user.username if new_comment.user else "Unknown",
-            "avatar_url": new_comment.user.avatar_url if new_comment.user and new_comment.user.avatar_url else None
+            "avatar_url": new_comment.user.avatar_url if new_comment.user and new_comment.user.avatar_url else None,
+            "id": str(new_comment.user.id) if new_comment.user else None
         }
     )
 

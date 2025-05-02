@@ -8,18 +8,27 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from typing import List, Union
+import io
+import uuid
+from PIL import Image
 
 from app.database.connection import get_db
 from app.models.user import User, Education, Experience
 from app.models.skill import Skill
 from app.models.save import SavedPost
 from app.models.post import Post
+from app.models.like import PostLike
+from app.models.comment import PostComment
+from app.models.project import Project
+from app.models.vote import ProjectVote
 from app.schemas.user import UserOut, UserUpdate, EducationCreate, ExperienceCreate, EducationUpdate, ExperienceUpdate, EducationOut, ExperienceOut, AvatarUpdate, StatusUpdate, BasicInfoUpdate, SocialLinksUpdate, ContactInfoUpdate, UserOutWithToken
 from app.schemas.skill import SkillOut
+from app.schemas.project import ProjectOut, TagOut
 from app.api.v1.auth import get_current_user, create_access_token
 from app.core.config import settings
 from app.utils.s3 import s3_service
 from app.utils.logger import get_logger
+from sqlalchemy import case, func
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -540,7 +549,7 @@ def update_contact_info(
                 detail="Этот email уже используется другим пользователем."
             )
         identity_changed = True
-      ## fix
+    
     # Проверка уникальности username
     if contact_info.username and contact_info.username != current_user.username:
         existing_user = db.query(User).filter(User.username == contact_info.username).first()
@@ -609,4 +618,145 @@ def update_contact_info(
 @router.get("/me/saved-posts")
 def get_saved_posts(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     saved_posts = db.query(SavedPost).filter(SavedPost.user_id == current_user.id).join(Post).all()
-    return [saved_post.post for saved_post in saved_posts]
+    
+    # Format each post with author information
+    formatted_posts = []
+    for saved_post in saved_posts:
+        post = saved_post.post
+        author = db.query(User).filter(User.id == post.author_id).first() if post.author_id else None
+        
+        formatted_post = {
+            "id": post.id,
+            "title": post.title,
+            "content": post.content,
+            "post_type": post.post_type,
+            "author_id": post.author_id,
+            "project_id": post.project_id,
+            "team_id": post.team_id,
+            "tags": [tag.name for tag in post.tags],
+            "author": {
+                "username": author.username if author else "Unknown",
+                "avatar_url": author.avatar_url if author and author.avatar_url else None
+            },
+            "likes_count": db.query(PostLike).filter(PostLike.post_id == post.id).count(),
+            "comments_count": db.query(PostComment).filter(PostComment.post_id == post.id).count(),
+            "saves_count": db.query(SavedPost).filter(SavedPost.post_id == post.id).count()
+        }
+        formatted_posts.append(formatted_post)
+    
+    return formatted_posts
+
+@router.patch("/me/cover-photo", response_model=UserOut)
+async def update_cover_photo(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update user cover photo with file upload.
+    """
+    try:
+        # Upload new cover photo to S3 using the specialized function
+        cover_photo_url = await s3_service.upload_cover_photo(file, current_user.id)
+        
+        # Store old cover photo URL for cleanup
+        old_cover_photo_url = current_user.cover_photo_url
+        
+        # Update user's cover photo URL
+        current_user.cover_photo_url = cover_photo_url
+        db.commit()
+        db.refresh(current_user)
+        
+        # If there was an old cover photo, try to delete it
+        if old_cover_photo_url:
+            try:
+                # Extract object name from URL
+                object_name = old_cover_photo_url.split(f"{settings.AWS_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/")[-1]
+                s3_service.delete_file(object_name)
+            except Exception as e:
+                logger.error(f"Failed to delete old cover photo: {str(e)}")
+                # Don't raise error, as the new cover photo is already uploaded
+        
+        return current_user
+    except HTTPException as e:
+        db.rollback()
+        raise e
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Unexpected error in cover photo update: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update cover photo"
+        )
+
+@router.delete("/me/cover-photo", response_model=UserOut)
+async def delete_cover_photo(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Delete user's cover photo and set it to null.
+    """
+    try:
+        # Store old cover photo URL for cleanup
+        old_cover_photo_url = current_user.cover_photo_url
+        
+        # Set cover photo URL to null
+        current_user.cover_photo_url = None
+        db.commit()
+        db.refresh(current_user)
+        
+        # If there was an old cover photo, try to delete it from S3
+        if old_cover_photo_url:
+            try:
+                # Extract object name from URL
+                object_name = old_cover_photo_url.split(f"{settings.AWS_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/")[-1]
+                s3_service.delete_file(object_name)
+            except Exception as e:
+                logger.error(f"Failed to delete old cover photo from S3: {str(e)}")
+                # Don't raise error, as the cover photo URL is already set to null
+        
+        return current_user
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Unexpected error in cover photo deletion: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete cover photo"
+        )
+
+@router.get("/{user_id}/projects", response_model=List[ProjectOut], summary="Get user's projects")
+def get_user_projects(
+    user_id: int, 
+    db: Session = Depends(get_db)
+):
+    """
+    Get all projects created by a specific user.
+    This endpoint can be accessed by any user to view another user's projects.
+    """
+    # First check if the user exists
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get all projects where the user is the owner
+    projects = db.query(Project).filter(Project.owner_id == user_id).all()
+    
+    # Format the projects for response
+    return [
+        ProjectOut(
+            id=project.id,
+            name=project.name,
+            description=project.description,
+            owner=UserOut.model_validate(project.owner) if project.owner else None,
+            tags=[TagOut(id=tag.id, name=tag.name) for tag in project.tags],
+            skills=[SkillOut(id=skill.id, name=skill.name) for skill in project.skills],
+            members=[UserOut.model_validate(user) for user in project.members],
+            applicants=[],  # Not showing applicants to other users for privacy
+            comments_count=len(project.comments),
+            vote_count=db.query(
+                func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
+            ).filter(ProjectVote.project_id == project.id).scalar() or 0
+        )
+        for project in projects
+    ]

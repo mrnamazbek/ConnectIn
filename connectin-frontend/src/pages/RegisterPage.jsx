@@ -57,7 +57,7 @@ const RegisterPage = () => {
     });
 
     return (
-        <div className="flex justify-center items-center min-h-screen -mt-13 px-4 bg-white dark:bg-black">
+        <div className="flex justify-center items-center min-h-screen -mt-20 px-4 bg-white dark:bg-black">
             <div className="flex flex-wrap md:flex-nowrap border border-green-700 dark:border-green-600 rounded-md bg-white dark:bg-gray-800 shadow-lg dark:shadow-gray-700/50 w-full max-w-3xl">
                 {/* Left Side: Form */}
                 <div className="flex flex-col flex-1 p-4 sm:p-6">

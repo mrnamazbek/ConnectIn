@@ -5,7 +5,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch, faSpinner, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import SearchResults from "../components/Search/SearchResults";
 import useSearchStore from "../store/searchStore";
-import useDebounce from "../hooks/useDebounce";
 
 export default function SearchPage() {
     const location = useLocation();
@@ -15,7 +14,7 @@ export default function SearchPage() {
 
     const { query, setQuery, search, clearResults, loading } = useSearchStore();
 
-    // Set initial query from URL
+    // Set initial query from URL and search if there is a query
     useEffect(() => {
         if (initialQuery) {
             setQuery(initialQuery);
@@ -23,29 +22,7 @@ export default function SearchPage() {
         }
     }, [initialQuery, setQuery, search]);
 
-    // Debounce search query to reduce API calls
-    const debouncedQuery = useDebounce(query, 500);
-
-    // Perform search when debounced query changes
-    useEffect(() => {
-        if (debouncedQuery.trim()) {
-            search(debouncedQuery);
-
-            // Update URL with search query
-            const url = new URL(window.location);
-            url.searchParams.set("q", debouncedQuery);
-            window.history.pushState({}, "", url);
-        } else if (debouncedQuery === "") {
-            clearResults();
-
-            // Remove query parameter from URL
-            const url = new URL(window.location);
-            url.searchParams.delete("q");
-            window.history.pushState({}, "", url);
-        }
-    }, [debouncedQuery, search, clearResults]);
-
-    // Handle input change
+    // Handle input change - only update query state and show hint
     const handleInputChange = (e) => {
         const value = e.target.value;
         setQuery(value);
@@ -53,20 +30,40 @@ export default function SearchPage() {
         setShowLengthHint(value.trim().length > 0 && value.trim().length < 3);
     };
 
-    // Handle submit
+    // Handle submit - search and update URL
     const handleSubmit = (e) => {
         e.preventDefault();
         if (query.trim().length >= 3) {
             search(query);
+            // Update URL with search query
+            const url = new URL(window.location);
+            url.searchParams.set("q", query);
+            window.history.pushState({}, "", url);
+        } else if (query.trim() === "") {
+            clearResults();
+            // Remove query parameter from URL
+            const url = new URL(window.location);
+            url.searchParams.delete("q");
+            window.history.pushState({}, "", url);
         }
     };
 
-    // Handle key press
+    // Handle key press - search only on Enter
     const handleKeyPress = (e) => {
         if (e.key === "Enter") {
             e.preventDefault();
             if (query.trim().length >= 3) {
                 search(query);
+                // Update URL with search query
+                const url = new URL(window.location);
+                url.searchParams.set("q", query);
+                window.history.pushState({}, "", url);
+            } else if (query.trim() === "") {
+                clearResults();
+                // Remove query parameter from URL
+                const url = new URL(window.location);
+                url.searchParams.delete("q");
+                window.history.pushState({}, "", url);
             }
         }
     };
@@ -99,7 +96,7 @@ export default function SearchPage() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         disabled={!query.trim() || query.trim().length < 3 || loading}
-                        className={`mt-2 sm:mt-0 px-6 py-3 font-semibold text-white rounded-md shadow-md transition ${!query.trim() || query.trim().length < 3 || loading ? "bg-gray-400 cursor-not-allowed" : "bg-green-700 hover:bg-green-600"}`}
+                        className={`mt-2 sm:mt-0 cursor-pointer px-6 py-3 font-semibold text-white rounded-md shadow-md transition ${!query.trim() || query.trim().length < 3 || loading ? "bg-gray-400 cursor-not-allowed" : "bg-green-700 hover:bg-green-600"}`}
                         type="submit"
                     >
                         {loading ? (
@@ -114,11 +111,9 @@ export default function SearchPage() {
                 </form>
             </motion.div>
 
-            {/* Search Results */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                    <SearchResults />
-                </div>
+            {/* Search Results - removed grid */}
+            <div className="w-full">
+                <SearchResults />
             </div>
         </div>
     );

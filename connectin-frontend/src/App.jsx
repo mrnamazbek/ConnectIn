@@ -14,7 +14,7 @@ import Footer from "./components/Footer"; // Путь к Footer
 import LandingPageV3 from "./pages/LandingPage_v3.jsx"; // Наш новый лендинг
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
-import UserProfile from "./pages/UserProfile";
+import UserProfilePage from "./pages/UserProfilePage"; // Combined user profile component
 import NotFoundPage from "./pages/NotFoundPage";
 import SearchPage from "./pages/SearchPage";
 import FeedPage from "./pages/FeedPage";
@@ -70,11 +70,20 @@ function App() {
                                         </MainContentWrapper>
                                     }
                                 />
+                                {/* User profile routes - both own profile and other user profiles */}
                                 <Route
-                                    path="/profile/*"
+                                    path="/profile"
                                     element={
                                         <MainContentWrapper>
-                                            <UserProfile />
+                                            <UserProfilePage />
+                                        </MainContentWrapper>
+                                    }
+                                />
+                                <Route
+                                    path="/profile/:userId"
+                                    element={
+                                        <MainContentWrapper>
+                                            <UserProfilePage />
                                         </MainContentWrapper>
                                     }
                                 />

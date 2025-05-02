@@ -1,10 +1,8 @@
-import { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Link, useNavigate, useLocation } from "react-router";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
-import { toast } from "react-toastify";
 import { ReactTyped } from "react-typed";
 import { faLightbulb, faHandshakeSimple, faRocket } from "@fortawesome/free-solid-svg-icons";
 import useAuthStore from "../store/authStore";
@@ -29,19 +27,19 @@ const LoginPage = () => {
         validateOnChange: true,
         onSubmit: async (values, { setSubmitting }) => {
             const success = await login(values.username, values.password);
-            
+
             if (success) {
                 // Redirect to the page user was trying to access, or home
                 const from = location.state?.from || "/";
                 navigate(from);
             }
-            
+
             setSubmitting(false);
         },
     });
 
     return (
-        <div className="flex justify-center items-center min-h-screen -mt-13 px-4">
+        <div className="flex justify-center items-center min-h-screen -mt-20 px-4">
             <div className="flex flex-wrap md:flex-nowrap border border-green-700 dark:border-green-500 rounded-md bg-white dark:bg-gray-800 shadow-lg w-full max-w-3xl">
                 {/* Left Side: Form */}
                 <div className="flex flex-col flex-1 p-4 sm:p-6">

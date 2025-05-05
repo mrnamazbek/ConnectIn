@@ -35,9 +35,20 @@ const RecommendationsPage = () => {
                     },
                 });
 
+                // Process project recommendations to remove duplicates and keep highest score
+                const uniqueProjects = {};
+                projectsResponse.data.forEach(rec => {
+                    if (!uniqueProjects[rec.project_id] || uniqueProjects[rec.project_id].score < rec.score) {
+                        uniqueProjects[rec.project_id] = rec;
+                    }
+                });
+
+                // Sort projects by ID (newest first)
+                const sortedProjects = Object.values(uniqueProjects).sort((a, b) => b.id - a.id);
+
                 // Fetch additional project details
                 const projectsWithDetails = await Promise.all(
-                    projectsResponse.data.map(async (rec) => {
+                    sortedProjects.map(async (rec) => {
                         try {
                             const projectDetails = await axios.get(`${import.meta.env.VITE_API_URL}/projects/${rec.project_id}`, {
                                 headers: {
@@ -65,8 +76,19 @@ const RecommendationsPage = () => {
                         },
                     });
 
+                    // Process post recommendations to remove duplicates and keep highest score
+                    const uniquePosts = {};
+                    postsResponse.data.forEach(rec => {
+                        if (!uniquePosts[rec.post_id] || uniquePosts[rec.post_id].score < rec.score) {
+                            uniquePosts[rec.post_id] = rec;
+                        }
+                    });
+
+                    // Sort posts by ID (newest first)
+                    const sortedPosts = Object.values(uniquePosts).sort((a, b) => b.id - a.id);
+
                     postsWithDetails = await Promise.all(
-                        postsResponse.data.map(async (rec) => {
+                        sortedPosts.map(async (rec) => {
                             try {
                                 const postDetails = await axios.get(`${import.meta.env.VITE_API_URL}/posts/${rec.post_id}`, {
                                     headers: {

@@ -144,7 +144,7 @@ To set up the project locally for development:
 
 **Setup Steps:**
 
-1.  **Clone:** `git clone <your-repository-url> && cd ConnectIn`
+1.  **Clone:** `git clone https://github.com/ded-r/ConnectIn/ && cd ConnectIn`
 
 2.  **Backend (`connectin-backend`):**
     * `cd connectin-backend`

@@ -15,14 +15,6 @@ const RecommendationsPage = () => {
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
-    // Create a custom axios instance that enforces HTTPS
-    const secureAxios = axios.create({
-        baseURL: import.meta.env.VITE_API_URL.replace('http://', 'https://'),
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-        }
-    });
 
     useEffect(() => {
         // If not authenticated, don't attempt to fetch
@@ -36,15 +28,22 @@ const RecommendationsPage = () => {
                 setLoading(true);
 
                 // Fetch project recommendations
-                const projectsResponse = await secureAxios.get(`/recommendations`, {
-                    params: { type: "project" }
+                const projectsResponse = await axios.get(`${import.meta.env.VITE_API_URL}/recommendations/`, {
+                    params: { type: "project" },
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                    },
                 });
 
                 // Fetch additional project details
                 const projectsWithDetails = await Promise.all(
                     projectsResponse.data.map(async (rec) => {
                         try {
-                            const projectDetails = await secureAxios.get(`/projects/${rec.project_id}`);
+                            const projectDetails = await axios.get(`${import.meta.env.VITE_API_URL}/projects/${rec.project_id}`, {
+                                headers: {
+                                    Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                                },
+                            });
                             return {
                                 ...rec,
                                 projectDetails: projectDetails.data,
@@ -59,14 +58,21 @@ const RecommendationsPage = () => {
                 // Fetch post recommendations (if implemented)
                 let postsWithDetails = [];
                 try {
-                    const postsResponse = await secureAxios.get(`/recommendations`, {
-                        params: { type: "post" }
+                    const postsResponse = await axios.get(`${import.meta.env.VITE_API_URL}/recommendations/`, {
+                        params: { type: "post" },
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                        },
                     });
 
                     postsWithDetails = await Promise.all(
                         postsResponse.data.map(async (rec) => {
                             try {
-                                const postDetails = await secureAxios.get(`/posts/${rec.post_id}`);
+                                const postDetails = await axios.get(`${import.meta.env.VITE_API_URL}/posts/${rec.post_id}`, {
+                                    headers: {
+                                        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                                    },
+                                });
                                 return {
                                     ...rec,
                                     postDetails: postDetails.data,

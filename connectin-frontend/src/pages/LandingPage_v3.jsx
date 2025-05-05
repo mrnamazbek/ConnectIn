@@ -256,6 +256,83 @@ const LandingPage_v3 = () => {
                 </div>
             </section>
 
+            {/* === Features Showcase Section с параллакс-эффектом === */}
+            <section className="py-24 bg-gradient-to-br from-emerald-900 via-teal-900 to-green-900 dark:from-gray-900 dark:via-gray-800 dark:to-black text-white relative overflow-hidden">
+                {/* Декоративные элементы фона */}
+                <div className="absolute inset-0 overflow-hidden">
+                    <div className="absolute w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-800/30 via-transparent to-transparent opacity-70"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent"></div>
+                </div>
+
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-20">
+                        <h2 className="text-4xl md:text-5xl font-bold mb-6">Designed for the Modern Developer</h2>
+                        <p className="text-xl text-emerald-100 dark:text-gray-300 max-w-3xl mx-auto">Powerful features that help you focus on what matters most: building great things with great people.</p>
+                    </motion.div>
+
+                    <div className="grid md:grid-cols-3 gap-y-12 md:gap-x-8">
+                        {[
+                            {
+                                icon: faProjectDiagram,
+                                title: "Project Matching",
+                                desc: "AI-powered matching connects you with projects that align with your skills and interests.",
+                            },
+                            {
+                                icon: faUsers,
+                                title: "Developer Networking",
+                                desc: "Connect with skilled developers who share your interests and complement your abilities.",
+                            },
+                            {
+                                icon: faComments,
+                                title: "Real-Time Chat",
+                                desc: "Seamless communication with other developers, with project-specific channels.",
+                            },
+                            {
+                                icon: faFileCode,
+                                title: "Portfolio Building",
+                                desc: "Showcase your projects and contributions to build a compelling professional portfolio.",
+                            },
+                            {
+                                icon: faBlog,
+                                title: "Knowledge Sharing",
+                                desc: "Share your insights and learn from others with our integrated blogging platform.",
+                            },
+                            {
+                                icon: faStar,
+                                title: "Skill Recognition",
+                                desc: "Get endorsed for your skills and build your professional reputation.",
+                            },
+                        ].map((feature, index) => (
+                            <motion.div
+                                key={index}
+                                initial="hidden"
+                                whileInView="visible"
+                                viewport={{ once: true, amount: 0.3 }}
+                                variants={{
+                                    hidden: { opacity: 0, y: 30 },
+                                    visible: {
+                                        opacity: 1,
+                                        y: 0,
+                                        transition: {
+                                            delay: index * 0.1,
+                                            duration: 0.7,
+                                            ease: [0.22, 1, 0.36, 1],
+                                        },
+                                    },
+                                }}
+                                className="flex flex-col items-center text-center px-4"
+                            >
+                                <div className="h-16 w-16 rounded-full bg-emerald-700/50 dark:bg-emerald-800/30 flex items-center justify-center text-emerald-400 mb-6">
+                                    <FontAwesomeIcon icon={feature.icon} className="text-xl" />
+                                </div>
+                                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
+                                <p className="text-emerald-100 dark:text-gray-400">{feature.desc}</p>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
             {/* === Testimonials Section с горизонтальной прокруткой === */}
             <section className="py-24 bg-white dark:bg-black overflow-hidden">
                 <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

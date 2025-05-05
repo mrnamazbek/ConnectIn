@@ -215,6 +215,16 @@ const ProjectPage = () => {
         }
     };
 
+    // Add function to handle author profile navigation
+    const handleAuthorClick = (user) => {
+        if (!user || !user.id) {
+            console.error("Cannot navigate to profile: Author ID is missing", user);
+            toast.error("Cannot view profile: User ID is missing");
+            return;
+        }
+        navigate(`/profile/${user.id}`);
+    };
+
     // Render auth-required UI elements based on login status
     const renderAuthRequiredUI = () => {
         if (!currentUser) {
@@ -360,13 +370,19 @@ const ProjectPage = () => {
                                     <img
                                         src={comment.user?.avatar_url || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
                                         alt={comment.user?.username || "User"}
-                                        className="w-8 h-8 rounded-full border hover:ring-2 hover:ring-green-500 transition"
+                                        className="w-8 h-8 rounded-full border hover:ring-2 hover:ring-green-500 transition cursor-pointer"
                                         onError={(e) => (e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png")}
+                                        onClick={() => handleAuthorClick(comment.user)}
                                     />
                                     <div className="flex-1">
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <p className="font-semibold text-sm">{comment.user?.username || "Unknown User"}</p>
+                                                <p 
+                                                    className="font-semibold text-sm cursor-pointer hover:text-green-700 transition-colors"
+                                                    onClick={() => handleAuthorClick(comment.user)}
+                                                >
+                                                    {comment.user?.username || "Unknown User"}
+                                                </p>
                                                 <p className="text-xs text-gray-500 flex items-center gap-1">
                                                     <FontAwesomeIcon icon={faClock} className="text-gray-400" />
                                                     {formatDate(comment.created_at)}

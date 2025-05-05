@@ -26,7 +26,7 @@ const RecommendationsPage = () => {
         const fetchRecommendations = async () => {
             try {
                 setLoading(true);
-                
+
                 // Fetch project recommendations
                 const projectsResponse = await axios.get(`${import.meta.env.VITE_API_URL}/recommendations`, {
                     params: { type: "project" },
@@ -34,7 +34,7 @@ const RecommendationsPage = () => {
                         Authorization: `Bearer ${localStorage.getItem("token")}`,
                     },
                 });
-                
+
                 // Fetch additional project details
                 const projectsWithDetails = await Promise.all(
                     projectsResponse.data.map(async (rec) => {
@@ -54,7 +54,7 @@ const RecommendationsPage = () => {
                         }
                     })
                 );
-                
+
                 // Fetch post recommendations (if implemented)
                 let postsWithDetails = [];
                 try {
@@ -64,7 +64,7 @@ const RecommendationsPage = () => {
                             Authorization: `Bearer ${localStorage.getItem("token")}`,
                         },
                     });
-                    
+
                     postsWithDetails = await Promise.all(
                         postsResponse.data.map(async (rec) => {
                             try {
@@ -86,12 +86,12 @@ const RecommendationsPage = () => {
                 } catch (err) {
                     console.log("Post recommendations might not be implemented yet:", err);
                 }
-                
+
                 setRecommendations({
                     projects: projectsWithDetails,
                     posts: postsWithDetails,
                 });
-                
+
                 setLoading(false);
             } catch (err) {
                 console.error("Error fetching recommendations:", err);
@@ -101,6 +101,7 @@ const RecommendationsPage = () => {
         };
 
         fetchRecommendations();
+        console.log(recommendations);
     }, [isAuthenticated, user]);
 
     const formatScore = (score) => {
@@ -112,9 +113,7 @@ const RecommendationsPage = () => {
             <div className="flex flex-col items-center justify-center min-h-[60vh] py-10 px-4 text-center">
                 <FontAwesomeIcon icon={faLock} className="text-5xl text-gray-400 mb-6" />
                 <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-4">Personalized Recommendations</h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
-                    Sign in to see personalized project and post recommendations based on your skills and interests.
-                </p>
+                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">Sign in to see personalized project and post recommendations based on your skills and interests.</p>
                 <Link to="/login" className="bg-emerald-500 hover:bg-emerald-600 text-white py-2 px-6 rounded-lg font-medium transition">
                     Sign In
                 </Link>
@@ -195,7 +194,7 @@ const RecommendationsPage = () => {
                                         <p className="text-gray-500 dark:text-gray-400 italic">Loading project details...</p>
                                     )}
                                     <p className="text-gray-500 text-sm mb-4">{rec.text || "Recommended based on your skills"}</p>
-                                    <Link to={`/project/${rec.project_id}`} className="inline-flex items-center text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
+                                    <Link to={`/feed/project/${rec.project_id}`} className="inline-flex items-center text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
                                         View Project <FontAwesomeIcon icon={faExternalLinkAlt} className="ml-1 text-xs" />
                                     </Link>
                                 </div>
@@ -219,27 +218,13 @@ const RecommendationsPage = () => {
                                         <>
                                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 truncate">{rec.postDetails.title || `Post #${rec.post_id}`}</h3>
                                             <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">{rec.postDetails.content || "No content available"}</p>
-                                            {rec.postDetails.author && (
-                                                <div className="flex items-center mb-4">
-                                                    <img
-                                                        src={rec.postDetails.author.avatar || "/default-avatar.png"}
-                                                        alt={rec.postDetails.author.name}
-                                                        className="w-8 h-8 rounded-full mr-2"
-                                                        onError={(e) => {
-                                                            e.target.onerror = null;
-                                                            e.target.src = "/default-avatar.png";
-                                                        }}
-                                                    />
-                                                    <span className="text-sm text-gray-600 dark:text-gray-400">By {rec.postDetails.author.name}</span>
-                                                </div>
-                                            )}
                                         </>
                                     ) : (
                                         <p className="text-gray-500 dark:text-gray-400 italic">Loading post details...</p>
                                     )}
                                     <p className="text-gray-500 text-sm mb-4">{rec.text || "Recommended based on your interests"}</p>
                                     <div className="flex justify-between items-center">
-                                        <Link to={`/post/${rec.post_id}`} className="inline-flex items-center text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
+                                        <Link to={`/feed/post/${rec.post_id}`} className="inline-flex items-center text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
                                             Read Post <FontAwesomeIcon icon={faExternalLinkAlt} className="ml-1 text-xs" />
                                         </Link>
                                         <span className="bg-emerald-100 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200 text-sm font-medium px-2.5 py-0.5 rounded">Match: {formatScore(rec.score)}/10</span>

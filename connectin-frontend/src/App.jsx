@@ -24,6 +24,9 @@ import AboutPage from "./pages/AboutPage.jsx";
 import PublishPage from "./pages/PublishPage.jsx";
 import ProjectPage from "./pages/ProjectPage.jsx";
 import RecommendationsPage from "./pages/RecommendationsPage.jsx";
+import ContactPage from "./pages/ContactPage.jsx";
+import FAQPage from "./pages/FAQPage.jsx";
+import NetworkGraph from "./pages/NetworkGraph.jsx";
 // Убедитесь, что пути ко всем страницам и компонентам верны!
 
 function App() {
@@ -104,6 +107,14 @@ function App() {
                                     }
                                 />
                                 <Route
+                                    path="/network"
+                                    element={
+                                        <MainContentWrapper>
+                                            <NetworkGraph />
+                                        </MainContentWrapper>
+                                    }
+                                />
+                                <Route
                                     path="/project/:projectId"
                                     element={
                                         <MainContentWrapper>
@@ -124,6 +135,22 @@ function App() {
                                     element={
                                         <MainContentWrapper>
                                             <AboutPage />
+                                        </MainContentWrapper>
+                                    }
+                                />
+                                <Route
+                                    path="/contact"
+                                    element={
+                                        <MainContentWrapper>
+                                            <ContactPage />
+                                        </MainContentWrapper>
+                                    }
+                                />
+                                <Route
+                                    path="/faq"
+                                    element={
+                                        <MainContentWrapper>
+                                            <FAQPage />
                                         </MainContentWrapper>
                                     }
                                 />

@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch, faPlus, faTimes, faPaperPlane, faUserCircle, faImage, faSpinner, faTimes as faClose, faBars, faEllipsisV, faChevronLeft } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
+import { useNavigate, useLocation } from "react-router";
 
 const ChatPage = () => {
     const [conversations, setConversations] = useState([]);
@@ -34,6 +35,8 @@ const ChatPage = () => {
     const fileInputRef = useRef(null);
     const messagesEndRef = useRef(null);
     const { accessToken, user } = useAuthStore();
+    const navigate = useNavigate();
+    const location = useLocation();
 
     // Store active conversation in localStorage when it changes
     useEffect(() => {
@@ -551,7 +554,41 @@ const ChatPage = () => {
 
         if (otherParticipants.length === 0) return "Just you";
 
+        // For display in chat list where JSX isn't needed
         return otherParticipants.map((p) => `${p.first_name || ""} ${p.last_name || ""}`.trim() || p.username).join(", ");
+    };
+
+    // New function to get participants with clickable names
+    const getConversationParticipants = (conversation, isClickable = false) => {
+        if (!conversation || !conversation.participants) return "Chat";
+        if (!user) return "Loading...";
+
+        // Filter out current user and get the other participant(s)
+        const otherParticipants = conversation.participants.filter((p) => p?.id !== user?.id);
+
+        if (otherParticipants.length === 0) return "Just you";
+
+        if (!isClickable) {
+            return otherParticipants.map((p) => `${p.first_name || ""} ${p.last_name || ""}`.trim() || p.username).join(", ");
+        }
+
+        // For usage where we need clickable elements
+        const participant = otherParticipants[0]; // Since we mostly have 1:1 chats
+        if (!participant || !participant.id) {
+            return otherParticipants.map((p) => `${p.first_name || ""} ${p.last_name || ""}`.trim() || p.username).join(", ");
+        }
+
+        return (
+            <span 
+                onClick={(e) => {
+                    console.log("Username clicked, navigating to:", participant.id);
+                    handleUserProfileClick(participant.id, e);
+                }}
+                className="cursor-pointer hover:text-green-600 hover:underline"
+            >
+                {`${participant.first_name || ""} ${participant.last_name || ""}`.trim() || participant.username}
+            </span>
+        );
     };
 
     const getParticipantAvatar = (conversation) => {
@@ -618,6 +655,23 @@ const ChatPage = () => {
         }
     }, [isSearchingUsers, isMobileView]);
 
+    // Add a function to navigate to user profile
+    const handleUserProfileClick = (userId, e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation(); // Prevent conversation selection
+        }
+        
+        if (!userId) {
+            console.error("Cannot navigate to profile: User ID is missing");
+            toast.error("Cannot view profile: User information is missing");
+            return;
+        }
+        
+        console.log("Navigating to profile:", userId);
+        navigate(`/profile/${userId}`);
+    };
+
     if (loading) {
         return (
             <div className="flex h-full items-center justify-center">
@@ -651,7 +705,15 @@ const ChatPage = () => {
                         </button>
                     )}
 
-                    <h1 className="text-lg font-semibold text-gray-800 dark:text-white">{activeConversation && !sidebarVisible ? getConversationName(activeConversation) : "Messages"}</h1>
+                    <h1 className="text-lg font-semibold text-gray-800 dark:text-white">
+                        {activeConversation && !sidebarVisible 
+                            ? (
+                                <div onClick={(e) => e.stopPropagation()}>
+                                    {getConversationParticipants(activeConversation, true)}
+                                </div>
+                            ) 
+                            : "Messages"}
+                    </h1>
 
                     <button
                         onClick={() => {
@@ -709,7 +771,10 @@ const ChatPage = () => {
                                                 <motion.div
                                                     key={userResult.id}
                                                     className="p-2 flex items-center space-x-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer relative"
-                                                    onClick={() => startConversation(userResult.id)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        startConversation(userResult.id);
+                                                    }}
                                                     whileHover={{ scale: 1.01 }}
                                                     whileTap={{ scale: 0.99 }}
                                                 >
@@ -834,7 +899,26 @@ const ChatPage = () => {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-center">
-                                                <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{getConversationName(conversation)}</p>
+                                                <div 
+                                                    className="font-medium text-gray-900 dark:text-white text-sm truncate"
+                                                    style={{ cursor: 'pointer', position: 'relative', zIndex: 50 }}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        const participant = conversation.participants.find(p => p?.id !== user?.id);
+                                                        if (participant && participant.id) {
+                                                            console.log("Header directly clicked", participant.id);
+                                                            navigate(`/profile/${participant.id}`);
+                                                        }
+                                                    }}
+                                                >
+                                                    {(() => {
+                                                        // Direct rendering
+                                                        const otherParticipants = conversation.participants.filter((p) => p?.id !== user?.id);
+                                                        if (otherParticipants.length === 0) return "Just you";
+                                                        return otherParticipants.map((p) => `${p.first_name || ""} ${p.last_name || ""}`.trim() || p.username).join(", ");
+                                                    })()}
+                                                </div>
                                                 <div className="flex items-center">
                                                     {conversation.last_message && <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap ml-1">{formatDate(conversation.last_message.timestamp)}</span>}
 
@@ -921,7 +1005,26 @@ const ChatPage = () => {
                                                 </div>
                                             )}
                                             <div>
-                                                <h2 className="font-medium text-gray-900 dark:text-white">{getConversationName(activeConversation)}</h2>
+                                                <div 
+                                                    className="font-medium text-gray-900 dark:text-white"
+                                                    style={{ cursor: 'pointer', position: 'relative', zIndex: 50 }}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        const participant = activeConversation.participants.find(p => p?.id !== user?.id);
+                                                        if (participant && participant.id) {
+                                                            console.log("Header directly clicked", participant.id);
+                                                            navigate(`/profile/${participant.id}`);
+                                                        }
+                                                    }}
+                                                >
+                                                    {(() => {
+                                                        // Direct rendering
+                                                        const otherParticipants = activeConversation.participants.filter((p) => p?.id !== user?.id);
+                                                        if (otherParticipants.length === 0) return "Just you";
+                                                        return otherParticipants.map((p) => `${p.first_name || ""} ${p.last_name || ""}`.trim() || p.username).join(", ");
+                                                    })()}
+                                                </div>
                                             </div>
                                         </>
                                     )}

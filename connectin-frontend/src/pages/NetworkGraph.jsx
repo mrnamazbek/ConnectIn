@@ -1,33 +1,33 @@
-import React, { useRef, useState, useEffect, useMemo, Suspense } from 'react';
-import { Canvas, useFrame, extend } from '@react-three/fiber';
-import { OrbitControls, Text, Line } from '@react-three/drei';
-import * as THREE from 'three';
-import {
-    forceSimulation3d,
-    forceLink,
-    forceManyBody,
-    forceCenter
-} from 'd3-force-3d';
-import axios from '../utils/axiosConfig'; // Используем ваш настроенный axios
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { useRef, useState, useEffect, useMemo, Suspense } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls, Text, Line } from "@react-three/drei";
+import * as THREE from "three";
+import { forceSimulation, forceLink, forceManyBody, forceCenter } from "d3-force-3d";
+import axios from "../utils/axiosConfig";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 
-// Расширяем Three.js для использования LineGeometry/LineMaterial (если нужно для толстых линий)
-// extend({ LineGeometry, LineMaterial }); // Пока используем Line из drei
+// Note: Many JSX properties below are specific to Three.js/React Three Fiber
+// and will trigger ESLint warnings about unknown props. This is normal for 3D components.
 
 // --- Компонент для одного Узла ---
 function Node({ node, position, onNodeClick, onNodeHover }) {
     const meshRef = useRef();
     const [isHovered, setIsHovered] = useState(false);
 
-    // Цвета в зависимости от типа узла (настройте под ваш стиль)
+    // Цвета в зависимости от типа узла
     const color = useMemo(() => {
         switch (node.type) {
-            case 'user': return '#4299e1'; // Синий
-            case 'project': return '#48bb78'; // Зеленый
-            case 'skill': return '#f6ad55'; // Оранжевый
-            case 'team': return '#a0aec0'; // Серый
-            default: return '#cbd5e0';
+            case "user":
+                return "#4299e1"; // Синий
+            case "project":
+                return "#48bb78"; // Зеленый
+            case "skill":
+                return "#f6ad55"; // Оранжевый
+            case "team":
+                return "#a0aec0"; // Серый
+            default:
+                return "#cbd5e0";
         }
     }, [node.type]);
 
@@ -41,26 +41,30 @@ function Node({ node, position, onNodeClick, onNodeHover }) {
     return (
         <group
             position={position}
-            onPointerOver={(e) => { e.stopPropagation(); setIsHovered(true); onNodeHover(node.id); }}
-            onPointerOut={() => { setIsHovered(false); onNodeHover(null); }}
-            onClick={(e) => { e.stopPropagation(); onNodeClick(node); }}
+            onPointerOver={(e) => {
+                e.stopPropagation();
+                setIsHovered(true);
+                onNodeHover(node.id);
+            }}
+            onPointerOut={() => {
+                setIsHovered(false);
+                onNodeHover(null);
+            }}
+            onClick={(e) => {
+                e.stopPropagation();
+                onNodeClick(node);
+            }}
         >
             {/* Сфера узла */}
             <mesh ref={meshRef}>
                 <sphereGeometry args={[0.3, 32, 32]} />
-                <meshStandardMaterial
-                    color={color}
-                    roughness={0.6}
-                    metalness={0.2}
-                    transparent
-                    opacity={0.9}
-                />
+                <meshStandardMaterial color={color} roughness={0.6} metalness={0.2} transparent opacity={0.9} />
             </mesh>
             {/* Подпись узла (появляется при наведении) */}
             <Suspense fallback={null}>
                 <Text
                     position={[0, 0.5, 0]} // Над сферой
-                    color={isHovered ? (node.type === 'user' ? '#fff' : '#333') : 'transparent'} // Показываем только при наведении
+                    color={isHovered ? (node.type === "user" ? "#fff" : "#333") : "transparent"} // Показываем только при наведении
                     anchorX="center"
                     anchorY="middle"
                     fontSize={0.18}
@@ -101,7 +105,7 @@ function Edge({ edge, positions }) {
 }
 
 // --- Основной Компонент Графа ---
-const GraphComponent = ({ graphData, onNodeClick, onNodeHover, hoveredNodeId }) => {
+const GraphComponent = ({ graphData, onNodeClick, onNodeHover }) => {
     const nodesRef = useRef([]); // Ref для хранения узлов d3
     const simulationRef = useRef(); // Ref для симуляции d3
     const [positions, setPositions] = useState({}); // Состояние для позиций узлов
@@ -111,19 +115,25 @@ const GraphComponent = ({ graphData, onNodeClick, onNodeHover, hoveredNodeId }) 
         if (!graphData || !graphData.nodes || !graphData.edges) return;
 
         // Создаем копии для d3, чтобы не мутировать исходные данные
-        const nodes = graphData.nodes.map(d => ({ ...d }));
-        const edges = graphData.edges.map(d => ({ source: d.source, target: d.target })); // d3 нужны только source/target ID
+        const nodes = graphData.nodes.map((d) => ({ ...d }));
+        const edges = graphData.edges.map((d) => ({ source: d.source, target: d.target })); // d3 нужны только source/target ID
 
         nodesRef.current = nodes; // Сохраняем узлы в ref
 
         // Создаем симуляцию
-        const simulation = forceSimulation3d(nodes)
+        const simulation = forceSimulation(nodes)
             // Сила притяжения по связям
-            .force('link', forceLink(edges).id(d => d.id).distance(1.5).strength(0.5))
+            .force(
+                "link",
+                forceLink(edges)
+                    .id((d) => d.id)
+                    .distance(1.5)
+                    .strength(0.5)
+            )
             // Сила отталкивания между узлами
-            .force('charge', forceManyBody().strength(-1.5)) // Отрицательное значение для отталкивания
+            .force("charge", forceManyBody().strength(-1.5)) // Отрицательное значение для отталкивания
             // Центрирующая сила (удерживает граф в центре)
-            .force('center', forceCenter().strength(0.05))
+            .force("center", forceCenter().strength(0.05))
             .alphaDecay(0.01) // Как быстро симуляция "остывает"
             .velocityDecay(0.4); // Трение
 
@@ -131,9 +141,9 @@ const GraphComponent = ({ graphData, onNodeClick, onNodeHover, hoveredNodeId }) 
 
         // Функция, которая обновляет позиции в React состоянии на каждом тике симуляции
         const tick = () => {
-            setPositions(prev => {
+            setPositions((prev) => {
                 const newPositions = { ...prev };
-                nodesRef.current.forEach(node => {
+                nodesRef.current.forEach((node) => {
                     // d3 добавляет координаты x, y, z к объектам узлов
                     newPositions[node.id] = { x: node.x || 0, y: node.y || 0, z: node.z || 0 };
                 });
@@ -141,20 +151,14 @@ const GraphComponent = ({ graphData, onNodeClick, onNodeHover, hoveredNodeId }) 
             });
         };
 
-        simulation.on('tick', tick); // Вызываем tick на каждом шаге симуляции
-        // simulation.on('end', () => logger.info("D3 Simulation ended.")); // Можно отслеживать конец
+        simulation.on("tick", tick); // Вызываем tick на каждом шаге симуляции
+        // simulation.on('end', () => console.log("D3 Simulation ended.")); // Можно отслеживать конец
 
         // Очистка при размонтировании
         return () => {
             simulation.stop();
         };
-
     }, [graphData]); // Перезапускаем симуляцию только при изменении данных графа
-
-    // Обновляем позиции узлов в Three.js на каждом кадре анимации
-    useFrame(() => {
-        // Этот useFrame не нужен, так как позиции обновляются через useState по тикам d3
-    });
 
     // --- Рендеринг ---
     if (!graphData || !graphData.nodes) {
@@ -168,18 +172,11 @@ const GraphComponent = ({ graphData, onNodeClick, onNodeHover, hoveredNodeId }) 
                 <Edge key={`edge-${i}`} edge={edge} positions={positions} />
             ))}
             {/* Рендерим узлы */}
-            {graphData.nodes.map(node => (
-                 // Рендерим узел только если его позиция рассчитана
-                positions[node.id] && (
-                    <Node
-                        key={node.id}
-                        node={node}
-                        position={[positions[node.id].x, positions[node.id].y, positions[node.id].z]}
-                        onNodeClick={onNodeClick}
-                        onNodeHover={onNodeHover}
-                    />
-                )
-            ))}
+            {graphData.nodes.map(
+                (node) =>
+                    // Рендерим узел только если его позиция рассчитана
+                    positions[node.id] && <Node key={node.id} node={node} position={[positions[node.id].x, positions[node.id].y, positions[node.id].z]} onNodeClick={onNodeClick} onNodeHover={onNodeHover} />
+            )}
         </>
     );
 };
@@ -198,14 +195,14 @@ const NetworkGraph3D = () => {
             setError(null);
             try {
                 // Используем ваш настроенный axios и эндпоинт
-                const response = await axios.get('/api/v1/graph/connections');
+                const response = await axios.get("/api/v1/graph/connections");
                 if (response.data && response.data.nodes && response.data.edges) {
                     setGraphData(response.data);
                 } else {
                     throw new Error("Invalid data format received from API");
                 }
             } catch (err) {
-                logger.error("Failed to fetch graph data:", err);
+                console.error("Failed to fetch graph data:", err);
                 setError(err.message || "Could not load graph data.");
             } finally {
                 setLoading(false);
@@ -224,11 +221,11 @@ const NetworkGraph3D = () => {
     const handleNodeHover = (nodeId) => {
         setHoveredNodeId(nodeId);
         // Можно менять стиль курсора и т.д.
-        document.body.style.cursor = nodeId ? 'pointer' : 'default';
+        document.body.style.cursor = nodeId ? "pointer" : "default";
     };
 
     return (
-        <div className="relative w-full rounded-lg overflow-hidden shadow-lg border dark:border-gray-700" style={{ height: '70vh', minHeight: '500px' }}>
+        <div className="relative w-full rounded-lg overflow-hidden shadow-lg border dark:border-gray-700" style={{ height: "70vh", minHeight: "500px" }}>
             {/* Индикатор загрузки */}
             {loading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-black/50 z-20">
@@ -243,31 +240,28 @@ const NetworkGraph3D = () => {
             )}
             {/* 3D Canvas */}
             {!loading && !error && graphData && (
-                 <Canvas camera={{ position: [0, 0, 15], fov: 50 }}> {/* Настройка камеры */}
+                <Canvas camera={{ position: [0, 0, 15], fov: 50 }}>
+                    {/* Настройка камеры */}
                     {/* Освещение */}
                     <ambientLight intensity={0.8} />
                     <pointLight position={[20, 20, 20]} intensity={1.5} color="#ffffff" />
                     <pointLight position={[-20, -20, -10]} intensity={0.5} color="#a0e0ff" />
-
                     {/* Используем Suspense для асинхронных компонентов внутри (например, Text) */}
                     <Suspense fallback={null}>
-                        <GraphComponent
-                             graphData={graphData}
-                             onNodeClick={handleNodeClick}
-                             onNodeHover={handleNodeHover}
-                             hoveredNodeId={hoveredNodeId}
-                        />
+                        <GraphComponent graphData={graphData} onNodeClick={handleNodeClick} onNodeHover={handleNodeHover} />
                     </Suspense>
-
                     {/* Управление камерой (вращение, зум, панорамирование) */}
                     <OrbitControls enableZoom={true} enablePan={true} enableRotate={true} />
-                 </Canvas>
+                </Canvas>
             )}
-             {/* Можно добавить легенду или информацию о наведенном узле поверх Canvas */}
-             {/* {hoveredNodeId && <div className="absolute bottom-4 left-4 bg-black/50 text-white p-2 rounded text-xs">Hovering: {hoveredNodeId}</div>} */}
+            {/* Инфо о наведенном узле */}
+            {hoveredNodeId && (
+                <div className="absolute bottom-4 left-4 bg-black/50 text-white p-2 rounded text-xs">
+                    Node: {hoveredNodeId}
+                </div>
+            )}
         </div>
     );
 };
 
 export default NetworkGraph3D;
-

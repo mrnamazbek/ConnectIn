@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGithub, faTwitter, faLinkedin, faDiscord } from "@fortawesome/free-brands-svg-icons";
-import { faQuestionCircle, faCode, faLaptopCode, faBook, faEnvelope, faArrowRight } from "@fortawesome/free-solid-svg-icons";
+import { faQuestionCircle, faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { NavLink } from "react-router";
 
 const Footer = () => {
@@ -40,16 +40,6 @@ const Footer = () => {
                                     </NavLink>
                                 </li>
                                 <li>
-                                    <NavLink to="/careers" className="text-gray-600 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 transition">
-                                        Careers
-                                    </NavLink>
-                                </li>
-                                <li>
-                                    <NavLink to="/blog" className="text-gray-600 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 transition">
-                                        Blog
-                                    </NavLink>
-                                </li>
-                                <li>
                                     <NavLink to="/contact" className="text-gray-600 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 transition">
                                         Contact
                                     </NavLink>
@@ -62,27 +52,9 @@ const Footer = () => {
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Resources</h3>
                             <ul className="space-y-2">
                                 <li>
-                                    <NavLink to="/docs" className="text-gray-600 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 transition">
-                                        <FontAwesomeIcon icon={faBook} className="mr-2" />
-                                        Documentation
-                                    </NavLink>
-                                </li>
-                                <li>
                                     <NavLink to="/faq" className="text-gray-600 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 transition">
                                         <FontAwesomeIcon icon={faQuestionCircle} className="mr-2" />
                                         FAQ
-                                    </NavLink>
-                                </li>
-                                <li>
-                                    <NavLink to="/api" className="text-gray-600 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 transition">
-                                        <FontAwesomeIcon icon={faCode} className="mr-2" />
-                                        API
-                                    </NavLink>
-                                </li>
-                                <li>
-                                    <NavLink to="/tutorials" className="text-gray-600 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 transition">
-                                        <FontAwesomeIcon icon={faLaptopCode} className="mr-2" />
-                                        Tutorials
                                     </NavLink>
                                 </li>
                             </ul>
@@ -94,15 +66,8 @@ const Footer = () => {
                             <p className="text-gray-600 dark:text-gray-400 mb-4">Subscribe to our newsletter for the latest updates.</p>
                             <form className="flex flex-col space-y-2">
                                 <div className="relative">
-                                    <input
-                                        type="email"
-                                        placeholder="Your email"
-                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                                    />
-                                    <button
-                                        type="submit"
-                                        className="absolute right-1 top-1 bottom-1 px-3 bg-green-600 hover:bg-green-700 text-white rounded-md flex items-center justify-center transition-colors"
-                                    >
+                                    <input type="email" placeholder="Your email" className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500" />
+                                    <button type="submit" className="absolute right-1 top-1 bottom-1 px-3 bg-green-600 hover:bg-green-700 text-white rounded-md flex items-center justify-center transition-colors">
                                         <FontAwesomeIcon icon={faArrowRight} />
                                     </button>
                                 </div>

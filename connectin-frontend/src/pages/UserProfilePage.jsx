@@ -100,8 +100,8 @@ const UserProfilePage = () => {
                     }
                 } else if (userId) {
                     // Fetch another user's profile
-                    const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/${userId}`);
-                    setUser(response.data);
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/${userId}`);
+                setUser(response.data);
                     setSkills(response.data.skills || []);
                     setIsOwnProfile(false);
 
@@ -121,7 +121,7 @@ const UserProfilePage = () => {
             }
         };
 
-        fetchUserProfile();
+            fetchUserProfile();
     }, [userId, navigate, isAuthenticated, currentUser]);
 
     const fetchAllData = async () => {
@@ -708,7 +708,7 @@ const UserProfilePage = () => {
                             <AvatarUpload user={user} onAvatarUpdate={handleAvatarUpdate} editMode={editMode} />
                         ) : (
                             <div className="border-4 border-white dark:border-gray-800 rounded-full">
-                                {user.avatar_url ? (
+                        {user.avatar_url ? (
                                     <img src={user.avatar_url} alt={user.username} className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover bg-white" />
                                 ) : (
                                     <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
@@ -725,61 +725,61 @@ const UserProfilePage = () => {
                             <div>
                                 <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">{user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : `@${user.username}`}</h1>
 
-                                {(user.first_name || user.last_name) && <p className="text-gray-600 dark:text-gray-300 mb-1">@{user.username}</p>}
+                        {(user.first_name || user.last_name) && <p className="text-gray-600 dark:text-gray-300 mb-1">@{user.username}</p>}
 
                                 {/* Improve spacing and layout of user info for mobile */}
                                 <div className="mt-2 space-y-1.5">
-                                    {user.position && (
+                        {user.position && (
                                         <p className="text-gray-700 dark:text-gray-300 flex items-center text-sm sm:text-base">
                                             <FontAwesomeIcon icon={faBriefcase} className="mr-2 text-gray-500 w-4" />
-                                            {user.position}
-                                        </p>
-                                    )}
+                                {user.position}
+                            </p>
+                        )}
 
-                                    {user.city && (
+                        {user.city && (
                                         <p className="text-gray-600 dark:text-gray-400 flex items-center text-sm sm:text-base">
                                             <FontAwesomeIcon icon={faLocationDot} className="mr-2 text-gray-500 w-4" />
-                                            {user.city}
-                                        </p>
-                                    )}
+                                {user.city}
+                            </p>
+                        )}
 
-                                    {user.email && (
+                        {user.email && (
                                         <p className="text-gray-600 dark:text-gray-400 flex items-center text-sm sm:text-base break-all">
                                             <FontAwesomeIcon icon={faEnvelope} className="mr-2 text-gray-500 w-4 flex-shrink-0" />
-                                            {user.email}
-                                        </p>
-                                    )}
+                                {user.email}
+                            </p>
+                        )}
                                 </div>
 
-                                {/* Status message if available */}
-                                {user.status && (
+                        {/* Status message if available */}
+                        {user.status && (
                                     <div className="mt-3 mb-3 sm:mb-4 p-2 sm:p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
                                         <p className="text-gray-700 dark:text-gray-300 italic text-sm sm:text-base">{user.status}</p>
-                                    </div>
-                                )}
+                            </div>
+                        )}
 
                                 {/* Social Links - improve for mobile */}
-                                {(user.github || user.linkedin || user.telegram) && (
+                        {(user.github || user.linkedin || user.telegram) && (
                                     <div className="flex mt-3 space-x-2 sm:space-x-3">
-                                        {user.github && (
+                                {user.github && (
                                             <button onClick={() => handleExternalLink(user.github)} className="p-1.5 sm:p-2 text-gray-700 hover:text-green-600 dark:text-gray-300 dark:hover:text-green-400 transition-colors" aria-label="GitHub Profile">
                                                 <FontAwesomeIcon icon={faGithub} className="text-lg sm:text-xl" />
-                                            </button>
-                                        )}
+                                    </button>
+                                )}
 
-                                        {user.linkedin && (
+                                {user.linkedin && (
                                             <button onClick={() => handleExternalLink(user.linkedin)} className="p-1.5 sm:p-2 text-gray-700 hover:text-green-600 dark:text-gray-300 dark:hover:text-green-400 transition-colors" aria-label="LinkedIn Profile">
                                                 <FontAwesomeIcon icon={faLinkedin} className="text-lg sm:text-xl" />
-                                            </button>
-                                        )}
+                                    </button>
+                                )}
 
-                                        {user.telegram && (
+                                {user.telegram && (
                                             <button onClick={() => handleExternalLink(user.telegram)} className="p-1.5 sm:p-2 text-gray-700 hover:text-green-600 dark:text-gray-300 dark:hover:text-green-400 transition-colors" aria-label="Telegram">
                                                 <FontAwesomeIcon icon={faTelegram} className="text-lg sm:text-xl" />
-                                            </button>
-                                        )}
-                                    </div>
+                                    </button>
                                 )}
+                            </div>
+                        )}
 
                                 {isOwnProfile && (
                                     <button onClick={() => setEditMode(true)} className="mt-3 sm:mt-4 px-3 py-1.5 sm:px-4 sm:py-2 bg-green-700 dark:bg-green-600 text-white rounded-lg hover:bg-green-600 dark:hover:bg-green-500 transition-colors flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
@@ -787,7 +787,7 @@ const UserProfilePage = () => {
                                         Edit Profile
                                     </button>
                                 )}
-                            </div>
+                    </div>
                         ) : (
                             <div className="space-y-4">
                                 {/* Move AvatarUpload controls to a visible position in edit mode */}
@@ -797,8 +797,8 @@ const UserProfilePage = () => {
                                     </div>
                                     <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                                         <p>Update your profile picture</p>
-                                    </div>
-                                </div>
+                </div>
+            </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
@@ -1031,7 +1031,7 @@ const UserProfilePage = () => {
                                     {loadingSkills ? (
                                         <div className="flex justify-center py-4">
                                             <FontAwesomeIcon icon={faSpinner} spin className="text-green-500" />
-                                        </div>
+                        </div>
                                     ) : (
                                         <>
                                             <div className="relative">
@@ -1144,7 +1144,7 @@ const UserProfilePage = () => {
                                             value={newEducation.end_year}
                                             onChange={(e) => setNewEducation({ ...newEducation, end_year: e.target.value })}
                                         />
-                                    </div>
+                        </div>
                                     <textarea
                                         placeholder="Description"
                                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
@@ -1157,7 +1157,7 @@ const UserProfilePage = () => {
                                 </motion.div>
                             )}
                         </AnimatePresence>
-                    </div>
+                </div>
 
                     {/* Experience */}
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-5 md:p-6">
@@ -1231,7 +1231,7 @@ const UserProfilePage = () => {
                                             value={newExperience.end_year}
                                             onChange={(e) => setNewExperience({ ...newExperience, end_year: e.target.value })}
                                         />
-                                    </div>
+                        </div>
                                     <button onClick={handleAddExperience} className="w-full cursor-pointer px-4 py-2 bg-green-700 dark:bg-green-600 text-white rounded-lg hover:bg-green-600 dark:hover:bg-green-500 transition-colors">
                                         Add Experience
                                     </button>
@@ -1254,7 +1254,7 @@ const UserProfilePage = () => {
                                     }`}
                                 >
                                     <FontAwesomeIcon icon={faLink} className="mr-1 sm:mr-2" />
-                                    Projects
+                                Projects
                                 </button>
 
                                 {isOwnProfile && (
@@ -1302,11 +1302,11 @@ const UserProfilePage = () => {
                                                 <FontAwesomeIcon icon={faSpinner} spin className="text-green-500 text-xl" />
                                             </div>
                                         ) : projects && projects.length > 0 ? (
-                                            <div className="space-y-4">
+                            <div className="space-y-4">
                                                 {projects.map((project) => (
                                                     <div key={project.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
                                                         <div className="flex items-start justify-between flex-wrap sm:flex-nowrap gap-1 mb-1">
-                                                            <h3 className="font-medium text-gray-800 dark:text-white">{project.name}</h3>
+                                        <h3 className="font-medium text-gray-800 dark:text-white">{project.name}</h3>
                                                             {project.owner && !isOwnProfile && (
                                                                 <span 
                                                                     onClick={() => navigate(`/profile/${project.owner.id}`)} 
@@ -1327,9 +1327,9 @@ const UserProfilePage = () => {
                                                                 </button>
                                                             )}
                                                         </div>
-                                                    </div>
-                                                ))}
-                                            </div>
+                                    </div>
+                                ))}
+                            </div>
                                         ) : (
                                             <p className="text-center py-6 text-gray-500 dark:text-gray-400">No projects found</p>
                                         )}
@@ -1342,7 +1342,7 @@ const UserProfilePage = () => {
                                         {loadingAppliedProjects ? (
                                             <div className="flex justify-center py-10">
                                                 <FontAwesomeIcon icon={faSpinner} spin className="text-green-500 text-xl" />
-                                            </div>
+                        </div>
                                         ) : appliedProjects && appliedProjects.length > 0 ? (
                                             <div className="space-y-4">
                                                 {appliedProjects.map((project) => (
@@ -1356,8 +1356,8 @@ const UserProfilePage = () => {
                                                                 >
                                                                     @{project.owner.username || "Unknown"}
                                                                 </span>
-                                                            )}
-                                                        </div>
+                    )}
+                </div>
                                                         {project.description && <p className="mt-1 text-gray-600 dark:text-gray-400 line-clamp-3" dangerouslySetInnerHTML={{ __html: project.description }}></p>}
                                                         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                                                             Application status: <span className="font-medium text-green-600 dark:text-green-400">{project.status || "Pending"}</span>

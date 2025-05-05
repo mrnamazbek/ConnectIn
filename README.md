@@ -1,105 +1,191 @@
-# ConnectIn
-The platform is designed to connect professional teams with project owners in a seamless and efficient way.
+# 🚀 ConnectIn: Your Professional IT Ecosystem
 
+<p align="center">
+  <img src="placeholder-logo.png" alt="ConnectIn Logo Placeholder" width="150">
+</p>
 
-📌 About the ConnectIn Project
-ConnectIn is a platform for students and aspiring specialists who want to gain experience by participating in real projects.
+<p align="center">
+  <em>Connecting Developers, Projects, and Opportunities in the Tech World.</em>
+  <br />
+  </p>
 
-🎯 Main Goal
-To help young developers and specialists find like-minded people, create projects, work in teams, and gain practical experience.
+---
 
-👥 Main Users:
-Students and beginners → Gain experience by working on real projects.
+**ConnectIn** is a dynamic web platform designed to bridge the gap between developers seeking practical experience and projects/teams looking for motivated talent. It serves as a comprehensive ecosystem fostering collaboration, skill development, and career growth within the IT community, initially focused on the Kazakhstan tech scene but built with global potential.
 
-Team leads and creative users → Create project ideas and find a team.
+## 🎯 The Problem
 
-Experienced specialists → Share knowledge and participate in projects.
+Many aspiring developers, students, and even experienced professionals face significant hurdles:
 
-🔗 Platform Features
-📢 1. News
-Any user can:
-✅ Publish thoughts, ideas, and advice.
-✅ Share their development experience.
-✅ Comment on and like posts.
-💡 Why is this needed? — To build a community, share knowledge, and motivate beginners.
+* **Finding Relevant Experience:** Difficulty securing initial roles or projects due to a lack of demonstrable, real-world experience.
+* **Discovering Opportunities:** Traditional job boards often lack context about project specifics or team dynamics. Platforms like GitHub are code-centric, missing tools for holistic team formation and project management.
+* **Building a Network:** Finding collaborators, mentors, or like-minded peers for projects can be challenging.
+* **Showcasing Practical Skills:** Resumes often fail to capture true collaborative abilities and hands-on project contributions.
 
-🚀 2. Projects
-Project Creation → Team leads publish project ideas with details.
+## ✨ The Solution: ConnectIn
 
-Project Roles → Specify the needed specialists (Backend, Frontend, ML, etc.).
+ConnectIn tackles these challenges by providing an integrated platform where:
 
-Application Process → Users can apply for a suitable role.
+* **Developers** can build rich profiles showcasing their skills, education, *and* contributions to **real projects** hosted on the platform. They can easily discover projects matching their interests and apply to join teams.
+* **Team Leaders & Initiators** can create detailed project pages, specify required skills and roles, and recruit motivated team members based on their profiles and demonstrated abilities.
+* **Companies & HR** can identify potential candidates by observing their practical skills, teamwork within projects, and verified contributions, going beyond traditional resumes.
+* **The Community** can share knowledge, insights, and project updates through posts, fostering a collaborative learning environment.
 
-Teamwork → Projects include task descriptions, deadlines, and required skills.
-💡 Main idea — Users can find projects where they can apply their knowledge and work in a team.
+## 🔑 Key Features
 
-👤 3. User Profile
-Users can:
-✅ Specify their specialization (Frontend, Backend, ML, etc.).
-✅ Indicate their experience level (Junior, Middle, Senior).
-✅ Add their place of study (university, courses).
-✅ Track their project participation and work history.
-💡 Why is this needed? — Helps team leads find the right people for projects.
+* 👤 **Rich User Profiles:** Detail skills, experience, education, projects participated in, social links, and status.
+* 🚀 **Project Hub:** Create, discover, and manage projects with descriptions, required skills, team members, and progress tracking (future).
+* 🤝 **Team Formation:** Build teams, invite members, and manage collaboration within projects.
+* 📝 **Post & News Feed:** Share updates, articles, questions, and insights with the community. Engage with likes and comments.
+* 💬 **Real-Time Chat:** Integrated chat for direct messaging and potentially team/project communication (with media sharing via S3).
+* 🧠 **ML-Powered Recommendations:**
+    * **Content-Based:** Recommends relevant projects and teams based on user skill similarity.
+    * **Item-Based Collaborative Filtering:** Recommends posts based on user interaction patterns (likes).
+* 📄 **AI Resume Generation (Optional Add-on):** Generate professional resumes based on user profile data.
+* ☁️ **Cloud Integration:** Leverages AWS services (RDS, S3, Lambda, ECR, EventBridge) for database management, file storage, and scalable ML task execution.
 
-🔥 How It Works? (Example Scenario)
-1️⃣ Ainur (team lead) publishes a project: "Creating an AI chatbot."
+## 🛠️ Tech Stack
 
-Needs a Frontend, Backend, and ML developer.
+ConnectIn utilizes a modern and robust technology stack:
 
-The project includes goals, technologies, and a deadline.
+**Backend (`connectin-backend`):**
 
-2️⃣ Yernar (student, ML engineer) sees the project and applies.
-3️⃣ Ainur accepts him into the team.
-4️⃣ The team starts development, using the platform for communication and tasks.
-5️⃣ After completing the project, Yernar gains experience and a profile record of his work.
-💡 This provides real experience that can be added to a resume.
+* **Framework:** FastAPI (Python 3.11+) - High-performance asynchronous API framework.
+* **Database:** PostgreSQL (Managed via AWS RDS) - Reliable relational database.
+* **ORM:** SQLAlchemy 2.x - Powerful Object-Relational Mapper.
+* **Migrations:** Alembic - Database schema migration tool.
+* **Data Validation:** Pydantic V2 - Robust data validation and settings management.
+* **Authentication:** JWT (Access & Refresh Tokens), OAuth2 (Password flow, Google), Passlib/Bcrypt (Hashing).
+* **Asynchronous Task Queue:** Celery (with Redis/RabbitMQ broker - *if implemented*) - For background tasks.
+* **API Documentation:** OpenAPI / Swagger UI (auto-generated by FastAPI).
+* **Testing:** Pytest (placeholder).
+* **Deployment:** Railway (using Dockerfile or Nixpacks).
 
-💻 How Is It Implemented? (Technical Part)
-1. Backend (FastAPI + PostgreSQL)
-API structure:
+**Frontend (`connectin-frontend`):**
 
-auth/ → Registration, authentication.
+* **Library/Framework:** React.js (with Vite) - Modern JavaScript library for UI.
+* **Styling:** Tailwind CSS - Utility-first CSS framework.
+* **State Management:** React Context API (or Zustand/Redux, confirm based on implementation).
+* **Routing:** React Router DOM.
+* **API Communication:** Axios.
+* **Real-time:** WebSocket API.
+* **UI Components:** Framer Motion (animations), React Toastify (notifications), FontAwesome (icons).
+* **Deployment:** Vercel.
 
-users/ → User profile management.
+**Machine Learning Service (`connectin-ml_service`):**
 
-projects/ → CRUD (create, edit, delete, view projects).
+* **Language:** Python 3.11+
+* **Core Libraries:** SQLAlchemy (for DB access), NumPy, Scikit-learn (for similarity calculations).
+* **Logic:** Content-Based Filtering (Skills), Item-Based Collaborative Filtering (Likes).
+* **Deployment:** AWS Lambda (using Docker container image from AWS ECR).
+* **Scheduling:** AWS EventBridge Scheduler.
 
-news/ → CRUD for publishing news.
+**Cloud Infrastructure (AWS):**
 
-applications/ → Application system for projects.
+* **Database:** AWS RDS (PostgreSQL)
+* **File Storage:** AWS S3
+* **ML Execution:** AWS Lambda
+* **ML Scheduling:** AWS EventBridge
+* **Container Registry:** AWS ECR
+* **Security & Access:** AWS IAM
+* **Monitoring:** AWS CloudWatch
 
-2. Frontend (ReactJS, Next.js)
-News Section → Post feed, comments.
+## 🏗️ Architecture Overview
 
-Projects Section → Project cards, role-based filtering.
+ConnectIn employs a distributed architecture:
 
-User Profile → User information, project list.
+```mermaid
+graph TD
+    subgraph User
+        U[<fa:fa-user/> User Browser]
+    end
 
-3. Database (PostgreSQL)
-Tables:
+    subgraph Frontend (Vercel)
+        FE[<fa:fa-window-maximize/> React SPA]
+    end
 
-users → User data.
+    subgraph Backend (Railway)
+        BE[<fa:fa-server/> FastAPI Monolith API]
+    end
 
-projects → Project information.
+    subgraph "AWS Cloud Infrastructure"
+        subgraph "Data Storage"
+            RDS[<fa:fa-database/> AWS RDS (PostgreSQL)]
+            S3[<fa:fa-hard-drive/> AWS S3 (Files)]
+        end
+        subgraph "ML Service (Serverless)"
+            ECR[<fa:fa-box/> ECR Repo (ML Image)];
+            EB(<fa:fa-clock/> EventBridge Scheduler) -->|Trigger| L[<fa:fa-microchip/> Lambda (ML Code)];
+            L -->|Uses Image| ECR;
+            L -->|Read/Write Data| RDS;
+            L -->|Logs| CW[<fa:fa-file-alt/> CloudWatch Logs];
+            IAM((<fa:fa-key/> IAM Role)) -- Grants Permissions --> L;
+        end
+    end
 
-applications → Who applied and where.
+    U -- HTTPS --> FE;
+    FE -- HTTPS API Calls --> BE;
+    FE -- WebSocket <--> BE; # WebSocket handled by FastAPI backend
+    BE -- DB Connection --> RDS;
+    BE -- File Operations --> S3;
 
-news → User news and posts.
-
-💡 Future Improvements
-✅ Premium Accounts → Only premium users can apply for paid projects.
-Implementation Steps:
-
-Premium users can:
-
-Publish their ideas and paid projects.
-
-View and apply for premium projects.
-
-Regular users:
-
-Can see premium projects but cannot apply.
-
-Can apply only after subscribing.
-
-✅ Chat → Communication between project participants.
+    classDef aws fill:#FF9900,stroke:#333,stroke-width:1px,color:#000;
+    class RDS,S3,ECR,EB,L,IAM,CW aws;
+Frontend (React on Vercel): Provides the user interface, interacts with the backend API.Backend (FastAPI on Railway): A monolithic API handling core business logic, user authentication, data management (via RDS), file uploads (via S3), and WebSocket communication for the chat.ML Service (Python on AWS Lambda): An independent, serverless function triggered by EventBridge. It reads data from RDS, calculates recommendations using ML algorithms, and writes results back to RDS, minimizing load on the main backend. It's deployed as a Docker container via ECR.AWS Services: RDS for the database, S3 for file storage, ECR for the ML service's Docker image, Lambda for serverless ML execution, EventBridge for scheduling, IAM for permissions, and CloudWatch for monitoring.🚀 Getting StartedFollow these instructions to set up the project locally for development.Prerequisites:Python 3.11+Node.js and npm/yarnDocker & Docker Compose (Recommended for local DB/Redis)PostgreSQL database (local instance or connection string to a test instance)AWS Account & configured AWS CLI (Optional, for testing S3/ML parts locally against AWS)GitSetup:Clone the Repository:git clone <your-repository-url>
+cd ConnectIn
+Backend Setup (connectin-backend):Navigate to the backend directory: cd connectin-backendCreate and activate a Python virtual environment:python -m venv .venv
+source .venv/bin/activate # On Windows use `.venv\Scripts\activate`
+Install dependencies:pip install -r requirements.txt
+Configure Environment: Create a .env file in the connectin-backend directory (copy .env.example if provided). Fill in necessary variables:DATABASE_URL: Your local/test PostgreSQL connection string (e.g., postgresql+psycopg2://user:password@localhost:5432/connectin_dev)SECRET_KEY: A long, random string for JWT.ALGORITHM: e.g., HS256ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYSOPENAI_API_KEY (if using AI resume generation)AWS Credentials (N_AWS_ACCESS_KEY_ID, N_AWS_SECRET_ACCESS_KEY, N_AWS_REGION, N_S3_BUCKET_NAME - for S3 chat uploads)Stripe Keys (STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_PRICE_ID, STRIPE_WEBHOOK_SECRET - if implementing subscriptions)FRONTEND_URL (e.g., http://localhost:5173)Database Migrations: Apply database migrations:alembic upgrade head
+Frontend Setup (connectin-frontend):Navigate to the frontend directory: cd ../connectin-frontendInstall dependencies:npm install
+# or yarn install
+Configure Environment: Create a .env.local file in the connectin-frontend directory. Add necessary variables:VITE_API_URL: URL of your running backend API (e.g., http://localhost:8000/api/v1)VITE_STRIPE_PUBLISHABLE_KEY (if implementing subscriptions)ML Service Setup (connectin-ml_service):Navigate to the ML service directory: cd ../connectin-ml_serviceCreate and activate a separate Python virtual environment (recommended):python -m venv .venv
+source .venv/bin/activate
+Install dependencies:pip install -r requirements.txt
+Configure Environment: Create a .env file in this directory. Add:DATABASE_URL: Connection string to your test PostgreSQL database. Do not run ML locally against your main dev DB without caution!▶️ Running the ProjectStart Backend Server:In the connectin-backend directory (with its venv activated):uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+Start Frontend Development Server:In the connectin-frontend directory:npm run dev
+# or yarn dev
+Open your browser to http://localhost:5173 (or the port specified by Vite).Run ML Service Locally (for testing):In the connectin-ml_service directory (with its venv activated):python run_recommendations.py
+🧪 Running Tests(Placeholder - Add instructions if you have tests)# Example for backend tests
+# cd connectin-backend
+# pytest
+☁️ DeploymentBackend: Deployed on Railway using its build system (likely Nixpacks or Dockerfile). Environment variables are configured in the Railway service settings.Frontend: Deployed on Vercel. Environment variables (like VITE_API_URL) are configured in Vercel project settings.ML Service: Deployed as an AWS Lambda function using a Docker container image stored in AWS ECR. Triggered by an AWS EventBridge schedule. Configuration (DB URL, etc.) is set via Lambda environment variables.📂 Project Structure Overview├── connectin-backend/      # FastAPI Backend Application
+│   ├── alembic/            # Database migrations
+│   ├── app/                # Core application code
+│   │   ├── api/            # API Routers (v1, v2...)
+│   │   ├── core/           # Configuration, settings
+│   │   ├── db/             # Database session setup
+│   │   ├── models/         # SQLAlchemy ORM models
+│   │   ├── schemas/        # Pydantic data schemas
+│   │   ├── services/       # Business logic layer
+│   │   ├── crud/           # Data access layer (optional, alternative to repos)
+│   │   ├── utils/          # Utility functions (auth, s3, etc.)
+│   │   ├── websockets/     # WebSocket logic (manager, endpoints)
+│   │   └── main.py         # FastAPI app creation and router includes
+│   ├── tests/              # Backend tests
+│   ├── Dockerfile          # For backend deployment/local env
+│   └── requirements.txt
+├── connectin-frontend/     # React Frontend Application
+│   ├── public/             # Static assets
+│   ├── src/                # Frontend source code
+│   │   ├── assets/         # Images, fonts
+│   │   ├── components/     # Reusable UI components
+│   │   ├── contexts/       # React Context providers (e.g., AuthContext)
+│   │   ├── hooks/          # Custom React hooks
+│   │   ├── pages/          # Page-level components
+│   │   ├── services/       # API service calls (e.g., tokenService)
+│   │   ├── store/          # State management (if using Zustand/Redux)
+│   │   ├── styles/         # Global CSS, component styles
+│   │   ├── utils/          # Frontend utility functions
+│   │   └── App.jsx         # Main application component with routing
+│   ├── index.html          # HTML entry point
+│   ├── package.json
+│   └── vite.config.js      # Vite configuration
+├── connectin-ml_service/   # ML Recommendation Service (for Lambda)
+│   ├── Dockerfile          # For building the Lambda container image
+│   ├── run_recommendations.py # Main script executed by Lambda
+│   ├── requirements.txt    # Python dependencies for ML service
+│   └── tests/              # Tests for ML service (optional)
+├── .gitignore
+└── README.md               # This file
+📜 License(Placeholder - Choose and add your license)This project is licensed under the MIT License - see the LICENSE.md file for details (you need to create this file).🙏 Acknowledgements(Optional - Thank specific people, libraries, or resources)

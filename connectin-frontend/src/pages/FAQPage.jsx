@@ -61,6 +61,24 @@ const FAQPage = () => {
             </p>
           ),
         },
+        {
+          question: "How is ConnectIn different from other platforms?",
+          answer: (
+            <p>
+              Unlike traditional platforms focused solely on code, ConnectIn prioritizes the human element of software development. 
+              We match people based on complementary skills, working styles, and project interests to create more effective collaborations.
+            </p>
+          ),
+        },
+        {
+          question: "Do I need to be an experienced developer to join?",
+          answer: (
+            <p>
+              Not at all! ConnectIn welcomes developers of all experience levels. Whether you're a seasoned professional 
+              or just starting your journey, you'll find projects and teams suitable for your skill level.
+            </p>
+          ),
+        },
       ],
     },
     {
@@ -96,6 +114,15 @@ const FAQPage = () => {
             </p>
           ),
         },
+        {
+          question: "Can I list my own project and recruit a team?",
+          answer: (
+            <p>
+              Absolutely! You can create a project listing, specify the skills you're looking for, and our platform 
+              will help connect you with suitable collaborators. You maintain full control over who you collaborate with.
+            </p>
+          ),
+        },
       ],
     },
     {
@@ -112,6 +139,16 @@ const FAQPage = () => {
                 <li>Check the "Collaboration Opportunities" tab for projects actively seeking contributors</li>
                 <li>Follow developers in your area of interest to see their project updates</li>
               </ul>
+            </p>
+          ),
+        },
+        {
+          question: "How does the project matching work?",
+          answer: (
+            <p>
+              Our proprietary algorithm analyzes your skills, interests, and past collaborations to suggest 
+              projects that would benefit from your expertise. The more you interact with the platform, 
+              the more accurate these suggestions become.
             </p>
           ),
         },
@@ -175,6 +212,15 @@ const FAQPage = () => {
                 <li>Microsoft Edge</li>
               </ul>
               For the best experience, we recommend keeping your browser updated to the latest version.
+            </p>
+          ),
+        },
+        {
+          question: "Is my data secure on ConnectIn?",
+          answer: (
+            <p>
+              Security is our priority. We employ industry-standard encryption and security practices to protect your data. 
+              We never share your personal information without your explicit consent.
             </p>
           ),
         },

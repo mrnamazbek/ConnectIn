@@ -101,7 +101,6 @@ const RecommendationsPage = () => {
         };
 
         fetchRecommendations();
-        console.log(recommendations);
     }, [isAuthenticated, user]);
 
     const formatScore = (score) => {
@@ -217,7 +216,7 @@ const RecommendationsPage = () => {
                                     {rec.postDetails ? (
                                         <>
                                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 truncate">{rec.postDetails.title || `Post #${rec.post_id}`}</h3>
-                                            <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">{rec.postDetails.content || "No content available"}</p>
+                                            <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3" dangerouslySetInnerHTML={{ __html: rec.postDetails.content }}></p>
                                         </>
                                     ) : (
                                         <p className="text-gray-500 dark:text-gray-400 italic">Loading post details...</p>

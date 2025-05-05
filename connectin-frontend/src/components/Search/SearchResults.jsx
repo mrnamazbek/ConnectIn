@@ -30,11 +30,6 @@ const SearchResults = () => {
         }
     }, [results.posts, initializePostState, initialized]);
 
-    // Handle project apply
-    const handleApply = async (projectId) => {
-        // This would be implemented with your project application logic
-        console.log("Applied to project:", projectId);
-    };
 
     // Container animation
     const containerVariants = {

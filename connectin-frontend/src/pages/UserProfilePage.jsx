@@ -89,7 +89,6 @@ const UserProfilePage = () => {
                         },
                     });
                     setUser(response.data);
-                    console.log(response.data);
                     setUpdatedUser(response.data);
                     setSkills(response.data.skills || []);
                     setIsOwnProfile(true);
@@ -174,7 +173,6 @@ const UserProfilePage = () => {
 
             if (savedPostsResponse?.data) {
                 setSavedPosts(savedPostsResponse.data);
-                console.log(savedPostsResponse.data);
             }
         } catch (error) {
             if (error.response?.status === 401) {

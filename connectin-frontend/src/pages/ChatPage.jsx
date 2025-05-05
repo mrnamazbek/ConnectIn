@@ -142,9 +142,7 @@ const ChatPage = () => {
         const wsUrl = `${import.meta.env.VITE_WS_URL}/api/v1/chat/ws/${activeConversation.id}?token=${accessToken}`;
         const newSocket = new WebSocket(wsUrl);
 
-        newSocket.onopen = () => {
-            console.log("WebSocket connection established");
-        };
+      
 
         newSocket.onmessage = (event) => {
             const data = JSON.parse(event.data);
@@ -175,9 +173,7 @@ const ChatPage = () => {
             console.error("WebSocket error:", error);
         };
 
-        newSocket.onclose = () => {
-            console.log("WebSocket connection closed");
-        };
+
 
         setSocket(newSocket);
 
@@ -384,10 +380,6 @@ const ChatPage = () => {
                 }
             );
 
-            console.log("Presigned URL response:", response.data);
-            console.log("Uploading to S3 URL:", response.data.url);
-            console.log("Fields from presigned URL:", response.data.fields);
-
             // Check if we have the expected structure
             if (!response.data.url || !response.data.fields) {
                 throw new Error("Invalid presigned URL response structure");
@@ -414,10 +406,7 @@ const ChatPage = () => {
             formDataForS3.append("file", selectedImage);
 
             // Debug the form data we're sending
-            console.log("Form data entries:");
-            for (let pair of formDataForS3.entries()) {
-                console.log(pair[0] + ": " + (pair[0] === "file" ? "[File object]" : pair[1]));
-            }
+           
 
             // Use native fetch API instead of axios for S3 upload
             // This gives us complete control over headers
@@ -434,7 +423,6 @@ const ChatPage = () => {
                 throw new Error(`S3 upload failed: ${s3UploadResponse.status} ${s3UploadResponse.statusText}`);
             }
 
-            console.log("S3 upload successful", s3UploadResponse);
 
             // Send message with image through WebSocket
             if (socket && socket.readyState === WebSocket.OPEN) {
@@ -581,7 +569,6 @@ const ChatPage = () => {
         return (
             <span 
                 onClick={(e) => {
-                    console.log("Username clicked, navigating to:", participant.id);
                     handleUserProfileClick(participant.id, e);
                 }}
                 className="cursor-pointer hover:text-green-600 hover:underline"
@@ -668,7 +655,6 @@ const ChatPage = () => {
             return;
         }
         
-        console.log("Navigating to profile:", userId);
         navigate(`/profile/${userId}`);
     };
 
@@ -907,7 +893,6 @@ const ChatPage = () => {
                                                         e.stopPropagation();
                                                         const participant = conversation.participants.find(p => p?.id !== user?.id);
                                                         if (participant && participant.id) {
-                                                            console.log("Header directly clicked", participant.id);
                                                             navigate(`/profile/${participant.id}`);
                                                         }
                                                     }}
@@ -1013,7 +998,6 @@ const ChatPage = () => {
                                                         e.stopPropagation();
                                                         const participant = activeConversation.participants.find(p => p?.id !== user?.id);
                                                         if (participant && participant.id) {
-                                                            console.log("Header directly clicked", participant.id);
                                                             navigate(`/profile/${participant.id}`);
                                                         }
                                                     }}

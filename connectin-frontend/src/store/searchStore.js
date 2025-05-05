@@ -153,7 +153,6 @@ const useSearchStore = create((set, get) => ({
 
             // If all API searches fail, use client-side search
             if (postsResponse.data === null && projectsResponse.data === null && usersResponse.data === null) {
-                console.log("Using client-side search as fallback");
                 results = get().performClientSideSearch(trimmedQuery);
             } else {
                 // Use a mix of API and client-side results if needed

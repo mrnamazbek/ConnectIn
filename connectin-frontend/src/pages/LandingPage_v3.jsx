@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { NavLink } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ReactTyped } from "react-typed";
-import { faUsers, faProjectDiagram, faStar, faUserTie, faCode, faRocket, faSearch, faNetworkWired, faBriefcase, faArrowRight, faComments, faCalendarAlt, faBlog } from "@fortawesome/free-solid-svg-icons";
+import { faUsers, faProjectDiagram, faStar, faUserTie, faCode, faRocket, faSearch, faNetworkWired, faBriefcase, faArrowRight, faComments, faBlog, faFileCode } from "@fortawesome/free-solid-svg-icons";
 
 // Animations
 const fadeIn = {
@@ -52,7 +52,7 @@ const LandingPage_v3 = () => {
         <div className="min-h-screen bg-white dark:bg-black text-gray-800 dark:text-gray-200 overflow-hidden" ref={mainRef}>
             {/* Hero Section with parallax effect */}
             <section className="relative min-h-screen pt-5 flex items-center">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <motion.div style={{ opacity: headerOpacity, y: headerY }} className="text-center max-w-4xl mx-auto">
                         <motion.h1 initial="hidden" animate="visible" variants={fadeInUp} className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
                             <span className="block">
@@ -98,7 +98,7 @@ const LandingPage_v3 = () => {
 
             {/* === Problem / Solution Section с красивой визуализацией === */}
             <section className="py-24 px-4 bg-white dark:bg-black relative overflow-hidden">
-                <div className="max-w-7xl mx-auto">
+                <div className="w-full max-w-7xl mx-auto">
                     <div className="grid md:grid-cols-2 gap-16 items-center">
                         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={fadeInLeft}>
                             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">
@@ -106,7 +106,7 @@ const LandingPage_v3 = () => {
                                 <br />
                                 Start <span className="text-emerald-500 dark:text-emerald-400">Connecting</span>.
                             </h2>
-                            <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">Traditional platforms focus on code. We focus on people and collaboration.</p>
+                            <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">We focus on people and collaboration.</p>
 
                             <ul className="space-y-6">
                                 {[
@@ -206,7 +206,7 @@ const LandingPage_v3 = () => {
 
             {/* === Key Benefits Section с анимированными карточками === */}
             <section className="py-24 px-4 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-black dark:to-gray-900">
-                <div className="max-w-7xl mx-auto">
+                <div className="w-full max-w-7xl mx-auto">
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-20">
                         <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">Your Complete Ecosystem for Growth</h2>
                         <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">Every feature designed to accelerate your development journey and expand your network.</p>
@@ -216,37 +216,35 @@ const LandingPage_v3 = () => {
                         {[
                             {
                                 icon: faSearch,
-                                color: "emerald",
                                 title: "Smart Project Discovery",
                                 desc: "Our AI matching algorithm finds projects that perfectly align with your skills and interests.",
                             },
                             {
                                 icon: faNetworkWired,
-                                color: "teal",
                                 title: "Networking & Collaboration",
                                 desc: "Connect with developers who have complementary skills. Communicate and collaborate seamlessly.",
+                                link: "/features/networking",
                             },
                             {
                                 icon: faBriefcase,
-                                color: "green",
                                 title: "Career Opportunities",
                                 desc: "Access to job postings, freelance gigs, and networking events to boost your professional growth.",
                             },
                         ].map((item, index) => (
                             <motion.div key={index} variants={fadeInUp} className="group">
                                 <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-emerald-500/10 h-full transform group-hover:translate-y-[-8px]">
-                                    <div className={`h-48 bg-${item.color}-100 dark:bg-${item.color}-900/30 relative overflow-hidden flex items-center justify-center`}>
-                                        <div className={`text-${item.color}-500 dark:text-${item.color}-400 text-6xl transform transition-all duration-500 group-hover:scale-110`}>
+                                    <div className="h-48 bg-emerald-100 dark:bg-emerald-900/30 relative overflow-hidden flex items-center justify-center">
+                                        <div className="text-emerald-500 dark:text-emerald-400 text-6xl transform transition-all duration-500 group-hover:scale-110">
                                             <FontAwesomeIcon icon={item.icon} />
                                         </div>
                                     </div>
                                     <div className="p-8">
-                                        <div className={`inline-block p-3 bg-${item.color}-100 dark:bg-${item.color}-900 rounded-lg mb-4 w-12 h-12 flex items-center justify-center`}>
-                                            <FontAwesomeIcon icon={item.icon} className={`text-${item.color}-600 dark:text-${item.color}-400 text-xl`} />
+                                        <div className="inline-block p-3 bg-emerald-100 dark:bg-emerald-900 rounded-lg mb-4 w-12 h-12 flex items-center justify-center">
+                                            <FontAwesomeIcon icon={item.icon} className="text-emerald-600 dark:text-emerald-400 text-xl" />
                                         </div>
                                         <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{item.title}</h3>
                                         <p className="text-gray-600 dark:text-gray-400 mb-6">{item.desc}</p>
-                                        <NavLink to={`/features/${item.title.toLowerCase().replace(/\s+/g, "-")}`} className={`inline-flex items-center font-medium text-${item.color}-600 dark:text-${item.color}-400 hover:text-${item.color}-700 dark:hover:text-${item.color}-300`}>
+                                        <NavLink to={item.link || `/features/${item.title.toLowerCase().replace(/\s+/g, "-")}`} className="inline-flex items-center font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300">
                                             Learn more
                                             <FontAwesomeIcon icon={faArrowRight} className="ml-2 text-sm" />
                                         </NavLink>
@@ -260,7 +258,7 @@ const LandingPage_v3 = () => {
 
             {/* === Testimonials Section с горизонтальной прокруткой === */}
             <section className="py-24 bg-white dark:bg-black overflow-hidden">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">From the Developer Community</h2>
                         <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">Hear from developers who&apos;ve found success through ConnectIn.</p>
@@ -270,54 +268,44 @@ const LandingPage_v3 = () => {
                         {[
                             {
                                 quote: "ConnectIn helped me find a project that perfectly matched my skill set. Now I'm contributing to an open-source project that's making a real difference.",
-                                name: "Alex Chen",
-                                title: "Full Stack Developer",
-                                avatar: "/static/images/avatar1.jpg",
+                                name: "Amirkhan Mamytbek",
+                                title: "Tech Lead at Google",
                             },
                             {
                                 quote: "I built my entire professional network through ConnectIn. The quality of talent and the matching algorithm is far superior to any other platform I've used.",
-                                name: "Sarah Johnson",
-                                title: "Tech Lead at StartupX",
-                                avatar: "/static/images/avatar2.jpg",
+                                name: "Yerman Berik",
+                                title: "Backend Developer",
                             },
                             {
                                 quote: "As a self-taught developer, ConnectIn gave me the opportunity to contribute to real projects and build my portfolio. The community here is incredibly supportive.",
-                                name: "Michael Rodriguez",
+                                name: "Yeldos Anarbaev",
                                 title: "Frontend Developer",
-                                avatar: "/static/images/avatar3.jpg",
                             },
                             {
                                 quote: "ConnectIn bridges the gap between project ideas and implementation. I found amazing collaborators for my open-source initiative within days.",
-                                name: "Emily Wong",
-                                title: "Open Source Maintainer",
-                                avatar: "/static/images/avatar4.jpg",
+                                name: "Namdar Ibrakhim",
+                                title: "Backend Developer",
+                            },
+                            {
+                                quote: "The portfolio building features helped me showcase my work effectively. I've received multiple job offers after connecting with professionals in my field.",
+                                name: "Adilet Zhandyrbay",
+                                title: "UI/UX Designer",
                             },
                         ].map((testimonial, index) => (
-                            <motion.div key={index} variants={fadeIn} className="flex-shrink-0 w-80 md:w-96 bg-gray-50 dark:bg-gray-900 rounded-xl p-6 shadow-lg border border-gray-100 dark:border-gray-800">
+                            <motion.div
+                                key={index}
+                                variants={fadeIn}
+                                className="flex-shrink-0 w-80 md:w-96 bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-emerald-100 dark:border-emerald-900/20 group hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 transform hover:translate-y-[-4px]"
+                            >
                                 <div className="flex flex-col h-full">
                                     <div className="mb-6 flex-grow">
-                                        <svg className="h-8 w-8 text-emerald-400 mb-4" fill="currentColor" viewBox="0 0 32 32">
+                                        <svg className="h-8 w-8 text-emerald-500 mb-4" fill="currentColor" viewBox="0 0 32 32">
                                             <path d="M9.352 4C4.456 7.456 1 13.12 1 19.36c0 5.088 3.072 8.064 6.624 8.064 3.36 0 5.856-2.688 5.856-5.856 0-3.168-2.208-5.472-5.088-5.472-.576 0-1.344.096-1.536.192.48-3.264 3.552-7.104 6.624-9.024L9.352 4zm16.512 0c-4.8 3.456-8.256 9.12-8.256 15.36 0 5.088 3.072 8.064 6.624 8.064 3.264 0 5.856-2.688 5.856-5.856 0-3.168-2.304-5.472-5.184-5.472-.576 0-1.248.096-1.44.192.48-3.264 3.456-7.104 6.528-9.024L25.864 4z" />
                                         </svg>
                                         <p className="text-gray-700 dark:text-gray-300 italic mb-3">{testimonial.quote}</p>
                                     </div>
                                     <div className="flex items-center">
-                                        <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900 overflow-hidden mr-4">
-                                            {testimonial.avatar ? (
-                                                <img
-                                                    src={testimonial.avatar}
-                                                    alt={testimonial.name}
-                                                    className="h-full w-full object-cover"
-                                                    onError={(e) => {
-                                                        e.target.onerror = null;
-                                                        e.target.style.display = "none";
-                                                        e.target.parentNode.innerHTML = testimonial.name.charAt(0);
-                                                    }}
-                                                />
-                                            ) : (
-                                                <div className="h-full w-full flex items-center justify-center text-emerald-500 font-bold">{testimonial.name.charAt(0)}</div>
-                                            )}
-                                        </div>
+                                        <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-emerald-500 dark:text-emerald-400 font-bold mr-4">{testimonial.name.charAt(0)}</div>
                                         <div>
                                             <h4 className="font-semibold text-gray-900 dark:text-white">{testimonial.name}</h4>
                                             <p className="text-sm text-emerald-600 dark:text-emerald-400">{testimonial.title}</p>
@@ -330,86 +318,9 @@ const LandingPage_v3 = () => {
                 </div>
             </section>
 
-            {/* === Features Showcase Section с параллакс-эффектом === */}
-            <section className="py-24 bg-gradient-to-br from-emerald-900 via-teal-900 to-green-900 dark:from-gray-900 dark:via-gray-800 dark:to-black text-white relative overflow-hidden">
-                {/* Декоративные элементы фона */}
-                <div className="absolute inset-0 overflow-hidden">
-                    <div className="absolute w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-800/30 via-transparent to-transparent opacity-70"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent"></div>
-                </div>
-
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-20">
-                        <h2 className="text-4xl md:text-5xl font-bold mb-6">Designed for the Modern Developer</h2>
-                        <p className="text-xl text-emerald-100 dark:text-gray-300 max-w-3xl mx-auto">Powerful features that help you focus on what matters most: building great things with great people.</p>
-                    </motion.div>
-
-                    <div className="grid md:grid-cols-3 gap-y-12 md:gap-x-8">
-                        {[
-                            {
-                                icon: faProjectDiagram,
-                                title: "Project Matching",
-                                desc: "AI-powered matching connects you with projects that align with your skills and interests.",
-                            },
-                            {
-                                icon: faUsers,
-                                title: "Developer Networking",
-                                desc: "Connect with skilled developers who share your interests and complement your abilities.",
-                            },
-                            {
-                                icon: faComments,
-                                title: "Real-Time Chat",
-                                desc: "Seamless communication with other developers, with project-specific channels.",
-                            },
-                            {
-                                icon: faCalendarAlt,
-                                title: "Event Planning",
-                                desc: "Organize and join virtual meetups, coding sessions, and workshops.",
-                            },
-                            {
-                                icon: faBlog,
-                                title: "Knowledge Sharing",
-                                desc: "Share your insights and learn from others with our integrated blogging platform.",
-                            },
-                            {
-                                icon: faStar,
-                                title: "Skill Recognition",
-                                desc: "Get endorsed for your skills and build your professional reputation.",
-                            },
-                        ].map((feature, index) => (
-                            <motion.div
-                                key={index}
-                                initial="hidden"
-                                whileInView="visible"
-                                viewport={{ once: true, amount: 0.3 }}
-                                variants={{
-                                    hidden: { opacity: 0, y: 30 },
-                                    visible: {
-                                        opacity: 1,
-                                        y: 0,
-                                        transition: {
-                                            delay: index * 0.1,
-                                            duration: 0.7,
-                                            ease: [0.22, 1, 0.36, 1],
-                                        },
-                                    },
-                                }}
-                                className="flex flex-col items-center text-center px-4"
-                            >
-                                <div className="h-16 w-16 rounded-full bg-emerald-700/50 dark:bg-emerald-800/30 flex items-center justify-center text-emerald-400 mb-6">
-                                    <FontAwesomeIcon icon={feature.icon} className="text-xl" />
-                                </div>
-                                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                                <p className="text-emerald-100 dark:text-gray-400">{feature.desc}</p>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* === Testimonials Section с горизонтальной прокруткой === */}
+            {/* === Pricing Section === */}
             <section className="py-24 bg-white dark:bg-black overflow-hidden">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-16">
                         <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">Simple, Transparent Pricing</h2>
                         <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">Choose the plan that&apos;s right for your development journey.</p>
@@ -419,7 +330,7 @@ const LandingPage_v3 = () => {
                         {[
                             {
                                 name: "Free",
-                                price: "$0",
+                                price: "Free",
                                 period: "forever",
                                 description: "Perfect for exploring and getting started",
                                 features: ["Join up to 3 active projects", "Basic collaboration tools", "Community support", "Personal profile"],
@@ -428,30 +339,36 @@ const LandingPage_v3 = () => {
                             },
                             {
                                 name: "Premium",
-                                price: "$5",
-                                period: "per month",
+                                price: "Contact us",
+                                period: "",
                                 description: "Everything you need for serious collaboration and AI features",
                                 features: ["Unlimited projects", "Advanced networking features", "Priority matching algorithm", "Direct messaging", "Profile verification badge", "Email support"],
-                                cta: "Upgrade Now",
+                                cta: "Contact Sales",
                                 highlighted: true,
                             },
                             {
-                                name: "Premium Yearly",
-                                price: "$15",
-                                period: "per year",
+                                name: "Enterprise",
+                                price: "Custom",
+                                period: "pricing",
                                 description: "Best for long-term professional growth",
-                                features: ["All Developer features", "Personal workspace", "Advanced analytics", "Custom branding", "API access", "Dedicated support"],
+                                features: ["All Premium features", "Personal workspace", "Advanced analytics", "Custom branding", "API access", "Dedicated support"],
                                 cta: "Contact Sales",
                                 highlighted: false,
                             },
                         ].map((plan, index) => (
-                            <motion.div key={index} variants={fadeInUp} className={`rounded-2xl overflow-hidden ${plan.highlighted ? "ring-4 ring-emerald-500 dark:ring-emerald-400" : "border border-gray-200 dark:border-gray-800"}`}>
-                                <div className={`p-8 ${plan.highlighted ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white" : "bg-white dark:bg-gray-900 text-gray-900 dark:text-white"}`}>
+                            <motion.div
+                                key={index}
+                                variants={fadeInUp}
+                                className={`rounded-2xl overflow-hidden ${
+                                    plan.highlighted ? "ring-4 ring-emerald-500 dark:ring-emerald-400" : "border border-emerald-200 dark:border-emerald-800/20"
+                                } transition-all duration-300 group hover:shadow-xl hover:shadow-emerald-500/5 transform hover:translate-y-[-4px]`}
+                            >
+                                <div className={`p-8 ${plan.highlighted ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white" : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white"}`}>
                                     <h3 className="text-2xl font-bold mb-1">{plan.name}</h3>
                                     <p className={`mb-5 ${plan.highlighted ? "text-emerald-100" : "text-gray-500 dark:text-gray-400"}`}>{plan.description}</p>
                                     <div className="flex items-baseline mb-5">
                                         <span className="text-4xl font-extrabold tracking-tight">{plan.price}</span>
-                                        <span className={`ml-1 text-xl ${plan.highlighted ? "text-emerald-100" : "text-gray-500 dark:text-gray-400"}`}>/{plan.period}</span>
+                                        {plan.period && <span className={`ml-1 text-xl ${plan.highlighted ? "text-emerald-100" : "text-gray-500 dark:text-gray-400"}`}> {plan.period}</span>}
                                     </div>
                                     <button className={`w-full py-3 px-6 rounded-lg font-medium transition-all transform hover:translate-y-[-2px] ${plan.highlighted ? "bg-white text-emerald-600 hover:bg-gray-50" : "bg-emerald-500 text-white hover:bg-emerald-600"}`}>{plan.cta}</button>
                                 </div>
@@ -477,46 +394,6 @@ const LandingPage_v3 = () => {
                             Contact our team
                         </a>
                     </motion.p>
-                </div>
-            </section>
-
-            {/* === FAQ Section === */}
-            <section className="py-24 bg-gray-50 dark:bg-gray-900">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-16">
-                        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">Frequently Asked Questions</h2>
-                        <p className="text-xl text-gray-600 dark:text-gray-400">Everything you need to know about ConnectIn.</p>
-                    </motion.div>
-
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="space-y-8">
-                        {[
-                            {
-                                q: "How is ConnectIn different from other platforms?",
-                                a: "Unlike traditional platforms focused solely on code, ConnectIn prioritizes the human element of software development. We match people based on complementary skills, working styles, and project interests to create more effective collaborations.",
-                            },
-                            {
-                                q: "Do I need to be an experienced developer to join?",
-                                a: "Not at all! ConnectIn welcomes developers of all experience levels. Whether you're a seasoned professional or just starting your journey, you'll find projects and teams suitable for your skill level.",
-                            },
-                            {
-                                q: "How does the project matching work?",
-                                a: "Our proprietary algorithm analyzes your skills, interests, and past collaborations to suggest projects that would benefit from your expertise. The more you interact with the platform, the more accurate these suggestions become.",
-                            },
-                            {
-                                q: "Can I list my own project and recruit a team?",
-                                a: "Absolutely! You can create a project listing, specify the skills you're looking for, and our platform will help connect you with suitable collaborators. You maintain full control over who you collaborate with.",
-                            },
-                            {
-                                q: "Is my data secure on ConnectIn?",
-                                a: "Security is our priority. We employ industry-standard encryption and security practices to protect your data. We never share your personal information without your explicit consent.",
-                            },
-                        ].map((faq, index) => (
-                            <motion.div key={index} variants={fadeIn} className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
-                                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">{faq.q}</h3>
-                                <p className="text-gray-600 dark:text-gray-400">{faq.a}</p>
-                            </motion.div>
-                        ))}
-                    </motion.div>
                 </div>
             </section>
 
@@ -552,7 +429,7 @@ const LandingPage_v3 = () => {
                     />
                 </div>
 
-                <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+                <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
                     <motion.h2 variants={fadeInUp} className="text-4xl md:text-6xl font-bold text-white mb-6">
                         Ready to transform your development experience?
                     </motion.h2>

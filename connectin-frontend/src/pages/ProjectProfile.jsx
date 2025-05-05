@@ -24,7 +24,6 @@ const ProjectProfile = () => {
                 if (user) {
                     await fetchProjectProfile(user);
                 } else {
-                    console.log("User not authenticated.");
                 }
             } catch (error) {
                 console.error("Failed to fetch data:", error);
@@ -61,7 +60,6 @@ const ProjectProfile = () => {
             setApplications(data.applications || []);
             setComments(data.comments);
             setIsOwner(user && data.project.owner?.id === user.id);
-            console.log(user?.id, " ", data.project.owner?.id);
             setIsMember(data.members.some((member) => member.id === user?.id) || (user && data.project.owner?.id === user.id));
         } catch (error) {
             console.error("Failed to fetch project profile:", error);

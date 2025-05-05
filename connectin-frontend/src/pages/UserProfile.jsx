@@ -372,7 +372,6 @@ const UserProfile = () => {
 
             if (response.data.access_token) {
                 localStorage.setItem("access_token", response.data.access_token);
-                console.log("Updated authentication token");
             }
         } catch (error) {
             console.error("Failed to update profile", error);

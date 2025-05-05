@@ -213,7 +213,6 @@ const NetworkGraph3D = () => {
 
     // Обработчики событий от узлов
     const handleNodeClick = (node) => {
-        console.log("Node clicked:", node);
         // TODO: Реализовать действие при клике (например, показать детали узла)
         alert(`Clicked on ${node.type}: ${node.label} (ID: ${node.id})`);
     };

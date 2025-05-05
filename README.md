@@ -76,12 +76,12 @@ ConnectIn uses a distributed architecture separating concerns:
 ```mermaid
 graph TD
     %% Define Styles based on ConnectIn Palette
-    classDef user fill:#E0F2F7,stroke:#00796b,stroke-width:2px,color:#004d40;  /* Light Teal/Blue */
-    classDef frontend fill:#E8F5E9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20; /* Light Green */
-    classDef backend fill:#E3F2FD,stroke:#0d47a1,stroke-width:2px,color:#0d47a1; /* Light Blue */
-    classDef aws fill:#FFF3E0,stroke:#ff9900,stroke-width:2px,color:#e65100;   /* Light Orange/AWS */
-    classDef data fill:#FFF8E1,stroke:#ff8f00,stroke-width:1px,color:#e65100;  /* Lighter Orange for Data */
-    classDef ml fill:#F1F8E9,stroke:#558b2f,stroke-width:1px,color:#33691e;   /* Light Green for ML */
+    classDef user fill:#E0F2F7,stroke:#00796b,stroke-width:2px,color:#004d40;  
+    classDef frontend fill:#E8F5E9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20; 
+    classDef backend fill:#E3F2FD,stroke:#0d47a1,stroke-width:2px,color:#0d47a1; 
+    classDef aws fill:#FFF3E0,stroke:#ff9900,stroke-width:2px,color:#e65100;   
+    classDef data fill:#FFF8E1,stroke:#ff8f00,stroke-width:1px,color:#e65100;  
+    classDef ml fill:#F1F8E9,stroke:#558b2f,stroke-width:1px,color:#33691e;  
 
     subgraph User Browser
         U[<fa:fa-user/> User]:::user

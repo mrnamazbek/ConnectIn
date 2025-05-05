@@ -184,7 +184,7 @@ const GraphComponent = ({ graphData, onNodeClick, onNodeHover }) => {
 const UserInfoCard = ({ userId, username }) => {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
-    
+
     useEffect(() => {
         const fetchUserData = async () => {
             try {
@@ -197,10 +197,10 @@ const UserInfoCard = ({ userId, username }) => {
                 setLoading(false);
             }
         };
-        
+
         fetchUserData();
     }, [userId]);
-    
+
     return (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-64 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center mb-3">
@@ -212,7 +212,7 @@ const UserInfoCard = ({ userId, username }) => {
                     <p className="text-xs text-gray-500 dark:text-gray-400">User Profile</p>
                 </div>
             </div>
-            
+
             {loading ? (
                 <div className="flex justify-center py-3">
                     <FontAwesomeIcon icon={faSpinner} spin className="text-blue-500" />
@@ -222,18 +222,23 @@ const UserInfoCard = ({ userId, username }) => {
                     <div className="grid grid-cols-2 gap-2 mb-2">
                         <div className="text-gray-600 dark:text-gray-400">Role:</div>
                         <div className="text-gray-800 dark:text-white">{userData.role || "Member"}</div>
-                        
+
                         <div className="text-gray-600 dark:text-gray-400">Skills:</div>
                         <div className="text-gray-800 dark:text-white">
-                            {userData.skills ? userData.skills.slice(0, 3).map(s => s.name).join(", ") : "No skills listed"}
+                            {userData.skills
+                                ? userData.skills
+                                      .slice(0, 3)
+                                      .map((s) => s.name)
+                                      .join(", ")
+                                : "No skills listed"}
                         </div>
                     </div>
                 </div>
             ) : (
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">No additional info available</p>
             )}
-            
-            <button 
+
+            <button
                 onClick={(e) => {
                     e.stopPropagation();
                     window.open(`/profile/${userId}`, "_blank");
@@ -250,7 +255,7 @@ const UserInfoCard = ({ userId, username }) => {
 const ProjectInfoCard = ({ projectId, projectName }) => {
     const [projectData, setProjectData] = useState(null);
     const [loading, setLoading] = useState(true);
-    
+
     useEffect(() => {
         const fetchProjectData = async () => {
             try {
@@ -263,10 +268,10 @@ const ProjectInfoCard = ({ projectId, projectName }) => {
                 setLoading(false);
             }
         };
-        
+
         fetchProjectData();
     }, [projectId]);
-    
+
     return (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-64 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center mb-3">
@@ -278,21 +283,19 @@ const ProjectInfoCard = ({ projectId, projectName }) => {
                     <p className="text-xs text-gray-500 dark:text-gray-400">Project Details</p>
                 </div>
             </div>
-            
+
             {loading ? (
                 <div className="flex justify-center py-3">
                     <FontAwesomeIcon icon={faSpinner} spin className="text-green-500" />
                 </div>
             ) : projectData ? (
                 <div className="text-sm">
-                    <p className="text-gray-600 dark:text-gray-300 mb-2 line-clamp-2">
-                        {projectData.description || "No description available"}
-                    </p>
-                    
+                    <p className="text-gray-600 dark:text-gray-300 mb-2 line-clamp-2">{projectData.description || "No description available"}</p>
+
                     <div className="grid grid-cols-2 gap-2 mb-2">
                         <div className="text-gray-600 dark:text-gray-400">Status:</div>
                         <div className="text-gray-800 dark:text-white">{projectData.status || "Active"}</div>
-                        
+
                         <div className="text-gray-600 dark:text-gray-400">Members:</div>
                         <div className="text-gray-800 dark:text-white">{projectData.members_count || "0"}</div>
                     </div>
@@ -300,8 +303,8 @@ const ProjectInfoCard = ({ projectId, projectName }) => {
             ) : (
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">No additional info available</p>
             )}
-            
-            <button 
+
+            <button
                 onClick={(e) => {
                     e.stopPropagation();
                     window.open(`/project/${projectId}`, "_blank");
@@ -327,8 +330,8 @@ const SkillInfoCard = ({ skillName }) => {
                     <p className="text-xs text-gray-500 dark:text-gray-400">Skill</p>
                 </div>
             </div>
-            
-            <button 
+
+            <button
                 onClick={(e) => {
                     e.stopPropagation();
                     window.open(`/search?skill=${encodeURIComponent(skillName)}`, "_blank");
@@ -398,9 +401,9 @@ const NetworkGraph = () => {
     // Функция для рендера соответствующей информационной карточки
     const renderInfoCard = () => {
         if (!hoveredNode) return null;
-        
+
         let userId, projectId;
-        
+
         switch (hoveredNode.type) {
             case "user":
                 userId = hoveredNode.id.split("_")[1];
@@ -420,8 +423,45 @@ const NetworkGraph = () => {
         }
     };
 
+    const Legend = () => (
+        <div className="absolute top-4 left-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm p-3 rounded-lg shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-sm font-medium text-gray-800 dark:text-white mb-2">Global Connection Map</h3>
+            <div className="space-y-2">
+                <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">Users</span>
+                </div>
+                <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">Projects</span>
+                </div>
+                <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-orange-400 mr-2"></div>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">Skills</span>
+                </div>
+                <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center">
+                        <div className="w-4 h-0.5 bg-blue-500 mr-2"></div>
+                        <span className="text-xs text-gray-700 dark:text-gray-300">User-Skill Connection</span>
+                    </div>
+                    <div className="flex items-center mt-1">
+                        <div className="w-4 h-0.5 bg-green-500 mr-2"></div>
+                        <span className="text-xs text-gray-700 dark:text-gray-300">User-Project Connection</span>
+                    </div>
+                    <div className="flex items-center mt-1">
+                        <div className="w-4 h-0.5 bg-orange-400 mr-2"></div>
+                        <span className="text-xs text-gray-700 dark:text-gray-300">Project-Skill Connection</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div className="relative w-full rounded-lg overflow-hidden shadow-lg border dark:border-gray-700" style={{ height: "70vh", minHeight: "500px" }}>
+            {/* Legend */}
+            <Legend />
+            
             {/* Индикатор загрузки */}
             {loading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-black/50 z-20">
@@ -451,11 +491,7 @@ const NetworkGraph = () => {
                 </Canvas>
             )}
             {/* Инфо о наведенном узле - позиционирование и отображение соответствующей карточки */}
-            {hoveredNode && (
-                <div className="absolute bottom-4 right-4 z-10 animate-fade-in">
-                    {renderInfoCard()}
-                </div>
-            )}
+            {hoveredNode && <div className="absolute bottom-4 right-4 z-10 animate-fade-in">{renderInfoCard()}</div>}
         </div>
     );
 };

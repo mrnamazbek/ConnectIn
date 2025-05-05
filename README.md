@@ -131,6 +131,8 @@ graph TD
 
     classDef aws fill:#FF9900,stroke:#333,stroke-width:1px,color:#000;
     class RDS,S3,ECR,EB,L,IAM,CW aws;
+```
+
 Frontend (React on Vercel): Provides the user interface, interacts with the backend API.Backend (FastAPI on Railway): A monolithic API handling core business logic, user authentication, data management (via RDS), file uploads (via S3), and WebSocket communication for the chat.ML Service (Python on AWS Lambda): An independent, serverless function triggered by EventBridge. It reads data from RDS, calculates recommendations using ML algorithms, and writes results back to RDS, minimizing load on the main backend. It's deployed as a Docker container via ECR.AWS Services: RDS for the database, S3 for file storage, ECR for the ML service's Docker image, Lambda for serverless ML execution, EventBridge for scheduling, IAM for permissions, and CloudWatch for monitoring.🚀 Getting StartedFollow these instructions to set up the project locally for development.Prerequisites:Python 3.11+Node.js and npm/yarnDocker & Docker Compose (Recommended for local DB/Redis)PostgreSQL database (local instance or connection string to a test instance)AWS Account & configured AWS CLI (Optional, for testing S3/ML parts locally against AWS)GitSetup:Clone the Repository:git clone <your-repository-url>
 cd ConnectIn
 Backend Setup (connectin-backend):Navigate to the backend directory: cd connectin-backendCreate and activate a Python virtual environment:python -m venv .venv

@@ -87,7 +87,7 @@ graph TD
         U[<fa:fa-user/> User]:::user
     end
 
-    subgraph Frontend Deployed on Vercel  %% <-- ИСПРАВЛЕНО
+    subgraph Frontend Deployed on Railway  
         FE[<fa:fa-window-maximize/> React SPA]:::frontend
     end
 

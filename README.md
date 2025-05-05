@@ -89,8 +89,8 @@ graph TD
 
     subgraph "AWS Cloud"
         subgraph "Data & Storage"
-            RDS[<fa:fa-database/> AWS RDS (PostgreSQL)]
-            S3[<fa:fa-hard-drive/> AWS S3 (Files)]
+            RDS[<fa:fa-database/> AWS RDS Relational Database PostgreSQL]
+            S3[<fa:fa-hard-drive/> AWS S3 File Storage]
         end
         subgraph "ML Service (Serverless)"
             ECR[<fa:fa-box/> ECR Image];

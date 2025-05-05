@@ -6,7 +6,7 @@ class NodeModel(BaseModel):
     """Модель узла для графа связей."""
     id: str # Уникальный ID узла (e.g., "user_1", "skill_5", "project_10")
     label: str # Текст для отображения на узле
-    type: Literal['user', 'project', 'skill', 'team'] # Тип узла для стилизации
+    type: Literal['user', 'project', 'skill'] # Тип узла для стилизации
     # Дополнительные данные, которые могут пригодиться на фронтенде
     details: Dict[str, Any] = Field(default_factory=dict)
 

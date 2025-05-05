@@ -7,7 +7,7 @@ from app.core.config import settings
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from app.api.v1 import resume as resumes_v1
-from app.api.v1.endpoints import graph as graph_v1 # Импорт нового роутера
+from app.api.v1 import graph as graph_v1 # Импорт нового роутера
 
 
 
@@ -62,8 +62,10 @@ def create_app() -> FastAPI:
     # api_router.include_router(chat_uploads.router, prefix="/uploads", tags=["Uploads"])  # Маршруты для загрузки файлов
 
     api_router.include_router(resumes_v1.router, prefix="/resume", tags=["Resume Generator"])
+    
+    # Add graph router with proper prefix
+    api_router.include_router(graph_v1.router, prefix="/graph", tags=["Graph"])  # Added to api_router
 
-    app.include_router(graph_v1.router, prefix="/graph")  # Подключаем с префиксом
     # Include the main API router in the app
     app.include_router(api_router)
 

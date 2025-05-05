@@ -5,7 +5,8 @@ import * as THREE from "three";
 import { forceSimulation, forceLink, forceManyBody, forceCenter } from "d3-force-3d";
 import axios from "../utils/axiosConfig";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faSpinner, faUser, faCode, faLaptopCode } from "@fortawesome/free-solid-svg-icons";
+import { useNavigate } from "react-router";
 
 // Note: Many JSX properties below are specific to Three.js/React Three Fiber
 // and will trigger ESLint warnings about unknown props. This is normal for 3D components.
@@ -24,8 +25,6 @@ function Node({ node, position, onNodeClick, onNodeHover }) {
                 return "#48bb78"; // Зеленый
             case "skill":
                 return "#f6ad55"; // Оранжевый
-            case "team":
-                return "#a0aec0"; // Серый
             default:
                 return "#cbd5e0";
         }
@@ -44,7 +43,7 @@ function Node({ node, position, onNodeClick, onNodeHover }) {
             onPointerOver={(e) => {
                 e.stopPropagation();
                 setIsHovered(true);
-                onNodeHover(node.id);
+                onNodeHover(node);
             }}
             onPointerOut={() => {
                 setIsHovered(false);
@@ -67,8 +66,8 @@ function Node({ node, position, onNodeClick, onNodeHover }) {
                     color={isHovered ? (node.type === "user" ? "#fff" : "#333") : "transparent"} // Показываем только при наведении
                     anchorX="center"
                     anchorY="middle"
-                    fontSize={0.18}
-                    outlineWidth={0.01}
+                    fontSize={0.25} // Увеличенный размер шрифта
+                    outlineWidth={0.02} // Более заметный контур
                     outlineColor="#000"
                     visible={isHovered} // Управляем видимостью
                 >
@@ -181,12 +180,174 @@ const GraphComponent = ({ graphData, onNodeClick, onNodeHover }) => {
     );
 };
 
+// --- Компонент для информационной карточки пользователя ---
+const UserInfoCard = ({ userId, username }) => {
+    const [userData, setUserData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                setLoading(true);
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/${userId}`);
+                setUserData(response.data);
+            } catch (err) {
+                console.error("Failed to fetch user data:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        fetchUserData();
+    }, [userId]);
+    
+    return (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-64 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center mb-3">
+                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white">
+                    <FontAwesomeIcon icon={faUser} />
+                </div>
+                <div className="ml-3">
+                    <h3 className="font-medium text-gray-800 dark:text-white">{username}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">User Profile</p>
+                </div>
+            </div>
+            
+            {loading ? (
+                <div className="flex justify-center py-3">
+                    <FontAwesomeIcon icon={faSpinner} spin className="text-blue-500" />
+                </div>
+            ) : userData ? (
+                <div className="text-sm">
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                        <div className="text-gray-600 dark:text-gray-400">Role:</div>
+                        <div className="text-gray-800 dark:text-white">{userData.role || "Member"}</div>
+                        
+                        <div className="text-gray-600 dark:text-gray-400">Skills:</div>
+                        <div className="text-gray-800 dark:text-white">
+                            {userData.skills ? userData.skills.slice(0, 3).map(s => s.name).join(", ") : "No skills listed"}
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">No additional info available</p>
+            )}
+            
+            <button 
+                onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(`/profile/${userId}`, "_blank");
+                }}
+                className="w-full mt-3 py-1.5 px-3 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded transition-colors"
+            >
+                View Profile
+            </button>
+        </div>
+    );
+};
+
+// --- Компонент для информационной карточки проекта ---
+const ProjectInfoCard = ({ projectId, projectName }) => {
+    const [projectData, setProjectData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    
+    useEffect(() => {
+        const fetchProjectData = async () => {
+            try {
+                setLoading(true);
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/${projectId}`);
+                setProjectData(response.data);
+            } catch (err) {
+                console.error("Failed to fetch project data:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        fetchProjectData();
+    }, [projectId]);
+    
+    return (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-64 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center mb-3">
+                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white">
+                    <FontAwesomeIcon icon={faLaptopCode} />
+                </div>
+                <div className="ml-3">
+                    <h3 className="font-medium text-gray-800 dark:text-white">{projectName}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Project Details</p>
+                </div>
+            </div>
+            
+            {loading ? (
+                <div className="flex justify-center py-3">
+                    <FontAwesomeIcon icon={faSpinner} spin className="text-green-500" />
+                </div>
+            ) : projectData ? (
+                <div className="text-sm">
+                    <p className="text-gray-600 dark:text-gray-300 mb-2 line-clamp-2">
+                        {projectData.description || "No description available"}
+                    </p>
+                    
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                        <div className="text-gray-600 dark:text-gray-400">Status:</div>
+                        <div className="text-gray-800 dark:text-white">{projectData.status || "Active"}</div>
+                        
+                        <div className="text-gray-600 dark:text-gray-400">Members:</div>
+                        <div className="text-gray-800 dark:text-white">{projectData.members_count || "0"}</div>
+                    </div>
+                </div>
+            ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">No additional info available</p>
+            )}
+            
+            <button 
+                onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(`/project/${projectId}`, "_blank");
+                }}
+                className="w-full mt-3 py-1.5 px-3 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition-colors"
+            >
+                View Project
+            </button>
+        </div>
+    );
+};
+
+// --- Компонент для информационной карточки навыка ---
+const SkillInfoCard = ({ skillName }) => {
+    return (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-64 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center mb-3">
+                <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white">
+                    <FontAwesomeIcon icon={faCode} />
+                </div>
+                <div className="ml-3">
+                    <h3 className="font-medium text-gray-800 dark:text-white">{skillName}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Skill</p>
+                </div>
+            </div>
+            
+            <button 
+                onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(`/search?skill=${encodeURIComponent(skillName)}`, "_blank");
+                }}
+                className="w-full mt-3 py-1.5 px-3 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded transition-colors"
+            >
+                Find Related
+            </button>
+        </div>
+    );
+};
+
 // --- Компонент-обертка с загрузкой данных и Canvas ---
-const NetworkGraph3D = () => {
+const NetworkGraph = () => {
     const [graphData, setGraphData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [hoveredNodeId, setHoveredNodeId] = useState(null); // Для информации о наведенном узле
+    const [hoveredNode, setHoveredNode] = useState(null); // Обновлено для хранения всего узла, а не только ID
+    const navigate = useNavigate();
 
     // Загрузка данных с бэкенда
     useEffect(() => {
@@ -195,7 +356,7 @@ const NetworkGraph3D = () => {
             setError(null);
             try {
                 // Используем ваш настроенный axios и эндпоинт
-                const response = await axios.get("/api/v1/graph/connections");
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/graph/connections`);
                 if (response.data && response.data.nodes && response.data.edges) {
                     setGraphData(response.data);
                 } else {
@@ -213,14 +374,50 @@ const NetworkGraph3D = () => {
 
     // Обработчики событий от узлов
     const handleNodeClick = (node) => {
-        // TODO: Реализовать действие при клике (например, показать детали узла)
-        alert(`Clicked on ${node.type}: ${node.label} (ID: ${node.id})`);
+        // Навигация в зависимости от типа узла
+        if (node.type === "user") {
+            // Извлекаем ID пользователя из строки "user_123"
+            const userId = node.id.split("_")[1];
+            navigate(`/profile/${userId}`);
+        } else if (node.type === "project") {
+            // Извлекаем ID проекта из строки "project_456"
+            const projectId = node.id.split("_")[1];
+            navigate(`/project/${projectId}`);
+        } else if (node.type === "skill") {
+            // Для навыков можно добавить перенаправление на страницу поиска
+            navigate(`/search?skill=${encodeURIComponent(node.label)}`);
+        }
     };
 
-    const handleNodeHover = (nodeId) => {
-        setHoveredNodeId(nodeId);
+    const handleNodeHover = (node) => {
+        setHoveredNode(node);
         // Можно менять стиль курсора и т.д.
-        document.body.style.cursor = nodeId ? "pointer" : "default";
+        document.body.style.cursor = node ? "pointer" : "default";
+    };
+
+    // Функция для рендера соответствующей информационной карточки
+    const renderInfoCard = () => {
+        if (!hoveredNode) return null;
+        
+        let userId, projectId;
+        
+        switch (hoveredNode.type) {
+            case "user":
+                userId = hoveredNode.id.split("_")[1];
+                return <UserInfoCard userId={userId} username={hoveredNode.label} />;
+            case "project":
+                projectId = hoveredNode.id.split("_")[1];
+                return <ProjectInfoCard projectId={projectId} projectName={hoveredNode.label} />;
+            case "skill":
+                return <SkillInfoCard skillName={hoveredNode.label} />;
+            default:
+                return (
+                    <div className="bg-black/70 text-white p-3 rounded-lg">
+                        <div className="font-medium">{hoveredNode.label}</div>
+                        <div className="text-xs text-gray-300 mt-1">Type: {hoveredNode.type}</div>
+                    </div>
+                );
+        }
     };
 
     return (
@@ -253,14 +450,14 @@ const NetworkGraph3D = () => {
                     <OrbitControls enableZoom={true} enablePan={true} enableRotate={true} />
                 </Canvas>
             )}
-            {/* Инфо о наведенном узле */}
-            {hoveredNodeId && (
-                <div className="absolute bottom-4 left-4 bg-black/50 text-white p-2 rounded text-xs">
-                    Node: {hoveredNodeId}
+            {/* Инфо о наведенном узле - позиционирование и отображение соответствующей карточки */}
+            {hoveredNode && (
+                <div className="absolute bottom-4 right-4 z-10 animate-fade-in">
+                    {renderInfoCard()}
                 </div>
             )}
         </div>
     );
 };
 
-export default NetworkGraph3D;
+export default NetworkGraph;

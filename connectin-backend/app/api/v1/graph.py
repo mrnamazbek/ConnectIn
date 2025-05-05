@@ -26,7 +26,6 @@ router = APIRouter(tags=["Graph Data"])
 MAX_USERS_NODES = 50
 MAX_PROJECT_NODES = 30
 MAX_SKILL_NODES = 40
-MAX_TEAM_NODES = 20
 
 @router.get("/connections", response_model=GraphData, summary="Получить данные о связях для 3D графа")
 async def get_graph_connections(
@@ -34,8 +33,8 @@ async def get_graph_connections(
     # current_user: User = Depends(get_current_active_user) # Раскомментируйте, если нужны данные для конкретного юзера
 ):
     """
-    Собирает ограниченный набор данных о пользователях, проектах, навыках,
-    командах и связях между ними для визуализации в виде графа.
+    Собирает ограниченный набор данных о пользователях, проектах, навыках
+    и связях между ними для визуализации в виде графа.
     """
     logger.info("Request received for graph connection data.")
     nodes: List[NodeModel] = []
@@ -100,27 +99,12 @@ async def get_graph_connections(
                     node_ids.add(node_id)
             logger.info(f"Loaded {len(skill_res)} skill nodes.")
 
-            # Загрузка Команд (Teams) - опционально
-            logger.debug("Loading team nodes...")
-            team_res = db.execute(
-                text("SELECT id, name FROM teams ORDER BY id DESC LIMIT :limit")
-                .bindparams(limit=MAX_TEAM_NODES)
-            ).mappings().fetchall()
-            for t in team_res:
-                 node_id = f"team_{t['id']}"
-                 if node_id not in node_ids:
-                     nodes.append(NodeModel(id=node_id, label=t['name'], type='team'))
-                     node_ids.add(node_id)
-            logger.info(f"Loaded {len(team_res)} team nodes.")
-
-
             # --- 2. Загрузка Связей (Edges) ---
             logger.debug("Loading edges...")
             # Собираем ID узлов, которые мы реально добавили
             final_user_ids = {int(nid.split('_')[1]) for nid in node_ids if nid.startswith('user_')}
             final_project_ids = {int(nid.split('_')[1]) for nid in node_ids if nid.startswith('project_')}
             final_skill_ids = {int(nid.split('_')[1]) for nid in node_ids if nid.startswith('skill_')}
-            final_team_ids = {int(nid.split('_')[1]) for nid in node_ids if nid.startswith('team_')}
 
             # Связи Пользователь -> Навык
             if final_user_ids and final_skill_ids:
@@ -154,17 +138,6 @@ async def get_graph_connections(
                      source_id = f"project_{edge['project_id']}"
                      target_id = f"skill_{edge['skill_id']}"
                      edges.append(EdgeModel(source=source_id, target=target_id, type='requires_skill'))
-
-            # Связи Пользователь -> Команда
-            if final_user_ids and final_team_ids:
-                 user_team_edges = db.execute(
-                     text("SELECT user_id, team_id FROM user_teams WHERE user_id = ANY(:user_ids) AND team_id = ANY(:team_ids)")
-                     .bindparams(user_ids=list(final_user_ids), team_ids=list(final_team_ids))
-                 ).mappings().fetchall()
-                 for edge in user_team_edges:
-                     source_id = f"user_{edge['user_id']}"
-                     target_id = f"team_{edge['team_id']}"
-                     edges.append(EdgeModel(source=source_id, target=target_id, type='member_of_team'))
 
             logger.info(f"Loaded {len(edges)} edges between {len(nodes)} nodes.")
 

@@ -79,11 +79,11 @@ graph TD
         U[<fa:fa-user/> User]
     end
 
-    subgraph Frontend (Vercel)
+    subgraph Frontend Deployed on Railway
         FE[<fa:fa-window-maximize/> React SPA]
     end
 
-    subgraph Backend (Railway)
+    subgraph Backend Deployed on Railway
         BE[<fa:fa-server/> FastAPI API]
     end
 

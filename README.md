@@ -112,7 +112,7 @@ graph TD
 
     U -- HTTPS --> FE;
     FE -- API Calls --> BE;
-    FE -- WebSocket <--> BE; %% <-- WebSocket остается на FastAPI бэкенде
+    FE -- WebSocket <--> BE;
     BE -- DB Access --> RDS;
     BE -- File Storage --> S3;
 

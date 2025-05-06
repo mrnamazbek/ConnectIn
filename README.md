@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="placeholder-logo.png" alt="[connectin-logo-png](https://github.com/user-attachments/assets/c2d8fdc6-d84b-47c9-9999-da360445012c)" width="150">
+  <img src="placeholder-logo.png" alt="Connectin Logo" width="150">
 </p>
 
 <h1 align="center">🚀 ConnectIn: Your Professional IT Ecosystem</h1>

@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUserMinus, faCheck, faTimes, faClipboardList, faUsers, faTag, faComment, faClock, faUserPlus } from "@fortawesome/free-solid-svg-icons";
+import { faUserMinus, faCheck, faTimes, faUsers, faTag, faComment, faClock, faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import { motion } from "framer-motion";
+import ProjectTaskBoard from "../components/ProjectTaskBoard";
+import { toast } from "react-toastify";
 
 const ProjectProfile = () => {
     const { projectId } = useParams();
@@ -23,7 +25,6 @@ const ProjectProfile = () => {
                 const user = await fetchCurrentUser();
                 if (user) {
                     await fetchProjectProfile(user);
-                } else {
                 }
             } catch (error) {
                 console.error("Failed to fetch data:", error);
@@ -102,6 +103,26 @@ const ProjectProfile = () => {
         }
     };
 
+    const handleUpdateStatus = async (newStatus) => {
+        if (!isOwner) return;
+
+        try {
+            const token = localStorage.getItem("access_token");
+            await axios.patch(
+                `${import.meta.env.VITE_API_URL}/projects/${projectId}/status?status=${newStatus}`,
+                {},
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+            await fetchProjectProfile(currentUser);
+            toast.success(`Project status updated to ${newStatus === "finished" ? "Finished" : "In Development"}`);
+        } catch (error) {
+            console.error("Failed to update project status:", error);
+            toast.error("Failed to update project status");
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen">
@@ -128,7 +149,25 @@ const ProjectProfile = () => {
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-5 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-green-700 dark:border-green-500 overflow-hidden hover:shadow-xl transition-all duration-300">
                     <div className="p-4 sm:p-6">
                         <div className="mb-6">
-                            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white mb-2">{projectDetails.name}</h1>
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">{projectDetails.name}</h1>
+                                <span className={`text-xs sm:text-sm px-3 py-1 rounded-full ${projectDetails.status === "finished" ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"}`}>
+                                    {projectDetails.status === "finished" ? "Finished" : "In Development"}
+                                </span>
+
+                                {isOwner && (
+                                    <div className="ml-auto">
+                                        <select
+                                            value={projectDetails.status}
+                                            onChange={(e) => handleUpdateStatus(e.target.value)}
+                                            className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        >
+                                            <option value="development">In Development</option>
+                                            <option value="finished">Finished</option>
+                                        </select>
+                                    </div>
+                                )}
+                            </div>
                             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
                                 <FontAwesomeIcon icon={faClock} className="text-green-700 dark:text-green-400" />
                                 <span>Created by {projectDetails.owner?.username || "Unknown"}</span>
@@ -138,13 +177,7 @@ const ProjectProfile = () => {
 
                         {(isMember || isOwner) && (
                             <div className="mt-8">
-                                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-                                    <FontAwesomeIcon icon={faClipboardList} className="text-green-700 dark:text-green-400" />
-                                    Project Tasks
-                                </h3>
-                                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 text-center">
-                                    <p className="text-gray-500 dark:text-gray-400">Tasks feature coming soon!</p>
-                                </div>
+                                <ProjectTaskBoard projectId={projectId} isOwner={isOwner} isMember={isMember} />
                             </div>
                         )}
                     </div>

@@ -10,6 +10,7 @@ class Project(Base):
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    status = Column(String, default="development", nullable=False)  # Status: "development" or "finished"
 
     # ✅ The owner relationship
     owner = relationship("User", back_populates="owned_projects")
@@ -30,6 +31,9 @@ class Project(Base):
     posts = relationship("Post", back_populates="project", cascade="all, delete")
     
     comments = relationship("ProjectComment", back_populates="project", cascade="all, delete-orphan")
+    
+    # ✅ Project tasks/todos
+    todos = relationship("Todo", back_populates="project", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Project id={self.id} name={self.name} owner_id={self.owner_id}>"

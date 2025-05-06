@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Boolean, ForeignKey, Table
+from sqlalchemy import Column, Integer, Boolean, ForeignKey, Table, String, DateTime, func
 from app.models.base import Base
 
 # ✅ Many-to-Many: Skills ↔ Skill Categories
@@ -99,4 +99,14 @@ todo_tags_association = Table(
     Column("todo_id", Integer, ForeignKey("todos.id", ondelete="CASCADE"), primary_key=True),
     Column("tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
     extend_existing=True
+)
+
+# Add the new task_assignments table
+task_assignments = Table(
+    "task_assignments",
+    Base.metadata,
+    Column("todo_id", Integer, ForeignKey("todos.id", ondelete="CASCADE"), primary_key=True),
+    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("role", String, default="assignee", primary_key=True),  # 'assignee', 'reviewer', 'watcher'
+    Column("assigned_at", DateTime, default=func.now())
 ) 

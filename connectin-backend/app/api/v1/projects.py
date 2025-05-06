@@ -56,7 +56,8 @@ def create_project(
     new_project = Project(
         name=project_data.name,
         description=project_data.description,
-        owner_id=current_user.id
+        owner_id=current_user.id,
+        status=project_data.status
     )
     db.add(new_project)
     db.commit()
@@ -92,7 +93,8 @@ def create_project(
         comments_count=len(new_project.comments),
         vote_count=db.query(
             func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
-        ).filter(ProjectVote.project_id == new_project.id).scalar() or 0
+        ).filter(ProjectVote.project_id == new_project.id).scalar() or 0,
+        status=new_project.status
     )
 
 # 🔹 Получить мои проекты
@@ -302,7 +304,7 @@ def get_applied_projects(
                 owner=UserOut.model_validate(project.owner) if project.owner else None,
                 tags=[TagOut(id=tag.id, name=tag.name) for tag in project.tags],
                 skills=[SkillOut(id=skill.id, name=skill.name) for skill in project.skills],
-                members=[UserOut(id=user.id, username=user.username) for user in project.members],
+                members=[UserOut.model_validate(user) for user in project.members],
                 comments_count=len(project.comments),
                 vote_count=db.query(
                     func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
@@ -312,6 +314,56 @@ def get_applied_projects(
         ]
     except Exception as e:
         logger.error(f"Error fetching applied projects: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/member-of", response_model=List[ProjectOut], summary="Get projects where user is a member")
+def get_member_projects(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get all projects where the current user is a member (not including owned projects).
+    """
+    try:
+        logger.info(f"Fetching member projects for user {current_user.id}")
+        
+        # Get projects where the user is a member
+        member_project_ids = db.query(project_members_association.c.project_id).filter(
+            project_members_association.c.user_id == current_user.id
+        ).all()
+        
+        if not member_project_ids:
+            logger.info("No member projects found")
+            return []
+            
+        # Convert to list of IDs
+        project_ids = [pid[0] for pid in member_project_ids]
+        
+        # Then fetch the projects
+        projects = db.query(Project).filter(Project.id.in_(project_ids)).all()
+        
+        logger.info(f"Found {len(projects)} member projects")
+        
+        result = []
+        for project in projects:
+            project_out = ProjectOut(
+                id=project.id,
+                name=project.name,
+                description=project.description,
+                owner=UserOut.model_validate(project.owner) if project.owner else None,
+                tags=[TagOut.model_validate(tag) for tag in project.tags],
+                skills=[SkillOut.model_validate(skill) for skill in project.skills],
+                members=[UserOut.model_validate(member) for member in project.members],
+                comments_count=len(project.comments),
+                vote_count=db.query(
+                    func.sum(case((ProjectVote.is_upvote, 1), else_=-1))
+                ).filter(ProjectVote.project_id == project.id).scalar() or 0
+            )
+            result.append(project_out)
+        
+        return result
+    except Exception as e:
+        logger.error(f"Error fetching member projects: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/search", response_model=List[ProjectOut])
@@ -463,11 +515,44 @@ def update_project(
     if project.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Вы не можете редактировать чужой проект")
 
+    # Update project fields
     project.name = project_data.name or project.name
     project.description = project_data.description or project.description
+    if project_data.status is not None:
+        if project_data.status not in ["development", "finished"]:
+            raise HTTPException(status_code=400, detail="Status must be either 'development' or 'finished'")
+        project.status = project_data.status
 
     db.commit()
     db.refresh(project)
+    return ProjectOut.model_validate(project)
+
+# 🔹 Update project status
+@router.patch("/{project_id}/status", response_model=ProjectOut, summary="Update project status")
+def update_project_status(
+    project_id: int,
+    status: str = Query(..., description="New project status", enum=["development", "finished"]),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update the status of a project (development or finished).
+    Only the project owner can update the status.
+    """
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if project.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the project owner can update the status")
+
+    if status not in ["development", "finished"]:
+        raise HTTPException(status_code=400, detail="Status must be either 'development' or 'finished'")
+
+    project.status = status
+    db.commit()
+    db.refresh(project)
+
     return ProjectOut.model_validate(project)
 
 # 🔹 Удалить проект
@@ -581,10 +666,23 @@ def apply_to_project(
 
     if db.query(project_applications).filter_by(user_id=current_user.id, project_id=project_id).first():
         raise HTTPException(status_code=400, detail="Вы уже подали заявку")
+        
+    # Check if user is already a member of 3 projects
+    member_count = db.query(project_members_association).filter_by(user_id=current_user.id).count()
+    
+    # Include owned projects in the count
+    owned_count = db.query(Project).filter_by(owner_id=current_user.id).count()
+    
+    total_projects = member_count + owned_count
+    
+    if total_projects >= 3:
+        raise HTTPException(
+            status_code=400, 
+            detail="Limit reached: You can only be a member of up to 3 projects. Please leave a project before applying to a new one."
+        )
 
     db.execute(project_applications.insert().values(user_id=current_user.id, project_id=project_id))
     current_user.last_active = datetime.now()
-    db.commit()
     db.commit()
     return {"detail": "Заявка подана"}
 
@@ -608,9 +706,11 @@ def get_project_members(
     ).fetchall()
 
     if not members:
-        return {"detail": "В проекте пока нет участников"}
+        return []  # Return empty array instead of error message
 
-    member_ids = [member["user_id"] for member in members]
+    # Fix: Handle members as tuples, not dictionaries
+    # The association table has user_id as first column
+    member_ids = [member[0] for member in members]  # Access by index instead of key
     users = db.query(User).filter(User.id.in_(member_ids)).all()
     return [UserOut.model_validate(user) for user in users]
 
@@ -667,6 +767,23 @@ def decide_application(
         raise HTTPException(status_code=404, detail="Заявка не найдена")
 
     if request.decision == ApplicationStatus.ACCEPTED:
+        # Check if the applicant is already a member of 3 projects
+        member_count = db.query(project_members_association).filter_by(user_id=user_id).count()
+        owned_count = db.query(Project).filter_by(owner_id=user_id).count()
+        total_projects = member_count + owned_count
+        
+        if total_projects >= 3:
+            # Automatically reject the application due to limit
+            db.execute(project_applications.delete().where(
+                (project_applications.c.project_id == project_id) &
+                (project_applications.c.user_id == user_id)
+            ))
+            db.commit()
+            raise HTTPException(
+                status_code=400, 
+                detail="Cannot accept: User has reached the maximum limit of 3 projects"
+            )
+            
         db.execute(project_members_association.insert().values(user_id=user_id, project_id=project_id))
         db.execute(project_applications.delete().where(
             (project_applications.c.project_id == project_id) &
@@ -836,3 +953,41 @@ def get_project_comments(
             user={"username": comment.user.username if comment.user else "Unknown", "avatar_url": comment.user.avatar_url if comment.user else None}        )
         for comment in comments
     ]
+
+# 🔹 Withdraw an application to a project
+@router.delete("/{project_id}/withdraw-application", summary="Withdraw application from project")
+def withdraw_application(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Withdraw/delete the current user's application to a project.
+    """
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # Check if the user has applied to this project
+    application = db.query(project_applications).filter_by(
+        user_id=current_user.id, 
+        project_id=project_id
+    ).first()
+
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    try:
+        # Delete the application
+        db.execute(
+            project_applications.delete().where(
+                (project_applications.c.project_id == project_id) &
+                (project_applications.c.user_id == current_user.id)
+            )
+        )
+        db.commit()
+        return {"detail": "Application withdrawn successfully"}
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error withdrawing application: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not withdraw application")

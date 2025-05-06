@@ -1,6 +1,4 @@
 <p align="center">
-  ![connectin-logo-png](https://github.com/user-attachments/assets/32dfcb54-448d-4516-b80d-e3428b40925a)
-
   <img src="https://github.com/user-attachments/assets/32dfcb54-448d-4516-b80d-e3428b40925a" alt="Connectin Logo" width="150">
 </p>
 

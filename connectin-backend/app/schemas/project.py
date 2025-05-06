@@ -51,6 +51,7 @@ class ProjectCreate(ProjectBase):
     """
     tag_ids: List[int] = []  # ✅ IDs of selected tags
     skill_ids: List[int] = []  # ✅ IDs of required skills
+    status: str = "development"  # Default status when creating a project
 
 
 class ProjectUpdate(BaseModel):
@@ -61,6 +62,7 @@ class ProjectUpdate(BaseModel):
     description: Optional[str] = None
     tag_ids: List[int] = []  # ✅ Allow updating tags
     skill_ids: List[int] = []  # ✅ Allow updating skills
+    status: Optional[str] = None  # Allow updating status
 
 class ProjectOut(BaseModel):
     id: int
@@ -72,6 +74,7 @@ class ProjectOut(BaseModel):
     skills: List[SkillOut] = []
     comments_count: int = 0
     vote_count: int = 0
+    status: str = "development"  # Include status in the output
 
     class Config:
         from_attributes = True

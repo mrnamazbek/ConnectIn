@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faSpinner, faEnvelope, faLocationDot, faBriefcase, faLink, faGraduationCap, faEdit, faCheck, faTimes, faTrashAlt, faPlus, faMinus, faRobot, faCopy, faFileArrowDown, faNewspaper, faThumbsUp, faBookmark, faEye, faCamera } from "@fortawesome/free-solid-svg-icons";
+import { faUser, faSpinner, faEnvelope, faLocationDot, faBriefcase, faLink, faGraduationCap, faEdit, faCheck, faTimes, faTrashAlt, faPlus, faMinus, faRobot, faCopy, faFileArrowDown, faNewspaper, faThumbsUp, faBookmark, faEye, faCamera, faUsers } from "@fortawesome/free-solid-svg-icons";
 import { faGithub, faLinkedin, faTelegram } from "@fortawesome/free-brands-svg-icons";
 import axios from "axios";
 import useAuthStore from "../store/authStore";
@@ -71,6 +71,8 @@ const UserProfilePage = () => {
     const [loadingPosts, setLoadingPosts] = useState(false);
     const [savedPosts, setSavedPosts] = useState([]);
     const [loadingSavedPosts, setLoadingSavedPosts] = useState(false);
+    const [memberProjects, setMemberProjects] = useState([]);
+    const [loadingMemberProjects, setLoadingMemberProjects] = useState(false);
 
     // Add state for cover photo and loading
     const [isUploadingCover, setIsUploadingCover] = useState(false);
@@ -99,8 +101,8 @@ const UserProfilePage = () => {
                     }
                 } else if (userId) {
                     // Fetch another user's profile
-                const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/${userId}`);
-                setUser(response.data);
+                    const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/${userId}`);
+                    setUser(response.data);
                     setSkills(response.data.skills || []);
                     setIsOwnProfile(false);
 
@@ -120,7 +122,7 @@ const UserProfilePage = () => {
             }
         };
 
-            fetchUserProfile();
+        fetchUserProfile();
     }, [userId, navigate, isAuthenticated, currentUser]);
 
     const fetchAllData = async () => {
@@ -130,6 +132,7 @@ const UserProfilePage = () => {
             setLoadingAppliedProjects(true);
             setLoadingPosts(true);
             setLoadingSavedPosts(true);
+            setLoadingMemberProjects(true);
 
             const token = localStorage.getItem("access_token");
             if (!token) {
@@ -137,42 +140,88 @@ const UserProfilePage = () => {
                 return;
             }
 
-            const [skillsResponse, projectsResponse, appliedProjectsResponse, postsResponse, savedPostsResponse] = await Promise.all([
-                axios.get(`${import.meta.env.VITE_API_URL}/skills/`, {
+            // Fetch skills
+            try {
+                const skillsResponse = await axios.get(`${import.meta.env.VITE_API_URL}/skills/`, {
                     headers: { Authorization: `Bearer ${token}` },
-                }),
-                axios.get(`${import.meta.env.VITE_API_URL}/projects/my`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                }),
-                axios.get(`${import.meta.env.VITE_API_URL}/projects/applied`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                }),
-                axios.get(`${import.meta.env.VITE_API_URL}/posts/my`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                }),
-                axios.get(`${import.meta.env.VITE_API_URL}/users/me/saved-posts`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                }),
-            ]);
-
-            if (skillsResponse?.data) {
-                setAvailableSkills(skillsResponse.data);
+                });
+                if (skillsResponse?.data) {
+                    setAvailableSkills(skillsResponse.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch skills:", error);
+            } finally {
+                setLoadingSkills(false);
             }
 
-            if (projectsResponse?.data) {
-                setProjects(projectsResponse.data);
+            // Fetch owned projects
+            try {
+                const projectsResponse = await axios.get(`${import.meta.env.VITE_API_URL}/projects/my`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (projectsResponse?.data) {
+                    setProjects(projectsResponse.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch owned projects:", error);
+            } finally {
+                setLoadingProjects(false);
             }
 
-            if (appliedProjectsResponse?.data) {
-                setAppliedProjects(appliedProjectsResponse.data);
+            // Fetch applied projects
+            try {
+                const appliedProjectsResponse = await axios.get(`${import.meta.env.VITE_API_URL}/projects/applied`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (appliedProjectsResponse?.data) {
+                    setAppliedProjects(appliedProjectsResponse.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch applied projects:", error);
+            } finally {
+                setLoadingAppliedProjects(false);
             }
 
-            if (postsResponse?.data) {
-                setUserPosts(postsResponse.data);
+            // Fetch user posts
+            try {
+                const postsResponse = await axios.get(`${import.meta.env.VITE_API_URL}/posts/my`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (postsResponse?.data) {
+                    setUserPosts(postsResponse.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch user posts:", error);
+            } finally {
+                setLoadingPosts(false);
             }
 
-            if (savedPostsResponse?.data) {
-                setSavedPosts(savedPostsResponse.data);
+            // Fetch saved posts
+            try {
+                const savedPostsResponse = await axios.get(`${import.meta.env.VITE_API_URL}/users/me/saved-posts`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (savedPostsResponse?.data) {
+                    setSavedPosts(savedPostsResponse.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch saved posts:", error);
+            } finally {
+                setLoadingSavedPosts(false);
+            }
+
+            // Fetch member projects
+            try {
+                const memberProjectsResponse = await axios.get(`${import.meta.env.VITE_API_URL}/projects/member-of`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (memberProjectsResponse?.data) {
+                    setMemberProjects(memberProjectsResponse.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch member projects:", error);
+            } finally {
+                setLoadingMemberProjects(false);
             }
         } catch (error) {
             if (error.response?.status === 401) {
@@ -183,12 +232,6 @@ const UserProfilePage = () => {
                 console.error("Failed to fetch data", error);
                 toast.error("Failed to load data. Please try again later.");
             }
-        } finally {
-            setLoadingSkills(false);
-            setLoadingProjects(false);
-            setLoadingAppliedProjects(false);
-            setLoadingPosts(false);
-            setLoadingSavedPosts(false);
         }
     };
 
@@ -556,8 +599,24 @@ const UserProfilePage = () => {
         }
     };
 
+    const handleDeleteApplication = async (projectId) => {
+        try {
+            const token = localStorage.getItem("access_token");
+            await axios.delete(`${import.meta.env.VITE_API_URL}/projects/${projectId}/withdraw-application`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            // Update applied projects state
+            setAppliedProjects(appliedProjects.filter((project) => project.id !== projectId));
+            toast.success("Application withdrawn successfully");
+        } catch (error) {
+            console.error("Failed to withdraw application:", error);
+            toast.error("Failed to withdraw application. Please try again.");
+        }
+    };
+
     const handleViewProject = (projectId) => {
-        navigate(`/project/${projectId}`);
+        navigate(`/project/${projectId}/profile`);
     };
 
     const handleUnsavePost = async (postId) => {
@@ -706,7 +765,7 @@ const UserProfilePage = () => {
                             <AvatarUpload user={user} onAvatarUpdate={handleAvatarUpdate} editMode={editMode} />
                         ) : (
                             <div className="border-4 border-white dark:border-gray-800 rounded-full">
-                        {user.avatar_url ? (
+                                {user.avatar_url ? (
                                     <img src={user.avatar_url} alt={user.username} className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover bg-white" />
                                 ) : (
                                     <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
@@ -723,61 +782,61 @@ const UserProfilePage = () => {
                             <div>
                                 <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">{user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : `@${user.username}`}</h1>
 
-                        {(user.first_name || user.last_name) && <p className="text-gray-600 dark:text-gray-300 mb-1">@{user.username}</p>}
+                                {(user.first_name || user.last_name) && <p className="text-gray-600 dark:text-gray-300 mb-1">@{user.username}</p>}
 
                                 {/* Improve spacing and layout of user info for mobile */}
                                 <div className="mt-2 space-y-1.5">
-                        {user.position && (
+                                    {user.position && (
                                         <p className="text-gray-700 dark:text-gray-300 flex items-center text-sm sm:text-base">
                                             <FontAwesomeIcon icon={faBriefcase} className="mr-2 text-gray-500 w-4" />
-                                {user.position}
-                            </p>
-                        )}
+                                            {user.position}
+                                        </p>
+                                    )}
 
-                        {user.city && (
+                                    {user.city && (
                                         <p className="text-gray-600 dark:text-gray-400 flex items-center text-sm sm:text-base">
                                             <FontAwesomeIcon icon={faLocationDot} className="mr-2 text-gray-500 w-4" />
-                                {user.city}
-                            </p>
-                        )}
+                                            {user.city}
+                                        </p>
+                                    )}
 
-                        {user.email && (
+                                    {user.email && (
                                         <p className="text-gray-600 dark:text-gray-400 flex items-center text-sm sm:text-base break-all">
                                             <FontAwesomeIcon icon={faEnvelope} className="mr-2 text-gray-500 w-4 flex-shrink-0" />
-                                {user.email}
-                            </p>
-                        )}
+                                            {user.email}
+                                        </p>
+                                    )}
                                 </div>
 
-                        {/* Status message if available */}
-                        {user.status && (
+                                {/* Status message if available */}
+                                {user.status && (
                                     <div className="mt-3 mb-3 sm:mb-4 p-2 sm:p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
                                         <p className="text-gray-700 dark:text-gray-300 italic text-sm sm:text-base">{user.status}</p>
-                            </div>
-                        )}
+                                    </div>
+                                )}
 
                                 {/* Social Links - improve for mobile */}
-                        {(user.github || user.linkedin || user.telegram) && (
+                                {(user.github || user.linkedin || user.telegram) && (
                                     <div className="flex mt-3 space-x-2 sm:space-x-3">
-                                {user.github && (
+                                        {user.github && (
                                             <button onClick={() => handleExternalLink(user.github)} className="p-1.5 sm:p-2 text-gray-700 hover:text-green-600 dark:text-gray-300 dark:hover:text-green-400 transition-colors" aria-label="GitHub Profile">
                                                 <FontAwesomeIcon icon={faGithub} className="text-lg sm:text-xl" />
-                                    </button>
-                                )}
+                                            </button>
+                                        )}
 
-                                {user.linkedin && (
+                                        {user.linkedin && (
                                             <button onClick={() => handleExternalLink(user.linkedin)} className="p-1.5 sm:p-2 text-gray-700 hover:text-green-600 dark:text-gray-300 dark:hover:text-green-400 transition-colors" aria-label="LinkedIn Profile">
                                                 <FontAwesomeIcon icon={faLinkedin} className="text-lg sm:text-xl" />
-                                    </button>
-                                )}
+                                            </button>
+                                        )}
 
-                                {user.telegram && (
+                                        {user.telegram && (
                                             <button onClick={() => handleExternalLink(user.telegram)} className="p-1.5 sm:p-2 text-gray-700 hover:text-green-600 dark:text-gray-300 dark:hover:text-green-400 transition-colors" aria-label="Telegram">
                                                 <FontAwesomeIcon icon={faTelegram} className="text-lg sm:text-xl" />
-                                    </button>
+                                            </button>
+                                        )}
+                                    </div>
                                 )}
-                            </div>
-                        )}
 
                                 {isOwnProfile && (
                                     <button onClick={() => setEditMode(true)} className="mt-3 sm:mt-4 px-3 py-1.5 sm:px-4 sm:py-2 bg-green-700 dark:bg-green-600 text-white rounded-lg hover:bg-green-600 dark:hover:bg-green-500 transition-colors flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
@@ -785,7 +844,7 @@ const UserProfilePage = () => {
                                         Edit Profile
                                     </button>
                                 )}
-                    </div>
+                            </div>
                         ) : (
                             <div className="space-y-4">
                                 {/* Move AvatarUpload controls to a visible position in edit mode */}
@@ -795,8 +854,8 @@ const UserProfilePage = () => {
                                     </div>
                                     <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                                         <p>Update your profile picture</p>
-                </div>
-            </div>
+                                    </div>
+                                </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
@@ -1029,7 +1088,7 @@ const UserProfilePage = () => {
                                     {loadingSkills ? (
                                         <div className="flex justify-center py-4">
                                             <FontAwesomeIcon icon={faSpinner} spin className="text-green-500" />
-                        </div>
+                                        </div>
                                     ) : (
                                         <>
                                             <div className="relative">
@@ -1142,7 +1201,7 @@ const UserProfilePage = () => {
                                             value={newEducation.end_year}
                                             onChange={(e) => setNewEducation({ ...newEducation, end_year: e.target.value })}
                                         />
-                        </div>
+                                    </div>
                                     <textarea
                                         placeholder="Description"
                                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
@@ -1155,7 +1214,7 @@ const UserProfilePage = () => {
                                 </motion.div>
                             )}
                         </AnimatePresence>
-                </div>
+                    </div>
 
                     {/* Experience */}
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-5 md:p-6">
@@ -1229,7 +1288,7 @@ const UserProfilePage = () => {
                                             value={newExperience.end_year}
                                             onChange={(e) => setNewExperience({ ...newExperience, end_year: e.target.value })}
                                         />
-                        </div>
+                                    </div>
                                     <button onClick={handleAddExperience} className="w-full cursor-pointer px-4 py-2 bg-green-700 dark:bg-green-600 text-white rounded-lg hover:bg-green-600 dark:hover:bg-green-500 transition-colors">
                                         Add Experience
                                     </button>
@@ -1252,11 +1311,21 @@ const UserProfilePage = () => {
                                     }`}
                                 >
                                     <FontAwesomeIcon icon={faLink} className="mr-1 sm:mr-2" />
-                                Projects
+                                    Projects
                                 </button>
 
                                 {isOwnProfile && (
                                     <>
+                                        <button
+                                            onClick={() => handleTabChange("member")}
+                                            className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                                                activeTab === "member" ? "text-green-700 dark:text-green-400 border-b-2 border-green-700 dark:border-green-400" : "text-gray-500 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400"
+                                            }`}
+                                        >
+                                            <FontAwesomeIcon icon={faUsers} className="mr-1 sm:mr-2" />
+                                            <span>Member Of</span>
+                                        </button>
+
                                         <button
                                             onClick={() => handleTabChange("applied")}
                                             className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
@@ -1300,16 +1369,22 @@ const UserProfilePage = () => {
                                                 <FontAwesomeIcon icon={faSpinner} spin className="text-green-500 text-xl" />
                                             </div>
                                         ) : projects && projects.length > 0 ? (
-                            <div className="space-y-4">
+                                            <div className="space-y-4">
                                                 {projects.map((project) => (
                                                     <div key={project.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
                                                         <div className="flex items-start justify-between flex-wrap sm:flex-nowrap gap-1 mb-1">
-                                        <h3 className="font-medium text-gray-800 dark:text-white">{project.name}</h3>
+                                                            <div className="flex items-center gap-2">
+                                                                <h3 className="font-medium text-gray-800 dark:text-white">{project.name}</h3>
+                                                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                                                    project.status === "finished" 
+                                                                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" 
+                                                                        : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                                                                }`}>
+                                                                    {project.status === "finished" ? "Finished" : "In Development"}
+                                                                </span>
+                                                            </div>
                                                             {project.owner && !isOwnProfile && (
-                                                                <span 
-                                                                    onClick={() => navigate(`/profile/${project.owner.id}`)} 
-                                                                    className="text-xs text-green-600 dark:text-green-400 whitespace-nowrap cursor-pointer hover:underline"
-                                                                >
+                                                                <span onClick={() => navigate(`/profile/${project.owner.id}`)} className="text-xs text-green-600 dark:text-green-400 whitespace-nowrap cursor-pointer hover:underline">
                                                                     @{project.owner.username || "Unknown"}
                                                                 </span>
                                                             )}
@@ -1325,11 +1400,50 @@ const UserProfilePage = () => {
                                                                 </button>
                                                             )}
                                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         ) : (
                                             <p className="text-center py-6 text-gray-500 dark:text-gray-400">No projects found</p>
+                                        )}
+                                    </motion.div>
+                                )}
+
+                                {/* Member Projects Tab - Only shown for own profile */}
+                                {activeTab === "member" && isOwnProfile && (
+                                    <motion.div key="member" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                                        {loadingMemberProjects ? (
+                                            <div className="flex justify-center py-10">
+                                                <FontAwesomeIcon icon={faSpinner} spin className="text-green-500 text-xl" />
+                                            </div>
+                                        ) : memberProjects && memberProjects.length > 0 ? (
+                                            <div className="space-y-4">
+                                                {memberProjects.map((project) => (
+                                                    <div key={project.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
+                                                        <div className="flex items-start justify-between flex-wrap sm:flex-nowrap gap-1 mb-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <h3 className="font-medium text-gray-800 dark:text-white">{project.name}</h3>
+                                                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                                                    project.status === "finished" 
+                                                                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" 
+                                                                        : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                                                                }`}>
+                                                                    {project.status === "finished" ? "Finished" : "In Development"}
+                                                                </span>
+                                                            </div>
+                                                            {project.owner && (
+                                                                <span onClick={() => navigate(`/profile/${project.owner.id}`)} className="text-xs text-green-600 dark:text-green-400 whitespace-nowrap cursor-pointer hover:underline">
+                                                                    @{project.owner.username || "Unknown"}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {project.description && <p className="mt-1 text-gray-600 dark:text-gray-400 line-clamp-3" dangerouslySetInnerHTML={{ __html: project.description }}></p>}
+                                                        {/* Remove tags section as requested */}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-center py-6 text-gray-500 dark:text-gray-400">You are not a member of any projects yet</p>
                                         )}
                                     </motion.div>
                                 )}
@@ -1340,26 +1454,40 @@ const UserProfilePage = () => {
                                         {loadingAppliedProjects ? (
                                             <div className="flex justify-center py-10">
                                                 <FontAwesomeIcon icon={faSpinner} spin className="text-green-500 text-xl" />
-                        </div>
+                                            </div>
                                         ) : appliedProjects && appliedProjects.length > 0 ? (
                                             <div className="space-y-4">
                                                 {appliedProjects.map((project) => (
                                                     <div key={project.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
                                                         <div className="flex items-start justify-between flex-wrap sm:flex-nowrap gap-1 mb-1">
-                                                            <h3 className="font-medium text-gray-800 dark:text-white">{project.name}</h3>
+                                                            <div className="flex items-center gap-2">
+                                                                <h3 className="font-medium text-gray-800 dark:text-white">{project.name}</h3>
+                                                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                                                    project.status === "finished" 
+                                                                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" 
+                                                                        : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                                                                }`}>
+                                                                    {project.status === "finished" ? "Finished" : "In Development"}
+                                                                </span>
+                                                            </div>
                                                             {project.owner && (
-                                                                <span 
-                                                                    onClick={() => navigate(`/profile/${project.owner.id}`)} 
-                                                                    className="text-xs text-green-600 dark:text-green-400 whitespace-nowrap cursor-pointer hover:underline"
-                                                                >
+                                                                <span onClick={() => navigate(`/profile/${project.owner.id}`)} className="text-xs text-green-600 dark:text-green-400 whitespace-nowrap cursor-pointer hover:underline">
                                                                     @{project.owner.username || "Unknown"}
                                                                 </span>
-                    )}
-                </div>
+                                                            )}
+                                                        </div>
                                                         {project.description && <p className="mt-1 text-gray-600 dark:text-gray-400 line-clamp-3" dangerouslySetInnerHTML={{ __html: project.description }}></p>}
                                                         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                                                             Application status: <span className="font-medium text-green-600 dark:text-green-400">{project.status || "Pending"}</span>
                                                         </p>
+                                                        <div className="mt-2 flex space-x-2">
+                                                            <button onClick={() => handleViewProject(project.id)} className="px-2 py-1 cursor-pointer text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
+                                                                <FontAwesomeIcon icon={faEye} className="mr-1" /> View
+                                                            </button>
+                                                            <button onClick={() => handleDeleteApplication(project.id)} className="px-2 py-1 cursor-pointer text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors">
+                                                                <FontAwesomeIcon icon={faTrashAlt} className="mr-1" /> Withdraw
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -1383,10 +1511,7 @@ const UserProfilePage = () => {
                                                         <div className="flex items-start justify-between flex-wrap sm:flex-nowrap gap-1 mb-1">
                                                             <h3 className="font-medium text-gray-800 dark:text-white">{post.title}</h3>
                                                             {post.author && (
-                                                                <span 
-                                                                    onClick={() => navigate(`/profile/${post.author.id}`)} 
-                                                                    className="text-xs text-green-600 dark:text-green-400 whitespace-nowrap cursor-pointer hover:underline"
-                                                                >
+                                                                <span onClick={() => navigate(`/profile/${post.author.id}`)} className="text-xs text-green-600 dark:text-green-400 whitespace-nowrap cursor-pointer hover:underline">
                                                                     @{post.author.username || "Unknown"}
                                                                 </span>
                                                             )}
@@ -1423,10 +1548,7 @@ const UserProfilePage = () => {
                                                         <div className="flex items-start justify-between flex-wrap sm:flex-nowrap gap-1">
                                                             <h3 className="font-medium text-gray-800 dark:text-white text-sm sm:text-base">{post.title}</h3>
                                                             {post.author && (
-                                                                <span 
-                                                                    onClick={() => navigate(`/profile/${post.author.id}`)} 
-                                                                    className="text-xs text-green-600 dark:text-green-400 whitespace-nowrap cursor-pointer hover:underline"
-                                                                >
+                                                                <span onClick={() => navigate(`/profile/${post.author.id}`)} className="text-xs text-green-600 dark:text-green-400 whitespace-nowrap cursor-pointer hover:underline">
                                                                     @{post.author.username || "Unknown"}
                                                                 </span>
                                                             )}

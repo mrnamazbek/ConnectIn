@@ -23,9 +23,9 @@ router = APIRouter(tags=["Graph Data"])
 
 # --- Константы ---
 # Ограничения на количество узлов для предотвращения перегрузки
-MAX_USERS_NODES = 50
-MAX_PROJECT_NODES = 30
-MAX_SKILL_NODES = 40
+MAX_USERS_NODES = 88
+MAX_PROJECT_NODES = 88
+MAX_SKILL_NODES = 88
 
 @router.get("/connections", response_model=GraphData, summary="Получить данные о связях для 3D графа")
 async def get_graph_connections(

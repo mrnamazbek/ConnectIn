@@ -191,7 +191,7 @@ const ProjectTaskBoard = ({ projectId, isOwner, isMember }) => {
                 project_id: projectId
             };
             
-            await axios.post(`${import.meta.env.VITE_API_URL}/todos`, taskData, {
+            await axios.post(`${import.meta.env.VITE_API_URL}/todos/`, taskData, {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("access_token")}`
                 }

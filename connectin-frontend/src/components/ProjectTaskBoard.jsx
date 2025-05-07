@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faTasks, faSpinner, faFilter, faSort, faEdit, faUsers, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTasks, faSpinner, faFilter, faSort, faEdit, faUsers, faTimes, faFlag } from "@fortawesome/free-solid-svg-icons";
 import TaskCard from "./TaskCard";
 
 const ProjectTaskBoard = ({ projectId, isOwner, isMember }) => {
@@ -315,7 +315,7 @@ const ProjectTaskBoard = ({ projectId, isOwner, isMember }) => {
     // Render functions
     const renderBoardView = () => {
         return (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {statusColumns.map((column) => (
                     <div key={column.id} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                         <h4 className="font-medium mb-3 flex items-center">
@@ -386,12 +386,13 @@ const ProjectTaskBoard = ({ projectId, isOwner, isMember }) => {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                     <span className={`px-2 py-1 rounded-full text-xs ${
-                                        task.priority === 'low' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' :
+                                        task.priority === 'low' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
                                         task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' :
                                         task.priority === 'high' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300' :
                                         'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
                                     }`}>
-                                        {task.priority}
+                                        <FontAwesomeIcon icon={faFlag} className="mr-1" />
+                                        {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
@@ -454,20 +455,30 @@ const ProjectTaskBoard = ({ projectId, isOwner, isMember }) => {
                     ></textarea>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-1">Priority</label>
-                        <select 
-                            name="priority"
-                            value={newTask.priority}
-                            onChange={handleInputChange}
-                            className="w-full rounded-lg border p-2 dark:bg-gray-700 dark:border-gray-600"
-                        >
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
-                            <option value="urgent">Urgent</option>
-                        </select>
+                        <div className="relative">
+                            <select 
+                                name="priority"
+                                value={newTask.priority}
+                                onChange={handleInputChange}
+                                className="w-full rounded-lg border p-2 pl-8 dark:bg-gray-700 dark:border-gray-600 appearance-none"
+                            >
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                            <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
+                                <FontAwesomeIcon icon={faFlag} className={
+                                    newTask.priority === 'low' ? 'text-blue-600' :
+                                    newTask.priority === 'medium' ? 'text-yellow-600' :
+                                    newTask.priority === 'high' ? 'text-orange-600' :
+                                    'text-red-600'
+                                } />
+                            </div>
+                        </div>
                     </div>
                     
                     {isEdit && (
@@ -540,8 +551,8 @@ const ProjectTaskBoard = ({ projectId, isOwner, isMember }) => {
     return (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-green-700 dark:border-green-500 overflow-hidden hover:shadow-xl transition-all duration-300">
             <div className="p-4 sm:p-6">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                <div className="flex flex-wrap justify-between items-center mb-6">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2 mb-3 sm:mb-0">
                         <FontAwesomeIcon icon={faTasks} className="text-green-700 dark:text-green-400" />
                         Project Tasks
                     </h3>
@@ -558,10 +569,10 @@ const ProjectTaskBoard = ({ projectId, isOwner, isMember }) => {
                 </div>
                 
                 {/* Filter and View Controls */}
-                <div className="flex flex-wrap justify-between mb-6 gap-4">
+                <div className="flex flex-col sm:flex-row justify-between mb-6 gap-4">
                     <div className="flex flex-wrap gap-2">
                         <select 
-                            className="bg-gray-100 dark:bg-gray-700 rounded px-3 py-2 text-sm"
+                            className="bg-gray-100 dark:bg-gray-700 rounded px-3 py-2 text-sm flex-1 sm:flex-none"
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
                         >
@@ -573,7 +584,7 @@ const ProjectTaskBoard = ({ projectId, isOwner, isMember }) => {
                         </select>
                         
                         <select 
-                            className="bg-gray-100 dark:bg-gray-700 rounded px-3 py-2 text-sm"
+                            className="bg-gray-100 dark:bg-gray-700 rounded px-3 py-2 text-sm flex-1 sm:flex-none"
                             value={priorityFilter}
                             onChange={(e) => setPriorityFilter(e.target.value)}
                         >
@@ -585,7 +596,7 @@ const ProjectTaskBoard = ({ projectId, isOwner, isMember }) => {
                         </select>
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 self-start sm:self-auto">
                         <button 
                             className={`px-3 py-2 text-sm rounded flex items-center gap-1 ${viewMode === "board" ? "bg-blue-500 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}`}
                             onClick={() => setViewMode("board")}
@@ -630,9 +641,12 @@ const ProjectTaskBoard = ({ projectId, isOwner, isMember }) => {
                 
                 {/* Add task modal */}
                 {showAddTask && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full">
-                            <h3 className="text-lg font-bold mb-4">Add New Task</h3>
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 w-full max-w-lg overflow-y-auto max-h-[90vh]">
+                            <h3 className="text-lg font-bold mb-4 flex items-center">
+                                <FontAwesomeIcon icon={faPlus} className="mr-2 text-green-600" />
+                                Add New Task
+                            </h3>
                             
                             {/* Display form errors */}
                             {formError && (
@@ -648,9 +662,12 @@ const ProjectTaskBoard = ({ projectId, isOwner, isMember }) => {
                 
                 {/* Edit task modal */}
                 {showEditTask && selectedTask && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full">
-                            <h3 className="text-lg font-bold mb-4">Edit Task</h3>
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 w-full max-w-lg overflow-y-auto max-h-[90vh]">
+                            <h3 className="text-lg font-bold mb-4 flex items-center">
+                                <FontAwesomeIcon icon={faEdit} className="mr-2 text-blue-600" />
+                                Edit Task
+                            </h3>
                             
                             {/* Display form errors */}
                             {formError && (
@@ -666,9 +683,9 @@ const ProjectTaskBoard = ({ projectId, isOwner, isMember }) => {
                 
                 {/* Task details modal */}
                 {showTaskDetails && selectedTask && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                            <div className="flex justify-between mb-4">
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                            <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-lg font-bold">Task Details</h3>
                                 <button 
                                     onClick={() => setShowTaskDetails(false)}
@@ -690,10 +707,10 @@ const ProjectTaskBoard = ({ projectId, isOwner, isMember }) => {
                                 </div>
                                 
                                 {/* Task metadata */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                                         <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Status</h4>
-                                        <span className={`px-2 py-1 rounded-full text-xs ${
+                                        <span className={`px-2 py-1 rounded-full text-xs inline-flex items-center ${
                                             selectedTask.status === 'todo' ? 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200' :
                                             selectedTask.status === 'in_progress' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
                                             selectedTask.status === 'in_review' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' :
@@ -707,13 +724,14 @@ const ProjectTaskBoard = ({ projectId, isOwner, isMember }) => {
                                     
                                     <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                                         <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Priority</h4>
-                                        <span className={`px-2 py-1 rounded-full text-xs ${
-                                            selectedTask.priority === 'low' ? 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200' :
+                                        <span className={`px-2 py-1 rounded-full text-xs inline-flex items-center ${
+                                            selectedTask.priority === 'low' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
                                             selectedTask.priority === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' :
                                             selectedTask.priority === 'high' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300' :
                                             'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
                                         }`}>
-                                            {selectedTask.priority}
+                                            <FontAwesomeIcon icon={faFlag} className="mr-1" />
+                                            {selectedTask.priority.charAt(0).toUpperCase() + selectedTask.priority.slice(1)}
                                         </span>
                                     </div>
                                     

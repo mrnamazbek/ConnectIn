@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUserMinus, faCheck, faTimes, faUsers, faTag, faComment, faClock, faUserPlus } from "@fortawesome/free-solid-svg-icons";
+import { faUserMinus, faCheck, faTimes, faUsers, faTag, faComment, faClock, faUserPlus, faChevronUp, faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { motion } from "framer-motion";
 import ProjectTaskBoard from "../components/ProjectTaskBoard";
 import { toast } from "react-toastify";
@@ -17,6 +17,7 @@ const ProjectProfile = () => {
     const [loading, setLoading] = useState(true);
     const [comments, setComments] = useState([]);
     const [currentUser, setCurrentUser] = useState(null);
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -150,7 +151,7 @@ const ProjectProfile = () => {
                     <div className="p-4 sm:p-6">
                         <div className="mb-6">
                             <div className="flex flex-wrap items-center gap-2 mb-2">
-                                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">{projectDetails.name}</h1>
+                                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white mb-2">{projectDetails.name}</h1>
                                 <span className={`text-xs sm:text-sm px-3 py-1 rounded-full ${projectDetails.status === "finished" ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"}`}>
                                     {projectDetails.status === "finished" ? "Finished" : "In Development"}
                                 </span>
@@ -172,7 +173,22 @@ const ProjectProfile = () => {
                                 <FontAwesomeIcon icon={faClock} className="text-green-700 dark:text-green-400" />
                                 <span>Created by {projectDetails.owner?.username || "Unknown"}</span>
                             </div>
-                            <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: projectDetails.description }}></div>
+                            <div className="relative">
+                                <div 
+                                    className={`prose dark:prose-invert max-w-none ${!isDescriptionExpanded ? 'line-clamp-3' : ''}`} 
+                                    dangerouslySetInnerHTML={{ __html: projectDetails.description }}
+                                ></div>
+                                {!isDescriptionExpanded && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white dark:from-gray-800 to-transparent pointer-events-none"></div>
+                                )}
+                                <button 
+                                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                                    className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 text-sm font-medium mt-2 flex items-center gap-1"
+                                >
+                                    {isDescriptionExpanded ? 'Show less' : 'Show more'}
+                                    <FontAwesomeIcon icon={isDescriptionExpanded ? faChevronUp : faChevronDown} className="text-xs" />
+                                </button>
+                            </div>
                         </div>
 
                         {(isMember || isOwner) && (

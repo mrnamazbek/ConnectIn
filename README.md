@@ -152,11 +152,11 @@ To set up the project locally for development:
 
 **Prerequisites:**
 
-* Python 3.11+ & Pip
-* Node.js (LTS) & npm or yarn
-* Docker & Docker Compose (Recommended for local DB)
-* PostgreSQL Client (`psql`)
-* Git
+* **Python Environment:** <img src="https://img.shields.io/badge/Python_3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+" /> & Pip
+* **JavaScript Runtime:** <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js LTS" /> (LTS) & <img src="https://img.shields.io/badge/npm-CB3837?style=for-the-badge&logo=npm&logoColor=white" alt="npm" /> / <img src="https://img.shields.io/badge/yarn-2C8EBB?style=for-the-badge&logo=yarn&logoColor=white" alt="yarn" />
+* **Containerization:** <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" /> & Docker Compose *(Recommended for local DB)*
+* **Database Client:** <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" /> Client (`psql`)
+* **Version Control:** <img src="https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white" alt="Git" />
 
 **Setup Steps:**
 

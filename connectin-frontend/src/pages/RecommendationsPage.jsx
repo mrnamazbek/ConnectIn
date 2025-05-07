@@ -37,7 +37,7 @@ const RecommendationsPage = () => {
 
                 // Process project recommendations to remove duplicates and keep highest score
                 const uniqueProjects = {};
-                projectsResponse.data.forEach(rec => {
+                projectsResponse.data.forEach((rec) => {
                     if (!uniqueProjects[rec.project_id] || uniqueProjects[rec.project_id].score < rec.score) {
                         uniqueProjects[rec.project_id] = rec;
                     }
@@ -78,7 +78,7 @@ const RecommendationsPage = () => {
 
                     // Process post recommendations to remove duplicates and keep highest score
                     const uniquePosts = {};
-                    postsResponse.data.forEach(rec => {
+                    postsResponse.data.forEach((rec) => {
                         if (!uniquePosts[rec.post_id] || uniquePosts[rec.post_id].score < rec.score) {
                             uniquePosts[rec.post_id] = rec;
                         }
@@ -197,7 +197,7 @@ const RecommendationsPage = () => {
                                 <div className="p-5">
                                     {rec.projectDetails ? (
                                         <>
-                                            <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">{rec.projectDetails.description || "No description available"}</p>
+                                            <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2" dangerouslySetInnerHTML={{ __html: rec.projectDetails.description || "No description available" }}></p>
                                             {rec.projectDetails.skills && rec.projectDetails.skills.length > 0 && (
                                                 <div className="mb-4">
                                                     <div className="flex flex-wrap gap-2">

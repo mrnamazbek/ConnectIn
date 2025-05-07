@@ -52,17 +52,9 @@ const TaskCard = ({ task, onUpdate, canEdit, onEditTask, onViewDetails }) => {
     
     const getPriorityIcon = (priority) => {
         const iconClass = getPriorityColor(priority);
-        const flagCount = 
-            priority === "urgent" ? 3 :
-            priority === "high" ? 2 :
-            priority === "medium" ? 1 : 0;
-            
         return (
             <div className="flex">
-                {[...Array(flagCount)].map((_, i) => (
-                    <FontAwesomeIcon key={i} icon={faFlag} className={`${iconClass} ${i > 0 ? "-ml-1" : ""}`} />
-                ))}
-                {flagCount === 0 && <FontAwesomeIcon icon={faFlag} className="text-gray-400" />}
+                <FontAwesomeIcon icon={faFlag} className={`${iconClass}`} />
             </div>
         );
     };

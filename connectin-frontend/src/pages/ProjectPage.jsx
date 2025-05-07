@@ -111,15 +111,18 @@ const ProjectPage = () => {
         if (!token) {
             toast.error("Please log in to apply for a project");
             navigate("/login", { state: { from: window.location.pathname } });
-            return;
+            return { error: true };
         }
 
         try {
             await axios.post(`${import.meta.env.VITE_API_URL}/projects/${projectId}/apply`, {}, { headers: { Authorization: `Bearer ${token}` } });
-            toast.success("Application submitted successfully!");
+            return { success: true };
         } catch (err) {
             console.error("Failed to apply:", err);
-            toast.error("Failed to apply. You may have already applied.");
+            // Display the specific error message from the backend
+            const errorMessage = err.response?.data?.detail || "Failed to apply. Please try again.";
+            toast.error(errorMessage);
+            return { error: true };
         }
     };
 
@@ -297,7 +300,17 @@ const ProjectPage = () => {
             </div>
 
             <div className={`transition-opacity duration-300 ${userLoading || voteLoading ? "opacity-70" : "opacity-100"}`}>
-                <ProjectCard project={project} currentUser={currentUser} handleApply={handleApply} handleUpvote={handleUpvote} handleDownvote={handleDownvote} showViewProject={false} showCommentsLink={true} isLoading={userLoading || voteLoading} />
+                <ProjectCard 
+                    project={project} 
+                    currentUser={currentUser} 
+                    handleApply={handleApply} 
+                    handleUpvote={handleUpvote} 
+                    handleDownvote={handleDownvote} 
+                    showViewProject={false} 
+                    showCommentsLink={true} 
+                    isLoading={userLoading || voteLoading}
+                    showFullContent={true}
+                />
                 {(userLoading || voteLoading) && (
                     <div className="absolute inset-0 flex items-center justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700"></div>

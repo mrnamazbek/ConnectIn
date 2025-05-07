@@ -140,7 +140,7 @@ const ProjectsPage = () => {
             const token = localStorage.getItem("access_token");
             if (!token) {
                 toast.error("Please log in to apply for a project");
-                return;
+                return { error: true };
             }
 
             await axios.post(
@@ -150,10 +150,13 @@ const ProjectsPage = () => {
                     headers: { Authorization: `Bearer ${token}` },
                 }
             );
-            toast.success("Application submitted successfully!");
+            return { success: true };
         } catch (error) {
             console.error("Failed to apply:", error);
-            toast.error("Failed to apply. You may have already applied.");
+            // Display the specific error message from the backend
+            const errorMessage = error.response?.data?.detail || "Failed to apply. Please try again.";
+            toast.error(errorMessage);
+            return { error: true };
         }
     };
 
@@ -319,7 +322,7 @@ const ProjectsPage = () => {
         }
         
         // Navigate to project detail with state
-        navigate(`/projects/${project.id}`, { state: { project } });
+        navigate(`/feed/project/${project.id}`, { state: { project } });
     };
 
     return (

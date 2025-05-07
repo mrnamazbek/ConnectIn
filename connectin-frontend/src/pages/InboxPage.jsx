@@ -80,7 +80,19 @@ const InboxPage = () => {
         }
     };
 
+    const handleRejectionClick = (notification) => {
+        // Mark rejection notification as read
+        if (!notification.read) {
+            markAsRead(notification.id);
+        }
+    };
+
     const handleNotificationClick = (notification) => {
+        if (notification.type === "application_rejected") {
+            handleRejectionClick(notification);
+            return;
+        }
+        
         if (notification.project_id) {
             // Mark notification as read when clicked
             if (!notification.read) {
@@ -127,8 +139,20 @@ const InboxPage = () => {
                         {notifications.map((notification) => (
                             <li
                                 key={notification.id}
-                                className={`p-4 transition-colors ${notification.project_id ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50' : ''} ${!notification.read ? 'bg-green-50 dark:bg-green-900/20' : ''}`}
-                                onClick={() => notification.project_id && handleNotificationClick(notification)}
+                                className={`p-4 transition-colors ${
+                                    notification.project_id && notification.type !== "application_rejected" 
+                                        ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50' 
+                                        : notification.type === "application_rejected"
+                                          ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                                          : ''
+                                } ${!notification.read ? 'bg-green-50 dark:bg-green-900/20' : ''}`}
+                                onClick={() => {
+                                    if (notification.type === "application_rejected") {
+                                        handleRejectionClick(notification);
+                                    } else if (notification.project_id) {
+                                        handleNotificationClick(notification);
+                                    }
+                                }}
                             >
                                 <div className="flex items-start justify-between flex-wrap sm:flex-nowrap gap-2">
                                     <div className="flex items-start gap-3">
@@ -152,9 +176,18 @@ const InboxPage = () => {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p 
-                                                className={`text-sm sm:text-base font-medium ${notification.project_id ? 'text-green-700 dark:text-green-400 hover:underline' : 'text-gray-800 dark:text-white'}`}
+                                                className={`text-sm sm:text-base font-medium ${
+                                                    notification.project_id && notification.type !== "application_rejected"
+                                                        ? 'text-green-700 dark:text-green-400 hover:underline' 
+                                                        : notification.type === "application_rejected"
+                                                            ? 'text-red-700 dark:text-red-400'
+                                                            : 'text-gray-800 dark:text-white'
+                                                }`}
                                                 onClick={(e) => {
-                                                    if (notification.project_id) {
+                                                    if (notification.type === "application_rejected") {
+                                                        e.stopPropagation();
+                                                        handleRejectionClick(notification);
+                                                    } else if (notification.project_id) {
                                                         e.stopPropagation();
                                                         handleNotificationClick(notification);
                                                     }
@@ -170,7 +203,7 @@ const InboxPage = () => {
                                             </p>
                                         </div>
                                     </div>
-                                    {notification.project_id && (
+                                    {notification.type !== "application_rejected" && notification.project_id && (
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();

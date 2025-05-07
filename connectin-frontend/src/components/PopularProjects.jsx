@@ -51,7 +51,7 @@ const PopularProjects = () => {
                             <h3 className="font-semibold text-sm mb-2">{project.name}</h3>
                             <p className="text-sm mb-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: project.description }}></p>
                             <div className="flex justify-between items-center text-xs">
-                                <NavLink to={`/projects/${project.id}`} className="border border-green-700 px-2 py-1 rounded-md text-green-700 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
+                                <NavLink to={`/feed/projects/${project.id}`} className="border border-green-700 px-2 py-1 rounded-md text-green-700 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
                                     View Project
                                 </NavLink>
                                 <div className="text-gray-500">

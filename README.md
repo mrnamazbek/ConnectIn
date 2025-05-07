@@ -46,30 +46,44 @@ ConnectIn tackles these issues by creating an interactive ecosystem where:
 
 ConnectIn is built with a modern technology stack:
 
-* **Backend (`connectin-backend`):**
-    * Framework: **FastAPI** (Python 3.11+)
-    * Database: **PostgreSQL** (on **AWS RDS**)
-    * ORM: **SQLAlchemy**
-    * Migrations: **Alembic**
-    * Data Validation: **Pydantic**
-    * Authentication: **JWT**, **OAuth2** (Google), **Passlib/Bcrypt**
-    * Deployment: **Railway** (using Docker or Nixpacks)
-* **Frontend (`connectin-frontend`):**
-    * Library: **React.js** (with Vite)
-    * Styling: **Tailwind CSS**
-    * State Management: React Context API / Zustand *(Confirm based on your setup)*
-    * Routing: **React Router DOM**
-    * API Client: **Axios**
-    * Real-time: **WebSocket**
-    * UI Enhancements: **Framer Motion**, **React Toastify**, **FontAwesome**
-    * Deployment: **Vercel**
-* **Machine Learning Service (`connectin-ml_service`):**
-    * Language: **Python 3.11+**
-    * Libraries: **SQLAlchemy**, **NumPy**, **Scikit-learn**
-    * Deployment: **AWS Lambda** (via Docker container on **AWS ECR**)
-    * Scheduling: **AWS EventBridge Scheduler**
-* **Cloud Infrastructure (AWS):**
-    * **RDS** (Database), **S3** (File Storage), **ECR** (Container Registry), **Lambda** (Serverless Compute), **EventBridge** (Scheduling), **IAM** (Permissions), **CloudWatch** (Monitoring)
+### Backend (`connectin-backend`)
+
+* **Framework:** <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" /> (using <img src="https://img.shields.io/badge/Python_3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+" />)
+* **Database:** <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" /> (on <img src="https://img.shields.io/badge/AWS_RDS-527FFF?style=for-the-badge&logo=amazonrds&logoColor=white" alt="AWS RDS" />)
+* **ORM:** <img src="https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white" alt="SQLAlchemy" />
+* **Migrations:** **Alembic**
+* **Data Validation:** **Pydantic**
+* **Authentication:** <img src="https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white" alt="JWT" />, <img src="https://img.shields.io/badge/OAuth2-24AAFF?style=for-the-badge&logo=oauth&logoColor=white" alt="OAuth2" /> (Google), **Passlib/Bcrypt**
+* **Deployment:** <img src="https://img.shields.io/badge/Railway-0B0D0E?style=for-the-badge&logo=railway&logoColor=white" alt="Railway" /> (using <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" /> or <img src="https://img.shields.io/badge/Nixpacks-5277C3?style=for-the-badge&logo=nixos&logoColor=white" alt="Nixpacks (using NixOS logo)" />)
+
+### Frontend (`connectin-frontend`)
+
+* **Library:** <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React.js" /> (with <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />)
+* **Styling:** <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
+* **State Management:** React Context API / **Zustand** *(Confirm based on your setup)*
+* **Routing:** <img src="https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=reactrouter&logoColor=white" alt="React Router DOM" />
+* **API Client:** **Axios**
+* **Real-time:** **WebSocket** 🔌
+* **UI Enhancements:** <img src="https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white" alt="Framer Motion" />, **React Toastify**, <img src="https://img.shields.io/badge/FontAwesome-528DD7?style=for-the-badge&logo=fontawesome&logoColor=white" alt="FontAwesome" />
+* **Deployment:** <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" />
+
+### Machine Learning Service (`connectin-ml_service`)
+
+* **Language:** <img src="https://img.shields.io/badge/Python_3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+" />
+* **Libraries:** <img src="https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white" alt="SQLAlchemy" />, <img src="https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white" alt="NumPy" />, <img src="https://img.shields.io/badge/Scikit--learn-F7931E?style=for-the-badge&logo=scikitlearn&logoColor=white" alt="Scikit-learn" />
+* **Deployment:** <img src="https://img.shields.io/badge/AWS_Lambda-FF9900?style=for-the-badge&logo=awslambda&logoColor=white" alt="AWS Lambda" /> (via <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" /> container on <img src="https://img.shields.io/badge/AWS_ECR-FF9900?style=for-the-badge&logo=amazonecr&logoColor=white" alt="AWS ECR" />)
+* **Scheduling:** <img src="https://img.shields.io/badge/AWS_EventBridge-FF9900?style=for-the-badge&logo=amazoneventbridge&logoColor=white" alt="AWS EventBridge Scheduler" />
+
+### Cloud Infrastructure (AWS)
+
+* **Core Services:** <img src="https://img.shields.io/badge/Amazon_AWS-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white" alt="AWS" />
+* **Database:** <img src="https://img.shields.io/badge/AWS_RDS-527FFF?style=for-the-badge&logo=amazonrds&logoColor=white" alt="AWS RDS" /> (hosting <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />)
+* **File Storage:** <img src="https://img.shields.io/badge/AWS_S3-569A31?style=for-the-badge&logo=amazons3&logoColor=white" alt="AWS S3" />
+* **Container Registry:** <img src="https://img.shields.io/badge/AWS_ECR-FF9900?style=for-the-badge&logo=amazonecr&logoColor=white" alt="AWS ECR" />
+* **Serverless Compute:** <img src="https://img.shields.io/badge/AWS_Lambda-FF9900?style=for-the-badge&logo=awslambda&logoColor=white" alt="AWS Lambda" />
+* **Scheduling:** <img src="https://img.shields.io/badge/AWS_EventBridge-FF9900?style=for-the-badge&logo=amazoneventbridge&logoColor=white" alt="AWS EventBridge" />
+* **Permissions:** <img src="https://img.shields.io/badge/AWS_IAM-FF9900?style=for-the-badge&logo=awsidentityandaccessmanagement&logoColor=white" alt="AWS IAM" />
+* **Monitoring:** <img src="https://img.shields.io/badge/AWS_CloudWatch-FF9900?style=for-the-badge&logo=amazoncloudwatch&logoColor=white" alt="AWS CloudWatch" />
 
 ## 🏗️ Architecture
 

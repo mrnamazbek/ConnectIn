@@ -8,9 +8,13 @@ import ProjectCard from "../Project/ProjectCard";
 import LoadingAnimation from "./LoadingAnimation";
 import useSearchStore from "../../store/searchStore";
 import usePostStore from "../../store/postStore";
+import { toast } from "react-toastify";
+import axios from "axios";
+import { useNavigate } from "react-router";
 
 const SearchResults = () => {
     const { query, loading, error, activeTab, setActiveTab, getFilteredResults, getTotalCount, hasSearched } = useSearchStore();
+    const navigate = useNavigate();
 
     const { initializePostState } = usePostStore();
     const [initialized, setInitialized] = useState(false);
@@ -21,6 +25,33 @@ const SearchResults = () => {
 
     // Format error message to ensure it's always a string
     const errorMessage = typeof error === "string" ? error : error ? "An error occurred during search" : null;
+
+    // Add handleApply function with proper error handling
+    const handleApply = async (projectId) => {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+            toast.error("Please log in to apply for a project");
+            navigate("/login", { state: { from: window.location.pathname } });
+            return { error: true };
+        }
+
+        try {
+            await axios.post(
+                `${import.meta.env.VITE_API_URL}/projects/${projectId}/apply`,
+                {},
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+            return { success: true };
+        } catch (error) {
+            console.error("Failed to apply:", error);
+            // Display the specific error message from the backend
+            const errorMessage = error.response?.data?.detail || "Failed to apply. Please try again.";
+            toast.error(errorMessage);
+            return { error: true };
+        }
+    };
 
     // Initialize post states for all posts in search results
     useEffect(() => {

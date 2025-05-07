@@ -766,6 +766,14 @@ def decide_application(
     if not application:
         raise HTTPException(status_code=404, detail="Заявка не найдена")
 
+    # Get applicant's information for notification
+    applicant = db.query(User).filter(User.id == user_id).first()
+    if not applicant:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    # Import here to avoid circular imports
+    from app.models.notification import Notification
+
     if request.decision == ApplicationStatus.ACCEPTED:
         # Check if the applicant is already a member of 3 projects
         member_count = db.query(project_members_association).filter_by(user_id=user_id).count()
@@ -778,25 +786,62 @@ def decide_application(
                 (project_applications.c.project_id == project_id) &
                 (project_applications.c.user_id == user_id)
             ))
+            
+            # Create a rejection notification for the user
+            rejection_notification = Notification(
+                user_id=user_id,
+                type="application_rejected",
+                title=f"Application Rejected: {project.name}",
+                message=f"Your application to join '{project.name}' was automatically rejected because you've reached the maximum limit of 3 projects.",
+                project_id=project_id
+            )
+            db.add(rejection_notification)
             db.commit()
+            
             raise HTTPException(
                 status_code=400, 
                 detail="Cannot accept: User has reached the maximum limit of 3 projects"
             )
             
+        # Add user to project members
         db.execute(project_members_association.insert().values(user_id=user_id, project_id=project_id))
+        
+        # Remove from applications
         db.execute(project_applications.delete().where(
             (project_applications.c.project_id == project_id) &
             (project_applications.c.user_id == user_id)
         ))
+        
+        # Create acceptance notification
+        acceptance_notification = Notification(
+            user_id=user_id,
+            type="application_accepted",
+            title=f"Application Accepted: {project.name}",
+            message=f"Your application to join '{project.name}' has been accepted. You are now a member of this project.",
+            project_id=project_id
+        )
+        db.add(acceptance_notification)
         db.commit()
+        
         return {"detail": "Пользователь принят в проект"}
     else:
+        # Remove from applications
         db.execute(project_applications.delete().where(
             (project_applications.c.project_id == project_id) &
             (project_applications.c.user_id == user_id)
         ))
+        
+        # Create rejection notification
+        rejection_notification = Notification(
+            user_id=user_id,
+            type="application_rejected",
+            title=f"Application Rejected: {project.name}",
+            message=f"Your application to join '{project.name}' has been rejected.",
+            project_id=project_id
+        )
+        db.add(rejection_notification)
         db.commit()
+        
         return {"detail": "Заявка отклонена"}
 
 # 🔹 Удалить пользователя из проекта

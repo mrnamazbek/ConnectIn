@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router";
 import useProjectVoteStore from "../../store/projectVoteStore";
 
-const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true, showCommentsLink = false, isLoading = false }) => {
+const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true, showCommentsLink = false, isLoading = false, showFullContent = false }) => {
     const [isVoteLoading, setIsVoteLoading] = useState(false);
     const [isApplyLoading, setIsApplyLoading] = useState(false);
     const [isCopyLoading, setIsCopyLoading] = useState(false);
@@ -61,11 +61,16 @@ const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true
 
         setIsApplyLoading(true);
         try {
-            await handleApply(project.id);
-            toast.success("Application submitted successfully!");
+            const response = await handleApply(project.id);
+            // Only show success toast if there's no error response
+            if (!response || !response.error) {
+                toast.success("Application submitted successfully!");
+            }
         } catch (error) {
             console.error("Failed to apply:", error);
-            toast.error("Failed to apply. You may have already applied.");
+            // Display the specific error message from the backend
+            const errorMessage = error.response?.data?.detail || "Failed to apply. Please try again.";
+            toast.error(errorMessage);
         } finally {
             setIsApplyLoading(false);
         }
@@ -76,7 +81,7 @@ const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true
         
         setIsCopyLoading(true);
         try {
-            const url = `${window.location.origin}/projects/${project.id}`;
+            const url = `${window.location.origin}/feed/project/${project.id}`;
             await navigator.clipboard.writeText(url);
             toast.success("Project link copied to clipboard!");
         } catch (error) {
@@ -135,7 +140,7 @@ const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true
             )}
 
             <h3 className="text-lg font-bold mb-2">{project.name || "Untitled Project"}</h3>
-            <p className="text-sm text-gray-700 dark:text-gray-300 mb-3" dangerouslySetInnerHTML={{ __html: project.description || "No description available." }} />
+            <p className={`text-sm text-gray-700 dark:text-gray-300 mb-3 ${!showFullContent ? 'line-clamp-6 overflow-hidden' : ''}`} dangerouslySetInnerHTML={{ __html: project.description || "No description available." }} />
 
             <div className="mt-3 flex flex-wrap gap-2 mb-4">
                 {project.skills?.length > 0 ? (
@@ -178,7 +183,7 @@ const ProjectCard = ({ project, currentUser, handleApply, showViewProject = true
                     </button>
                     {showCommentsLink && (
                         <NavLink 
-                            to={`/project/${project.id}`} 
+                            to={`/feed/project/${project.id}`} 
                             onClick={(e) => e.stopPropagation()}
                             className="group relative text-gray-500 hover:text-blue-700 transition cursor-pointer" 
                             title="View comments"

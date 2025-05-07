@@ -64,7 +64,7 @@ const LandingPage_v3 = () => {
                         </motion.h1>
 
                         <motion.p initial="hidden" animate="visible" variants={fadeIn} className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 mb-10 max-w-3xl mx-auto leading-relaxed">
-                            The dynamic ecosystem where developers find meaningful projects and unlock career opportunities beyond just code.
+                            The dynamic platform where developers find meaningful projects and unlock career opportunities beyond just code.
                         </motion.p>
 
                         <motion.div initial="hidden" animate="visible" variants={fadeIn} className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -208,7 +208,7 @@ const LandingPage_v3 = () => {
             <section className="py-24 px-4 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-black dark:to-gray-900">
                 <div className="w-full max-w-7xl mx-auto">
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-20">
-                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">Your Complete Ecosystem for Growth</h2>
+                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">Your Complete Platform for Growth</h2>
                         <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">Every feature designed to accelerate your development journey and expand your network.</p>
                     </motion.div>
 

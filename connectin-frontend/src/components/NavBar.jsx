@@ -1,7 +1,7 @@
 import { NavLink, useLocation, useNavigate } from "react-router";
 import { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSun, faMoon, faMagnifyingGlass, faUser, faComments, faNewspaper, faPen, faBars, faTimes, faChevronDown, faThumbsUp, faNetworkWired } from "@fortawesome/free-solid-svg-icons";
+import { faSun, faMoon, faMagnifyingGlass, faUser, faComments, faNewspaper, faPen, faBars, faTimes, faChevronDown, faThumbsUp, faNetworkWired, faBell } from "@fortawesome/free-solid-svg-icons";
 import Logo from "../assets/images/connectin-logo-png.png";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -17,6 +17,7 @@ const NavBar = () => {
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [unreadNotifications, setUnreadNotifications] = useState(0);
     const mobileMenuRef = useRef(null);
     const { ref: themeRef, toggleSwitchTheme, isDarkMode } = useModeAnimation();
 
@@ -60,8 +61,28 @@ const NavBar = () => {
 
         if (isAuthenticated) {
             checkAuth();
+            fetchUnreadNotificationCount();
         }
     }, [navigate, logout, isAuthenticated]);
+
+    const fetchUnreadNotificationCount = async () => {
+        try {
+            const token = localStorage.getItem("access_token");
+            if (!token) return;
+
+            const response = await axios.get(
+                `${import.meta.env.VITE_API_URL}/notifications/me`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+            
+            const unreadCount = response.data.filter(notification => !notification.read).length;
+            setUnreadNotifications(unreadCount);
+        } catch (error) {
+            console.error("Error fetching notification count:", error);
+        }
+    };
 
     const handleLogout = () => {
         logout();
@@ -69,7 +90,7 @@ const NavBar = () => {
     };
 
     const handleNavigation = (path) => {
-        if ((path === "/chats" || path === "/profile") && !isAuthenticated) {
+        if ((path === "/chats" || path === "/profile" || path === "/inbox") && !isAuthenticated) {
             toast.warning("Please login to access this feature");
             navigate("/login");
             return false;
@@ -87,17 +108,22 @@ const NavBar = () => {
         toggleMobileMenu();
     };
 
-    const NavItem = ({ to, icon, label, onClick }) => (
+    const NavItem = ({ to, icon, label, onClick, badge }) => (
         <NavLink
             to={to}
             onClick={onClick}
             className={({ isActive }) => `
-                flex flex-col items-center justify-center space-y-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                flex flex-col items-center justify-center space-y-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative
                 ${isActive ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-green-700 dark:hover:text-green-400"}
             `}
         >
             <FontAwesomeIcon icon={icon} className="w-5 h-5" />
             <span>{label}</span>
+            {badge > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {badge > 9 ? '9+' : badge}
+                </span>
+            )}
         </NavLink>
     );
 
@@ -121,6 +147,13 @@ const NavBar = () => {
                         <NavItem to="/network" icon={faNetworkWired} label="Network" />
                         <NavItem to="/recommendations" icon={faThumbsUp} label="For You" onClick={() => handleNavigation("/recommendations")} />
                         <NavItem to="/chats" icon={faComments} label="Chat" onClick={() => handleNavigation("/chats")} />
+                        <NavItem 
+                            to="/inbox" 
+                            icon={faBell} 
+                            label="Inbox" 
+                            onClick={() => handleNavigation("/inbox")} 
+                            badge={unreadNotifications} 
+                        />
 
                         {/* Theme Toggle */}
                         <button
@@ -187,10 +220,12 @@ const NavBar = () => {
                             <FontAwesomeIcon icon={isDarkMode ? faSun : faMoon} className="w-5 h-5 text-gray-600 dark:text-white transition-transform duration-300" />
                             <span className="text-xs mt-1">Theme</span>
                         </button>
-                        <button onClick={handleMobileMenuClick} className="flex flex-col items-center p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" aria-label="Toggle menu" aria-expanded={isMobileMenuOpen}>
-                            <FontAwesomeIcon icon={isMobileMenuOpen ? faTimes : faBars} className="w-5 h-5 text-gray-600 dark:text-white" />
-                            <span className="text-xs mt-1">Menu</span>
-                        </button>
+                        {!isMobileMenuOpen && (
+                            <button onClick={handleMobileMenuClick} className="flex flex-col items-center p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" aria-label="Open menu">
+                                <FontAwesomeIcon icon={faBars} className="w-5 h-5 text-gray-600 dark:text-white" />
+                                <span className="text-xs mt-1">Menu</span>
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -219,6 +254,16 @@ const NavBar = () => {
                             handleNavigation("/chats");
                             handleMobileMenuClick();
                         }}
+                    />
+                    <NavItem
+                        to="/inbox"
+                        icon={faBell}
+                        label="Inbox"
+                        onClick={() => {
+                            handleNavigation("/inbox");
+                            handleMobileMenuClick();
+                        }}
+                        badge={unreadNotifications}
                     />
 
                     {isAuthenticated ? (

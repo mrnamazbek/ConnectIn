@@ -4,9 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import useAuthStore from "../store/authStore";
 import { format } from "date-fns";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faPlus, faTimes, faPaperPlane, faUserCircle, faImage, faSpinner, faTimes as faClose, faBars, faEllipsisV, faChevronLeft } from "@fortawesome/free-solid-svg-icons";
+import { faSearch, faPlus, faTimes, faPaperPlane, faUserCircle, faImage, faSpinner, faTimes as faClose, faBars, faEllipsisV, faChevronLeft, faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate } from "react-router";
 
 const ChatPage = () => {
     const [conversations, setConversations] = useState([]);
@@ -26,6 +26,8 @@ const ChatPage = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [expandedImage, setExpandedImage] = useState(null);
+    const [changingConversation, setChangingConversation] = useState(false);
+    const [showScrollButton, setShowScrollButton] = useState(false);
 
     // New state variables for responsive design
     const [sidebarVisible, setSidebarVisible] = useState(true);
@@ -34,9 +36,9 @@ const ChatPage = () => {
 
     const fileInputRef = useRef(null);
     const messagesEndRef = useRef(null);
+    const chatContainerRef = useRef(null);
     const { accessToken, user } = useAuthStore();
     const navigate = useNavigate();
-    const location = useLocation();
 
     // Store active conversation in localStorage when it changes
     useEffect(() => {
@@ -117,10 +119,42 @@ const ChatPage = () => {
         }
     }, [searchTerm, conversations]);
 
+    // Enhanced auto-scroll to bottom when messages change
+    useEffect(() => {
+        if (messages.length > 0 && !changingConversation) {
+            setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, 100);
+        }
+    }, [messages, changingConversation]);
+
+    // Add scroll detection to show/hide scroll button
+    useEffect(() => {
+        const checkScroll = () => {
+            if (!chatContainerRef.current) return;
+
+            const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+            // Show button if scrolled up more than 300px from bottom
+            setShowScrollButton(scrollHeight - scrollTop - clientHeight > 300);
+        };
+
+        const container = chatContainerRef.current;
+        if (container) {
+            container.addEventListener("scroll", checkScroll);
+            return () => container.removeEventListener("scroll", checkScroll);
+        }
+    }, [activeConversation]);
+
+    // Function to scroll to bottom on demand
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
     // Fetch messages for active conversation
     useEffect(() => {
         if (!activeConversation) return;
 
+        setChangingConversation(true);
         const fetchMessages = async () => {
             try {
                 const response = await axios.get(`${import.meta.env.VITE_API_URL}/chats/conversations/${activeConversation.id}/messages`, {
@@ -130,9 +164,16 @@ const ChatPage = () => {
                 });
                 // Reverse to show oldest first
                 setMessages(response.data.reverse());
+                setChangingConversation(false);
+
+                // Ensure we scroll to bottom after loading messages
+                setTimeout(() => {
+                    scrollToBottom();
+                }, 150);
             } catch (err) {
                 console.error("Error fetching messages:", err);
                 setError("Failed to load messages");
+                setChangingConversation(false);
             }
         };
 
@@ -141,8 +182,6 @@ const ChatPage = () => {
         // Connect to WebSocket
         const wsUrl = `${import.meta.env.VITE_WS_URL}/api/v1/chat/ws/${activeConversation.id}?token=${accessToken}`;
         const newSocket = new WebSocket(wsUrl);
-
-      
 
         newSocket.onmessage = (event) => {
             const data = JSON.parse(event.data);
@@ -173,8 +212,6 @@ const ChatPage = () => {
             console.error("WebSocket error:", error);
         };
 
-
-
         setSocket(newSocket);
 
         // Cleanup
@@ -192,15 +229,16 @@ const ChatPage = () => {
 
     // Handle user search input
     const handleUserSearchChange = (e) => {
-        setUserSearchTerm(e.target.value);
+        const value = e.target.value;
+        setUserSearchTerm(value);
 
         // Clear previous results when search term changes
-        if (userSearchResults.length > 0 && e.target.value === "") {
+        if (userSearchResults.length > 0 && value === "") {
             setUserSearchResults([]);
         }
 
         // Auto-search after a short delay if term is longer than 2 chars
-        if (e.target.value.length > 2) {
+        if (value.length >= 3) {
             clearTimeout(window.searchTimeout);
             window.searchTimeout = setTimeout(() => {
                 searchUsers();
@@ -217,14 +255,14 @@ const ChatPage = () => {
 
         setUserSearchLoading(true);
         try {
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/search?query=${userSearchTerm}`, {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/search?query=${encodeURIComponent(userSearchTerm.trim())}`, {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                 },
             });
 
             // Filter out the current user from results
-            const filteredResults = response.data.filter((u) => u.id !== user.id);
+            const filteredResults = response.data.filter((u) => u.id !== user?.id);
 
             if (filteredResults.length === 0) {
                 toast.info("No users found matching your search");
@@ -406,7 +444,6 @@ const ChatPage = () => {
             formDataForS3.append("file", selectedImage);
 
             // Debug the form data we're sending
-           
 
             // Use native fetch API instead of axios for S3 upload
             // This gives us complete control over headers
@@ -422,7 +459,6 @@ const ChatPage = () => {
                 console.error("S3 upload failed:", errorText);
                 throw new Error(`S3 upload failed: ${s3UploadResponse.status} ${s3UploadResponse.statusText}`);
             }
-
 
             // Send message with image through WebSocket
             if (socket && socket.readyState === WebSocket.OPEN) {
@@ -479,9 +515,35 @@ const ChatPage = () => {
         setExpandedImage(null);
     };
 
+    // Toggle user search visibility specially for mobile
+    const toggleUserSearch = () => {
+        setIsSearchingUsers(!isSearchingUsers);
+        // Force sidebar visible on mobile when searching
+        if (isMobileView) {
+            setSidebarVisible(true);
+        }
+
+        // Reset search when closing
+        if (isSearchingUsers) {
+            setUserSearchTerm("");
+            setUserSearchResults([]);
+        }
+    };
+
     // Wrapper function for setActiveConversation to add safety
     const handleSetActiveConversation = (conversation) => {
         if (conversation && conversation.id) {
+            if (activeConversation && activeConversation.id === conversation.id) {
+                return; // Don't reload the same conversation
+            }
+
+            // Close the current socket before switching conversations
+            if (socket) {
+                socket.close();
+                setSocket(null);
+            }
+
+            setMessages([]); // Clear messages from previous conversation
             setActiveConversation(conversation);
             localStorage.setItem("activeConversationId", conversation.id);
         }
@@ -561,21 +623,24 @@ const ChatPage = () => {
         }
 
         // For usage where we need clickable elements
-        const participant = otherParticipants[0]; // Since we mostly have 1:1 chats
-        if (!participant || !participant.id) {
-            return otherParticipants.map((p) => `${p.first_name || ""} ${p.last_name || ""}`.trim() || p.username).join(", ");
+        if (otherParticipants.length > 0) {
+            const participant = otherParticipants[0]; // Since we mostly have 1:1 chats
+            if (participant && participant.id) {
+                return (
+                    <span
+                        onClick={(e) => {
+                            handleUserProfileClick(participant.id, e);
+                        }}
+                        className="cursor-pointer hover:text-green-600 hover:underline"
+                    >
+                        {`${participant.first_name || ""} ${participant.last_name || ""}`.trim() || participant.username}
+                    </span>
+                );
+            }
         }
-
-        return (
-            <span 
-                onClick={(e) => {
-                    handleUserProfileClick(participant.id, e);
-                }}
-                className="cursor-pointer hover:text-green-600 hover:underline"
-            >
-                {`${participant.first_name || ""} ${participant.last_name || ""}`.trim() || participant.username}
-            </span>
-        );
+        
+        // Fallback to non-clickable if we don't have a valid participant
+        return otherParticipants.map((p) => `${p.first_name || ""} ${p.last_name || ""}`.trim() || p.username).join(", ");
     };
 
     const getParticipantAvatar = (conversation) => {
@@ -648,13 +713,13 @@ const ChatPage = () => {
             e.preventDefault();
             e.stopPropagation(); // Prevent conversation selection
         }
-        
+
         if (!userId) {
             console.error("Cannot navigate to profile: User ID is missing");
             toast.error("Cannot view profile: User information is missing");
             return;
         }
-        
+
         navigate(`/profile/${userId}`);
     };
 
@@ -691,25 +756,9 @@ const ChatPage = () => {
                         </button>
                     )}
 
-                    <h1 className="text-lg font-semibold text-gray-800 dark:text-white">
-                        {activeConversation && !sidebarVisible 
-                            ? (
-                                <div onClick={(e) => e.stopPropagation()}>
-                                    {getConversationParticipants(activeConversation, true)}
-                                </div>
-                            ) 
-                            : "Messages"}
-                    </h1>
+                    <h1 className="text-lg font-semibold text-gray-800 dark:text-white">{activeConversation && !sidebarVisible ? <div onClick={(e) => e.stopPropagation()}>{getConversationParticipants(activeConversation, true)}</div> : "Messages"}</h1>
 
-                    <button
-                        onClick={() => {
-                            setIsSearchingUsers(!isSearchingUsers);
-                            if (isMobileView) {
-                                setSidebarVisible(true);
-                            }
-                        }}
-                        className="text-green-500 hover:text-green-600 transition-colors p-1"
-                    >
+                    <button onClick={toggleUserSearch} className="text-green-500 hover:text-green-600 transition-colors p-1">
                         <FontAwesomeIcon icon={isSearchingUsers ? faTimes : faPlus} />
                     </button>
                 </div>
@@ -721,24 +770,69 @@ const ChatPage = () => {
                 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col
                 ${isMobileView && "mt-12"}`}
             >
+                {/* Mobile user search UI */}
+                {isMobileView && isSearchingUsers && (
+                    <div className="px-4 pt-4 pb-2 bg-white dark:bg-gray-800 sticky top-12 z-10 border-b border-gray-200 dark:border-gray-700">
+                        <div className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+                            Find People to Chat With
+                        </div>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={userSearchTerm}
+                                onChange={handleUserSearchChange}
+                                placeholder="Search for users by name or email..."
+                                className="w-full pl-9 pr-10 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                autoFocus
+                            />
+                            <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <button 
+                                onClick={searchUsers} 
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-green-500 hover:text-green-600 transition p-1" 
+                                disabled={userSearchLoading || userSearchTerm.length < 3}
+                            >
+                                {userSearchLoading ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faSearch} />}
+                            </button>
+                        </div>
+                        <div className="mt-2 flex justify-between items-center">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {userSearchTerm.length < 3 ? "Type at least 3 characters to search" : 
+                                 userSearchLoading ? "Searching..." : 
+                                 userSearchResults.length > 0 ? `Found ${userSearchResults.length} user${userSearchResults.length !== 1 ? 's' : ''}` : 
+                                 userSearchTerm.length >= 3 ? "No users found" : ""}
+                            </span>
+                            <button 
+                                onClick={toggleUserSearch}
+                                className="text-sm text-red-500 hover:text-red-600"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {!isMobileView && (
                     <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                         <div className="flex justify-between items-center mb-3">
                             <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Messages</h2>
-                            <button onClick={() => setIsSearchingUsers(!isSearchingUsers)} className="text-green-500 hover:text-green-600 transition-colors p-1">
+                            <button onClick={toggleUserSearch} className="text-green-500 hover:text-green-600 transition-colors p-1">
                                 <FontAwesomeIcon icon={isSearchingUsers ? faTimes : faPlus} />
                             </button>
                         </div>
 
                         {isSearchingUsers ? (
                             <div className="space-y-3">
+                                <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                                    Find People to Chat With
+                                </div>
                                 <div className="relative">
                                     <input
                                         type="text"
                                         value={userSearchTerm}
                                         onChange={handleUserSearchChange}
-                                        placeholder="Search for users..."
+                                        placeholder="Search for users by name or email..."
                                         className="w-full pl-9 pr-10 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                        autoFocus
                                     />
                                     <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                                     <button onClick={searchUsers} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-green-500 hover:text-green-600 transition p-1" disabled={userSearchLoading || userSearchTerm.length < 3}>
@@ -746,7 +840,7 @@ const ChatPage = () => {
                                     </button>
                                 </div>
 
-                                <div className={`${isMobileView ? "max-h-[calc(100vh-200px)]" : "max-h-64"} overflow-y-auto`}>
+                                <div className={`max-h-64 overflow-y-auto`}>
                                     {userSearchLoading ? (
                                         <div className="flex justify-center p-4">
                                             <div className="animate-spin h-5 w-5 border-b-2 border-green-500"></div>
@@ -780,19 +874,12 @@ const ChatPage = () => {
                                                         </div>
                                                     )}
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="font-medium text-sm dark:text-white truncate">{`${userResult.first_name || ""} ${userResult.last_name || ""}`.trim() || userResult.username}</p>
+                                                        <p className="font-medium text-sm dark:text-white truncate">
+                                                            {`${userResult.first_name || ""} ${userResult.last_name || ""}`.trim() || userResult.username}
+                                                        </p>
                                                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{userResult.username}</p>
-
-                                                        {/* Show online status if available */}
-                                                        {userResult.is_online && (
-                                                            <div className="flex items-center mt-1">
-                                                                <div className="w-2 h-2 rounded-full bg-green-500 mr-1"></div>
-                                                                <span className="text-xs text-green-500">Online</span>
-                                                            </div>
-                                                        )}
                                                     </div>
 
-                                                    {/* Add to conversation button */}
                                                     <button
                                                         className="text-green-500 hover:text-green-600 p-1 rounded-full hover:bg-green-100 dark:hover:bg-green-900"
                                                         onClick={(e) => {
@@ -805,8 +892,6 @@ const ChatPage = () => {
                                                     </button>
                                                 </motion.div>
                                             ))}
-
-                                            {userSearchResults.length > 10 && <div className="text-center py-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 sticky bottom-0">Showing top {userSearchResults.length} results</div>}
                                         </div>
                                     ) : userSearchTerm ? (
                                         <div className="text-center py-6">
@@ -816,7 +901,7 @@ const ChatPage = () => {
                                     ) : (
                                         <div className="text-center py-6">
                                             <p className="text-gray-500 dark:text-gray-400 text-sm">Search for users to chat with</p>
-                                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Enter a name or username</p>
+                                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Enter a name or email</p>
                                         </div>
                                     )}
                                 </div>
@@ -885,15 +970,25 @@ const ChatPage = () => {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-center">
-                                                <div 
+                                                <div
                                                     className="font-medium text-gray-900 dark:text-white text-sm truncate"
-                                                    style={{ cursor: 'pointer', position: 'relative', zIndex: 50 }}
+                                                    style={{ cursor: "pointer", position: "relative", zIndex: 50 }}
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         e.stopPropagation();
-                                                        const participant = conversation.participants.find(p => p?.id !== user?.id);
-                                                        if (participant && participant.id) {
-                                                            navigate(`/profile/${participant.id}`);
+                                                        
+                                                        // Improved participant finding logic
+                                                        const otherParticipants = conversation.participants?.filter((p) => p?.id !== user?.id) || [];
+                                                        if (otherParticipants.length > 0) {
+                                                            const participant = otherParticipants[0];
+                                                            if (participant && participant.id) {
+                                                                navigate(`/profile/${participant.id}`);
+                                                            } else {
+                                                                console.error("Cannot navigate to profile: Participant ID is missing");
+                                                                toast.error("Cannot view profile: User ID is missing");
+                                                            }
+                                                        } else {
+                                                            toast.error("Cannot view profile: No other participants found");
                                                         }
                                                     }}
                                                 >
@@ -990,15 +1085,25 @@ const ChatPage = () => {
                                                 </div>
                                             )}
                                             <div>
-                                                <div 
+                                                <div
                                                     className="font-medium text-gray-900 dark:text-white"
-                                                    style={{ cursor: 'pointer', position: 'relative', zIndex: 50 }}
+                                                    style={{ cursor: "pointer", position: "relative", zIndex: 50 }}
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         e.stopPropagation();
-                                                        const participant = activeConversation.participants.find(p => p?.id !== user?.id);
-                                                        if (participant && participant.id) {
-                                                            navigate(`/profile/${participant.id}`);
+                                                        
+                                                        // Improved participant finding logic
+                                                        const otherParticipants = activeConversation.participants?.filter((p) => p?.id !== user?.id) || [];
+                                                        if (otherParticipants.length > 0) {
+                                                            const participant = otherParticipants[0];
+                                                            if (participant && participant.id) {
+                                                                navigate(`/profile/${participant.id}`);
+                                                            } else {
+                                                                console.error("Cannot navigate to profile: Participant ID is missing");
+                                                                toast.error("Cannot view profile: User ID is missing");
+                                                            }
+                                                        } else {
+                                                            toast.error("Cannot view profile: No other participants found");
                                                         }
                                                     }}
                                                 >
@@ -1017,169 +1122,182 @@ const ChatPage = () => {
                         )}
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-2 md:p-4 bg-gray-50 dark:bg-gray-900">
-                            <AnimatePresence>
-                                {messages.length === 0 && !loading ? (
-                                    <div className="flex h-full items-center justify-center text-gray-500">
-                                        <div className="text-center">
-                                            <div className="mb-2">
-                                                <FontAwesomeIcon icon={faPaperPlane} className="text-3xl text-gray-400" />
-                                            </div>
-                                            <p>No messages yet</p>
-                                            <p className="text-sm mt-1">Send a message to start the conversation</p>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    messages.map((message) => (
-                                        <motion.div key={message.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`mb-3 flex ${message.sender_id === user.id ? "justify-end" : "justify-start"}`}>
-                                            {message.sender_id !== user.id &&
-                                                (message.sender_avatar ? (
-                                                    <img
-                                                        src={message.sender_avatar}
-                                                        alt="Avatar"
-                                                        className="w-7 h-7 md:w-8 md:h-8 rounded-full mr-1 md:mr-2 self-end"
-                                                        onError={(e) => {
-                                                            e.target.onerror = null;
-                                                            e.target.parentNode.replaceWith(
-                                                                <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 mr-1 md:mr-2 self-end">
-                                                                    <FontAwesomeIcon icon={faUserCircle} />
-                                                                </div>
-                                                            );
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 mr-1 md:mr-2 self-end">
-                                                        <FontAwesomeIcon icon={faUserCircle} />
-                                                    </div>
-                                                ))}
-
-                                            <div className="group relative">
-                                                <div className={`max-w-[75vw] md:max-w-md lg:max-w-lg rounded-lg px-3 py-2 ${message.sender_id === user.id ? "bg-green-500 text-white rounded-br-none" : "bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-bl-none"}`}>
-                                                    {message.content && <p className="whitespace-pre-wrap break-words overflow-hidden text-sm md:text-base">{message.content}</p>}
-
-                                                    {message.media_url && (
-                                                        <div className="mt-2 mb-1 relative">
-                                                            <img
-                                                                src={message.media_url}
-                                                                alt={message.media_name || "Image"}
-                                                                className="max-w-full rounded cursor-pointer hover:opacity-90 transition-opacity"
-                                                                onClick={() => handleImageClick(message.media_url)}
-                                                                loading="lazy"
-                                                                onLoad={(e) => {
-                                                                    // Remove loading indicator when image loads
-                                                                    const parent = e.target.parentNode;
-                                                                    if (parent) {
-                                                                        const loadingIndicator = parent.querySelector(".loading-indicator");
-                                                                        if (loadingIndicator) {
-                                                                            loadingIndicator.style.display = "none";
-                                                                        }
-                                                                    }
-                                                                }}
-                                                                onError={(e) => {
-                                                                    e.target.onerror = null;
-                                                                    e.target.style.display = "none";
-                                                                    // Also hide loading indicator if present
-                                                                    const parent = e.target.parentNode;
-                                                                    if (parent) {
-                                                                        const loadingIndicator = parent.querySelector(".loading-indicator");
-                                                                        if (loadingIndicator) {
-                                                                            loadingIndicator.style.display = "none";
-                                                                        }
-                                                                    }
-                                                                }}
-                                                            />
-                                                            {/* Loading indicator with automatic timeout */}
-                                                            <div
-                                                                className="loading-indicator absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-60 dark:bg-gray-700 dark:bg-opacity-60 rounded"
-                                                                ref={(el) => {
-                                                                    if (el) {
-                                                                        // Auto-hide after 15 seconds as a safety measure
-                                                                        setTimeout(() => {
-                                                                            el.style.display = "none";
-                                                                        }, 15000);
-                                                                    }
-                                                                }}
-                                                            >
-                                                                <div className="animate-spin h-8 w-8 border-4 border-green-500 rounded-full border-t-transparent"></div>
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    <div className={`text-xs mt-1 ${message.sender_id === user.id ? "text-green-100" : "text-gray-500 dark:text-gray-400"}`}>{formatTime(message.timestamp)}</div>
+                        <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-2 md:p-4 bg-gray-50 dark:bg-gray-900 relative">
+                            {changingConversation ? (
+                                <div className="flex h-full items-center justify-center">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+                                </div>
+                            ) : (
+                                <AnimatePresence>
+                                    {messages.length === 0 && !loading ? (
+                                        <div className="flex h-full items-center justify-center text-gray-500">
+                                            <div className="text-center">
+                                                <div className="mb-2">
+                                                    <FontAwesomeIcon icon={faPaperPlane} className="text-3xl text-gray-400" />
                                                 </div>
-
-                                                {/* Message options dropdown */}
-                                                <div className="absolute top-0 -left-6 md:-left-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <div className="relative">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                toggleDropdown(`msg-${message.id}`);
+                                                <p>No messages yet</p>
+                                                <p className="text-sm mt-1">Send a message to start the conversation</p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        messages.map((message) => (
+                                            <motion.div key={message.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`mb-3 flex ${message.sender_id === user.id ? "justify-end" : "justify-start"}`}>
+                                                {message.sender_id !== user.id &&
+                                                    (message.sender_avatar ? (
+                                                        <img
+                                                            src={message.sender_avatar}
+                                                            alt="Avatar"
+                                                            className="w-7 h-7 md:w-8 md:h-8 rounded-full mr-1 md:mr-2 self-end"
+                                                            onError={(e) => {
+                                                                e.target.onerror = null;
+                                                                e.target.parentNode.replaceWith(
+                                                                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 mr-1 md:mr-2 self-end">
+                                                                        <FontAwesomeIcon icon={faUserCircle} />
+                                                                    </div>
+                                                                );
                                                             }}
-                                                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full"
-                                                        >
-                                                            <FontAwesomeIcon icon={faEllipsisV} className="text-xs" />
-                                                        </button>
+                                                        />
+                                                    ) : (
+                                                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 mr-1 md:mr-2 self-end">
+                                                            <FontAwesomeIcon icon={faUserCircle} />
+                                                        </div>
+                                                    ))}
 
-                                                        {dropdownOpen === `msg-${message.id}` && (
-                                                            <div className="absolute left-0 top-full mt-1 w-36 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
-                                                                <div className="py-1">
-                                                                    <button
-                                                                        className="block w-full text-left px-4 py-2 text-xs md:text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            // Copy message functionality
-                                                                            navigator.clipboard.writeText(message.content);
-                                                                            setDropdownOpen(null);
-                                                                            toast.success("Message copied to clipboard");
-                                                                        }}
-                                                                    >
-                                                                        Copy Message
-                                                                    </button>
-                                                                    {message.sender_id === user.id && (
-                                                                        <button
-                                                                            className="block w-full text-left px-4 py-2 text-xs md:text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                // Delete message functionality
-                                                                                setDropdownOpen(null);
-                                                                            }}
-                                                                        >
-                                                                            Delete Message
-                                                                        </button>
-                                                                    )}
+                                                <div className="group relative">
+                                                    <div className={`max-w-[75vw] md:max-w-md lg:max-w-lg rounded-lg px-3 py-2 ${message.sender_id === user.id ? "bg-green-500 text-white rounded-br-none" : "bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-bl-none"}`}>
+                                                        {message.content && <p className="whitespace-pre-wrap break-words overflow-hidden text-sm md:text-base">{message.content}</p>}
+
+                                                        {message.media_url && (
+                                                            <div className="mt-2 mb-1 relative">
+                                                                <img
+                                                                    src={message.media_url}
+                                                                    alt={message.media_name || "Image"}
+                                                                    className="max-w-full rounded cursor-pointer hover:opacity-90 transition-opacity"
+                                                                    onClick={() => handleImageClick(message.media_url)}
+                                                                    loading="lazy"
+                                                                    onLoad={(e) => {
+                                                                        // Remove loading indicator when image loads
+                                                                        const parent = e.target.parentNode;
+                                                                        if (parent) {
+                                                                            const loadingIndicator = parent.querySelector(".loading-indicator");
+                                                                            if (loadingIndicator) {
+                                                                                loadingIndicator.style.display = "none";
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                    onError={(e) => {
+                                                                        e.target.onerror = null;
+                                                                        e.target.style.display = "none";
+                                                                        // Also hide loading indicator if present
+                                                                        const parent = e.target.parentNode;
+                                                                        if (parent) {
+                                                                            const loadingIndicator = parent.querySelector(".loading-indicator");
+                                                                            if (loadingIndicator) {
+                                                                                loadingIndicator.style.display = "none";
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                {/* Loading indicator with automatic timeout */}
+                                                                <div
+                                                                    className="loading-indicator absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-60 dark:bg-gray-700 dark:bg-opacity-60 rounded"
+                                                                    ref={(el) => {
+                                                                        if (el) {
+                                                                            // Auto-hide after 15 seconds as a safety measure
+                                                                            setTimeout(() => {
+                                                                                el.style.display = "none";
+                                                                            }, 15000);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <div className="animate-spin h-8 w-8 border-4 border-green-500 rounded-full border-t-transparent"></div>
                                                                 </div>
                                                             </div>
                                                         )}
+
+                                                        <div className={`text-xs mt-1 ${message.sender_id === user.id ? "text-green-100" : "text-gray-500 dark:text-gray-400"}`}>{formatTime(message.timestamp)}</div>
+                                                    </div>
+
+                                                    {/* Message options dropdown */}
+                                                    <div className="absolute top-0 -left-6 md:-left-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <div className="relative">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    toggleDropdown(`msg-${message.id}`);
+                                                                }}
+                                                                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full"
+                                                            >
+                                                                <FontAwesomeIcon icon={faEllipsisV} className="text-xs" />
+                                                            </button>
+
+                                                            {dropdownOpen === `msg-${message.id}` && (
+                                                                <div className="absolute left-0 top-full mt-1 w-36 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
+                                                                    <div className="py-1">
+                                                                        <button
+                                                                            className="block w-full text-left px-4 py-2 text-xs md:text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                // Copy message functionality
+                                                                                navigator.clipboard.writeText(message.content);
+                                                                                setDropdownOpen(null);
+                                                                                toast.success("Message copied to clipboard");
+                                                                            }}
+                                                                        >
+                                                                            Copy Message
+                                                                        </button>
+                                                                        {message.sender_id === user.id && (
+                                                                            <button
+                                                                                className="block w-full text-left px-4 py-2 text-xs md:text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    // Delete message functionality
+                                                                                    setDropdownOpen(null);
+                                                                                }}
+                                                                            >
+                                                                                Delete Message
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                            {message.sender_id === user.id &&
-                                                (user.avatar_url ? (
-                                                    <img
-                                                        src={user.avatar_url}
-                                                        alt="Your Avatar"
-                                                        className="w-7 h-7 md:w-8 md:h-8 rounded-full ml-1 md:ml-2 self-end"
-                                                        onError={(e) => {
-                                                            e.target.onerror = null;
-                                                            e.target.parentNode.replaceWith(
-                                                                <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 ml-1 md:ml-2 self-end">
-                                                                    <FontAwesomeIcon icon={faUserCircle} />
-                                                                </div>
-                                                            );
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 ml-1 md:ml-2 self-end">
-                                                        <FontAwesomeIcon icon={faUserCircle} />
-                                                    </div>
-                                                ))}
-                                        </motion.div>
-                                    ))
-                                )}
-                                <div ref={messagesEndRef} />
-                            </AnimatePresence>
+                                                {message.sender_id === user.id &&
+                                                    (user.avatar_url ? (
+                                                        <img
+                                                            src={user.avatar_url}
+                                                            alt="Your Avatar"
+                                                            className="w-7 h-7 md:w-8 md:h-8 rounded-full ml-1 md:ml-2 self-end"
+                                                            onError={(e) => {
+                                                                e.target.onerror = null;
+                                                                e.target.parentNode.replaceWith(
+                                                                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 ml-1 md:ml-2 self-end">
+                                                                        <FontAwesomeIcon icon={faUserCircle} />
+                                                                    </div>
+                                                                );
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 ml-1 md:ml-2 self-end">
+                                                            <FontAwesomeIcon icon={faUserCircle} />
+                                                        </div>
+                                                    ))}
+                                            </motion.div>
+                                        ))
+                                    )}
+                                    <div ref={messagesEndRef} className="h-1" />
+                                </AnimatePresence>
+                            )}
+
+                            {/* Scroll to bottom button */}
+                            {showScrollButton && !changingConversation && (
+                                <motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} onClick={scrollToBottom} className="absolute bottom-6 right-6 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg p-3 transition-colors">
+                                    <FontAwesomeIcon icon={faChevronDown} />
+                                </motion.button>
+                            )}
                         </div>
 
                         {/* Message Input */}
@@ -1257,7 +1375,7 @@ const ChatPage = () => {
 
                         {/* Loading indicator for lightbox */}
                         <div className="loading-indicator-lightbox absolute inset-0 flex items-center justify-center">
-                            <div className="animate-spin h-12 w-12 border-4 border-white rounded-full border-t-transparent"></div>
+                            <FontAwesomeIcon icon={faSpinner} spin className="text-white text-4xl" />
                         </div>
 
                         <img

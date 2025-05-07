@@ -1,7 +1,31 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faSpinner, faEnvelope, faLocationDot, faBriefcase, faLink, faGraduationCap, faEdit, faCheck, faTimes, faTrashAlt, faPlus, faMinus, faRobot, faCopy, faFileArrowDown, faNewspaper, faThumbsUp, faBookmark, faEye, faCamera, faUsers } from "@fortawesome/free-solid-svg-icons";
+import {
+    faUser,
+    faSpinner,
+    faEnvelope,
+    faLocationDot,
+    faBriefcase,
+    faLink,
+    faGraduationCap,
+    faEdit,
+    faCheck,
+    faTimes,
+    faTrashAlt,
+    faPlus,
+    faMinus,
+    faRobot,
+    faCopy,
+    faFileArrowDown,
+    faNewspaper,
+    faThumbsUp,
+    faBookmark,
+    faEye,
+    faCamera,
+    faUsers,
+    faArrowRight,
+} from "@fortawesome/free-solid-svg-icons";
 import { faGithub, faLinkedin, faTelegram } from "@fortawesome/free-brands-svg-icons";
 import axios from "axios";
 import useAuthStore from "../store/authStore";
@@ -1375,11 +1399,7 @@ const UserProfilePage = () => {
                                                         <div className="flex items-start justify-between flex-wrap sm:flex-nowrap gap-1 mb-1">
                                                             <div className="flex items-center gap-2">
                                                                 <h3 className="font-medium text-gray-800 dark:text-white">{project.name}</h3>
-                                                                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                                                    project.status === "finished" 
-                                                                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" 
-                                                                        : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                                                                }`}>
+                                                                <span className={`text-xs px-2 py-0.5 rounded-full ${project.status === "finished" ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"}`}>
                                                                     {project.status === "finished" ? "Finished" : "In Development"}
                                                                 </span>
                                                             </div>
@@ -1423,11 +1443,7 @@ const UserProfilePage = () => {
                                                         <div className="flex items-start justify-between flex-wrap sm:flex-nowrap gap-1 mb-1">
                                                             <div className="flex items-center gap-2">
                                                                 <h3 className="font-medium text-gray-800 dark:text-white">{project.name}</h3>
-                                                                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                                                    project.status === "finished" 
-                                                                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" 
-                                                                        : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                                                                }`}>
+                                                                <span className={`text-xs px-2 py-0.5 rounded-full ${project.status === "finished" ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"}`}>
                                                                     {project.status === "finished" ? "Finished" : "In Development"}
                                                                 </span>
                                                             </div>
@@ -1439,6 +1455,11 @@ const UserProfilePage = () => {
                                                         </div>
                                                         {project.description && <p className="mt-1 text-gray-600 dark:text-gray-400 line-clamp-3" dangerouslySetInnerHTML={{ __html: project.description }}></p>}
                                                         {/* Remove tags section as requested */}
+                                                        <div className="mt-2 flex space-x-2">
+                                                            <button onClick={() => handleViewProject(project.id)} className="px-2 py-1 cursor-pointer text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
+                                                                <FontAwesomeIcon icon={faArrowRight} className="mr-1" /> Enter
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -1462,11 +1483,7 @@ const UserProfilePage = () => {
                                                         <div className="flex items-start justify-between flex-wrap sm:flex-nowrap gap-1 mb-1">
                                                             <div className="flex items-center gap-2">
                                                                 <h3 className="font-medium text-gray-800 dark:text-white">{project.name}</h3>
-                                                                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                                                    project.status === "finished" 
-                                                                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" 
-                                                                        : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                                                                }`}>
+                                                                <span className={`text-xs px-2 py-0.5 rounded-full ${project.status === "finished" ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"}`}>
                                                                     {project.status === "finished" ? "Finished" : "In Development"}
                                                                 </span>
                                                             </div>
@@ -1482,7 +1499,7 @@ const UserProfilePage = () => {
                                                         </p>
                                                         <div className="mt-2 flex space-x-2">
                                                             <button onClick={() => handleViewProject(project.id)} className="px-2 py-1 cursor-pointer text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
-                                                                <FontAwesomeIcon icon={faEye} className="mr-1" /> View
+                                                                <FontAwesomeIcon icon={faArrowRight} className="mr-1" /> View
                                                             </button>
                                                             <button onClick={() => handleDeleteApplication(project.id)} className="px-2 py-1 cursor-pointer text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors">
                                                                 <FontAwesomeIcon icon={faTrashAlt} className="mr-1" /> Withdraw

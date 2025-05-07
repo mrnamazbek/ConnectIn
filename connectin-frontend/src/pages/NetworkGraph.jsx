@@ -307,7 +307,7 @@ const ProjectInfoCard = ({ projectId, projectName }) => {
             <button
                 onClick={(e) => {
                     e.stopPropagation();
-                    window.open(`/project/${projectId}`, "_blank");
+                    window.open(`/feed/project/${projectId}`, "_blank");
                 }}
                 className="w-full mt-3 py-1.5 px-3 bg-green-500 hover:bg-green-600 text-white text-sm rounded transition-colors"
             >
@@ -385,7 +385,7 @@ const NetworkGraph = () => {
         } else if (node.type === "project") {
             // Извлекаем ID проекта из строки "project_456"
             const projectId = node.id.split("_")[1];
-            navigate(`/project/${projectId}`);
+            navigate(`/feed/project/${projectId}`);
         } else if (node.type === "skill") {
             // Для навыков можно добавить перенаправление на страницу поиска
             navigate(`/search?skill=${encodeURIComponent(node.label)}`);

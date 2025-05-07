@@ -82,7 +82,7 @@ const ProjectsSection = ({ user, projects: propProjects, loading, isStatic }) =>
                                             Delete
                                         </button>
                                     )}
-                                    <NavLink to={`/project/${project.id}/profile`} className="bg-green-700 text-white px-3 py-1 rounded hover:bg-green-600">
+                                    <NavLink to={`/feed/project/${project.id}/profile`} className="bg-green-700 text-white px-3 py-1 rounded hover:bg-green-600">
                                         View
                                     </NavLink>
                                 </div>

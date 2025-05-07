@@ -31,7 +31,7 @@ const ProjectPage = () => {
             navigate(-1);
         } else {
             // Fallback to projects page
-            navigate('/projects');
+            navigate("/projects");
         }
     };
 
@@ -85,6 +85,7 @@ const ProjectPage = () => {
         try {
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/projects/${projectId}/comments`);
             setComments(response.data);
+            console.log(response.data);
         } catch (err) {
             console.error("Failed to fetch comments:", err);
             setCommentError("Failed to load comments.");
@@ -99,7 +100,7 @@ const ProjectPage = () => {
         setLoading(true);
         setCommentsListLoading(true);
         setUserLoading(true);
-        
+
         fetchProject();
         fetchCurrentUser();
         fetchComments();
@@ -110,15 +111,18 @@ const ProjectPage = () => {
         if (!token) {
             toast.error("Please log in to apply for a project");
             navigate("/login", { state: { from: window.location.pathname } });
-            return;
+            return { error: true };
         }
 
         try {
             await axios.post(`${import.meta.env.VITE_API_URL}/projects/${projectId}/apply`, {}, { headers: { Authorization: `Bearer ${token}` } });
-            toast.success("Application submitted successfully!");
+            return { success: true };
         } catch (err) {
             console.error("Failed to apply:", err);
-            toast.error("Failed to apply. You may have already applied.");
+            // Display the specific error message from the backend
+            const errorMessage = err.response?.data?.detail || "Failed to apply. Please try again.";
+            toast.error(errorMessage);
+            return { error: true };
         }
     };
 
@@ -217,12 +221,25 @@ const ProjectPage = () => {
 
     // Add function to handle author profile navigation
     const handleAuthorClick = (user) => {
-        if (!user || !user.id) {
+        if (!user) {
+            console.error("Cannot navigate to profile: Author data is missing");
+            toast.error("Cannot view profile: User data is missing");
+            return;
+        }
+
+        // Debug: Log the user object to see its structure
+        console.log("Comment user object:", user);
+
+        // Check for different possible ID field formats
+        const userId = user.id || user._id || user.user_id;
+
+        if (!userId) {
             console.error("Cannot navigate to profile: Author ID is missing", user);
             toast.error("Cannot view profile: User ID is missing");
             return;
         }
-        navigate(`/profile/${user.id}`);
+
+        navigate(`/profile/${userId}`);
     };
 
     // Render auth-required UI elements based on login status
@@ -231,16 +248,13 @@ const ProjectPage = () => {
             return (
                 <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">Sign in to comment, vote, or apply to this project</p>
-                    <button 
-                        onClick={() => navigate("/login", { state: { from: window.location.pathname } })}
-                        className="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition"
-                    >
+                    <button onClick={() => navigate("/login", { state: { from: window.location.pathname } })} className="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition">
                         Sign In
                     </button>
                 </div>
             );
         }
-        
+
         return null;
     };
 
@@ -274,26 +288,18 @@ const ProjectPage = () => {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between mb-4">
-                <button 
-                    onClick={handleGoBack} 
-                    className="flex items-center text-gray-600 hover:text-green-700 transition-colors"
-                >
+                <button onClick={handleGoBack} className="flex items-center text-gray-600 hover:text-green-700 transition-colors">
                     <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
                     <span>Back</span>
                 </button>
-                
-                <button 
-                    onClick={handleCopyLink} 
-                    disabled={isCopyLoading} 
-                    className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 transition-colors disabled:opacity-50"
-                    title={isCopyLoading ? "Copying..." : "Copy project link"}
-                >
+
+                <button onClick={handleCopyLink} disabled={isCopyLoading} className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 transition-colors disabled:opacity-50" title={isCopyLoading ? "Copying..." : "Copy project link"}>
                     <FontAwesomeIcon icon={faLink} className={`${isCopyLoading ? "animate-pulse" : ""}`} />
                     <span>Share</span>
                 </button>
             </div>
 
-            <div className={`transition-opacity duration-300 ${userLoading || voteLoading ? 'opacity-70' : 'opacity-100'}`}>
+            <div className={`transition-opacity duration-300 ${userLoading || voteLoading ? "opacity-70" : "opacity-100"}`}>
                 <ProjectCard 
                     project={project} 
                     currentUser={currentUser} 
@@ -301,8 +307,9 @@ const ProjectPage = () => {
                     handleUpvote={handleUpvote} 
                     handleDownvote={handleDownvote} 
                     showViewProject={false} 
-                    showCommentsLink={true}
+                    showCommentsLink={true} 
                     isLoading={userLoading || voteLoading}
+                    showFullContent={true}
                 />
                 {(userLoading || voteLoading) && (
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -331,9 +338,9 @@ const ProjectPage = () => {
                             disabled={commentLoading || loading}
                         />
                         {commentError && <p className="text-red-500 text-sm">{commentError}</p>}
-                        <button 
-                            type="submit" 
-                            disabled={commentLoading || !newComment.trim() || loading} 
+                        <button
+                            type="submit"
+                            disabled={commentLoading || !newComment.trim() || loading}
                             className="rounded-md shadow-sm text-sm px-4 py-2 border border-green-700 hover:text-white font-semibold cursor-pointer hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {commentLoading ? (
@@ -372,15 +379,12 @@ const ProjectPage = () => {
                                         alt={comment.user?.username || "User"}
                                         className="w-8 h-8 rounded-full border hover:ring-2 hover:ring-green-500 transition cursor-pointer"
                                         onError={(e) => (e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png")}
-                                        onClick={() => handleAuthorClick(comment.user)}
+                                        onClick={() => handleAuthorClick({ ...comment.user, id: comment.user_id })}
                                     />
                                     <div className="flex-1">
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <p 
-                                                    className="font-semibold text-sm cursor-pointer hover:text-green-700 transition-colors"
-                                                    onClick={() => handleAuthorClick(comment.user)}
-                                                >
+                                                <p className="font-semibold text-sm cursor-pointer hover:text-green-700 transition-colors" onClick={() => handleAuthorClick({ ...comment.user, id: comment.user_id })}>
                                                     {comment.user?.username || "Unknown User"}
                                                 </p>
                                                 <p className="text-xs text-gray-500 flex items-center gap-1">

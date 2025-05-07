@@ -27,6 +27,7 @@ import RecommendationsPage from "./pages/RecommendationsPage.jsx";
 import ContactPage from "./pages/ContactPage.jsx";
 import FAQPage from "./pages/FAQPage.jsx";
 import NetworkGraph from "./pages/NetworkGraph.jsx";
+import InboxPage from "./pages/InboxPage.jsx";
 // Убедитесь, что пути ко всем страницам и компонентам верны!
 
 function App() {
@@ -111,6 +112,14 @@ function App() {
                                     element={
                                         <MainContentWrapper>
                                             <NetworkGraph />
+                                        </MainContentWrapper>
+                                    }
+                                />
+                                <Route
+                                    path="/inbox"
+                                    element={
+                                        <MainContentWrapper>
+                                            <InboxPage />
                                         </MainContentWrapper>
                                     }
                                 />

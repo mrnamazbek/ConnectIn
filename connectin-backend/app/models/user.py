@@ -67,6 +67,7 @@ class User(Base):
     experience = relationship("Experience", back_populates="user", cascade="all, delete-orphan")
     conversations = relationship("Conversation", secondary=conversation_participants, back_populates="participants")
     messages = relationship("Message", back_populates="sender")
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
 
     post_comments = relationship("PostComment", back_populates="user", cascade="all, delete")
     project_comments = relationship("ProjectComment", back_populates="user", cascade="all, delete")

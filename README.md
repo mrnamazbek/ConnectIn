@@ -13,6 +13,8 @@
 
 **ConnectIn** is a modern web platform designed to bridge the gap between developers seeking practical experience and projects/teams looking for motivated talent. It acts as a central hub, fostering collaboration, skill development, and career growth within the IT community.
 
+[Watch the video!](https://www.youtube.com/watch?v=clV6R6F6AWw)
+
 ## 🤔 Why ConnectIn? The Problem
 
 Many developers, especially students and those starting their careers, face common challenges:

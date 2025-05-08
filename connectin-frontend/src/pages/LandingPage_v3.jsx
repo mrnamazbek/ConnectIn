@@ -245,55 +245,82 @@ const LandingPage_v3 = () => {
             <section
                 className="py-24 px-4 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-black dark:to-gray-900">
                 <div className="w-full max-w-7xl mx-auto">
-                    <motion.div initial="hidden" whileInView="visible" viewport={{once: true}} variants={fadeInUp}
-                                className="text-center mb-20">
-                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">Your Complete
-                            Platform for Growth</h2>
-                        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">Every feature designed
-                            to accelerate your development journey and expand your network.</p>
+                    <motion.div
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{once: true}}
+                        variants={fadeInUp}
+                        className="text-center mb-20"
+                    >
+                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+                            Your Complete Platform for Growth
+                        </h2>
+                        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+                            Every feature designed to accelerate your development journey and expand your network.
+                        </p>
                     </motion.div>
 
-                    <motion.div initial="hidden" whileInView="visible" viewport={{once: true}}
-                                variants={staggerContainer} className="grid md:grid-cols-3 gap-8 md:gap-12">
+                    <motion.div
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{once: true}}
+                        variants={staggerContainer}
+                        className="grid md:grid-cols-3 gap-8 md:gap-12"
+                    >
                         {[
                             {
                                 icon: faSearch,
                                 title: "Smart Project Discovery",
                                 desc: "Our AI matching algorithm finds projects that perfectly align with your skills and interests.",
+                                apiUrl: "https://frontend-production-1eef2.up.railway.app/search"
                             },
                             {
                                 icon: faNetworkWired,
                                 title: "Networking & Collaboration",
                                 desc: "Connect with developers who have complementary skills. Communicate and collaborate seamlessly.",
                                 link: "/features/networking",
+                                apiUrl: "https://frontend-production-1eef2.up.railway.app/network"
                             },
                             {
                                 icon: faBriefcase,
                                 title: "Career Opportunities",
                                 desc: "Access to job postings, freelance gigs, and networking events to boost your professional growth.",
+                                apiUrl: "https://frontend-production-1eef2.up.railway.app/careers"
                             },
                         ].map((item, index) => (
                             <motion.div key={index} variants={fadeInUp} className="group">
                                 <div
-                                    className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-emerald-500/10 h-full transform group-hover:translate-y-[-8px]">
+                                    className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-emerald-500/10 h-full transform group-hover:translate-y-[-8px]"
+                                >
                                     <div
-                                        className="h-48 bg-emerald-100 dark:bg-emerald-900/30 relative overflow-hidden flex items-center justify-center">
+                                        className="h-48 bg-emerald-100 dark:bg-emerald-900/30 relative overflow-hidden flex items-center justify-center"
+                                    >
                                         <div
-                                            className="text-emerald-500 dark:text-emerald-400 text-6xl transform transition-all duration-500 group-hover:scale-110">
+                                            className="text-emerald-500 dark:text-emerald-400 text-6xl transform transition-all duration-500 group-hover:scale-110"
+                                        >
                                             <FontAwesomeIcon icon={item.icon}/>
                                         </div>
                                     </div>
                                     <div className="p-8">
                                         <div
-                                            className="inline-block p-3 bg-emerald-100 dark:bg-emerald-900 rounded-lg mb-4 w-12 h-12 flex items-center justify-center">
-                                            <FontAwesomeIcon icon={item.icon}
-                                                             className="text-emerald-600 dark:text-emerald-400 text-xl"/>
+                                            className="inline-block p-3 bg-emerald-100 dark:bg-emerald-900 rounded-lg mb-4 w-12 h-12 flex items-center justify-center"
+                                        >
+                                            <FontAwesomeIcon
+                                                icon={item.icon}
+                                                className="text-emerald-600 dark:text-emerald-400 text-xl"
+                                            />
                                         </div>
-                                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{item.title}</h3>
-                                        <p className="text-gray-600 dark:text-gray-400 mb-6">{item.desc}</p>
+                                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                                            {item.title}
+                                        </h3>
+                                        <p className="text-gray-600 dark:text-gray-400 mb-6">
+                                            {item.desc}
+                                        </p>
                                         <NavLink
                                             to={item.link || `/features/${item.title.toLowerCase().replace(/\s+/g, "-")}`}
-                                            className="inline-flex items-center font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300">
+                                            className="inline-flex items-center font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
+                                            data-search-api={item.apiUrl}
+                                        >
                                             Learn more
                                             <FontAwesomeIcon icon={faArrowRight} className="ml-2 text-sm"/>
                                         </NavLink>

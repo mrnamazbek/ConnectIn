@@ -114,8 +114,9 @@ const PostsPage = () => {
         try {
             // Check if posts for this page are already cached
             if (globalCache.posts[page]) {
-                setPosts(globalCache.posts[page].items);
-                setTotalPages(globalCache.posts[page].total_pages);
+                const items = Array.isArray(globalCache.posts[page].items) ? globalCache.posts[page].items : [];
+                setPosts(items);
+                setTotalPages(globalCache.posts[page].total_pages || 1);
                 return;
             }
 
@@ -130,18 +131,23 @@ const PostsPage = () => {
             // Cache the fetched posts in the global cache
             globalCache.posts[page] = postsRes.data;
 
-            setPosts(postsRes.data.items);
-            setTotalPages(postsRes.data.total_pages);
+            // Ensure items is an array
+            const items = Array.isArray(postsRes.data.items) ? postsRes.data.items : [];
+            setPosts(items);
+            setTotalPages(postsRes.data.total_pages || 1);
 
-            // Initialize post store with new posts
-            const postIds = postsRes.data.items.map((post) => post.id);
-            await initializePostState(postIds);
+            if (items.length > 0) {
+                // Initialize post store with new posts
+                const postIds = items.map((post) => post.id);
+                await initializePostState(postIds);
 
-            // Fetch like and save statuses for posts in a single request
-            await fetchPostStatuses(postsRes.data.items);
+                // Fetch like and save statuses for posts in a single request
+                await fetchPostStatuses(items);
+            }
         } catch (error) {
             console.error("Error fetching posts:", error);
-            throw error;
+            setPosts([]);
+            setTotalPages(1);
         }
     };
 
@@ -344,14 +350,24 @@ const PostsPage = () => {
             // Cache the filtered results
             globalCache.posts[1] = response.data;
 
-            setPosts(response.data.items || response.data);
-            setTotalPages(response.data.total_pages);
+            // Ensure items is an array
+            const items = Array.isArray(response.data.items) 
+                ? response.data.items 
+                : Array.isArray(response.data) 
+                    ? response.data 
+                    : [];
+            setPosts(items);
+            setTotalPages(response.data.total_pages || 1);
 
-            // Fetch like and save statuses for filtered posts
-            await fetchPostStatuses(response.data.items || response.data);
+            if (items.length > 0) {
+                // Fetch like and save statuses for filtered posts
+                await fetchPostStatuses(items);
+            }
         } catch (error) {
             console.error("Error filtering posts:", error);
             toast.error("Failed to filter posts");
+            setPosts([]);
+            setTotalPages(1);
         } finally {
             setFilterLoading(false);
         }

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
-import { NavLink } from "react-router";
+import { NavLink } from "react-router-dom";
 
 const PopularPosts = () => {
     const [popularPosts, setPopularPosts] = useState([]);
@@ -16,9 +16,12 @@ const PopularPosts = () => {
                         limit: 3,
                     },
                 });
-                setPopularPosts(response.data);
+                // Ensure data is an array before setting state
+                const data = Array.isArray(response.data) ? response.data : [];
+                setPopularPosts(data);
             } catch (error) {
                 console.error("Error fetching popular posts:", error);
+                setPopularPosts([]);
             } finally {
                 setLoading(false);
             }

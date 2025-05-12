@@ -5,17 +5,29 @@ import { Link, useNavigate, useLocation } from "react-router";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { ReactTyped } from "react-typed";
 import { faLightbulb, faHandshakeSimple, faRocket } from "@fortawesome/free-solid-svg-icons";
+import { faGoogle, faGithub } from "@fortawesome/free-brands-svg-icons";
+import { useEffect } from "react";
 import useAuthStore from "../store/authStore";
 
 const LoginPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { login, loading } = useAuthStore();
+    const { login, loading, handleOAuthCookies } = useAuthStore();
 
     const validationSchema = Yup.object({
         username: Yup.string().required("Username is required").min(3, "Username must be at least 3 characters long"),
         password: Yup.string().required("Password is required"),
     });
+
+    useEffect(() => {
+        // Check for OAuth cookies on component mount
+        const authSuccess = handleOAuthCookies();
+        if (authSuccess) {
+            // Redirect to the page user was trying to access, or home
+            const from = location.state?.from || "/";
+            navigate(from);
+        }
+    }, [handleOAuthCookies, navigate, location.state]);
 
     const formik = useFormik({
         initialValues: {
@@ -37,6 +49,14 @@ const LoginPage = () => {
             setSubmitting(false);
         },
     });
+
+    const handleGoogleLogin = () => {
+        window.location.href = `${import.meta.env.VITE_API_URL}/auth/google/login`;
+    };
+
+    const handleGithubLogin = () => {
+        window.location.href = `${import.meta.env.VITE_API_URL}/auth/github/login`;
+    };
 
     return (
         <div className="flex justify-center items-center min-h-screen -mt-20 px-4">
@@ -97,6 +117,33 @@ const LoginPage = () => {
                                 ) : (
                                     "Sign in"
                                 )}
+                            </button>
+                        </div>
+
+                        {/* Social Login Divider */}
+                        <div className="flex items-center my-3">
+                            <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+                            <div className="px-3 text-xs text-gray-500 dark:text-gray-400">OR</div>
+                            <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+                        </div>
+
+                        {/* Social Login Buttons */}
+                        <div className="flex flex-col space-y-2">
+                            <button
+                                type="button"
+                                onClick={handleGoogleLogin}
+                                className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
+                            >
+                                <FontAwesomeIcon icon={faGoogle} className="text-red-500" />
+                                <span>Continue with Google</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleGithubLogin}
+                                className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
+                            >
+                                <FontAwesomeIcon icon={faGithub} className="text-gray-800 dark:text-white" />
+                                <span>Continue with GitHub</span>
                             </button>
                         </div>
 

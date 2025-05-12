@@ -86,8 +86,7 @@ def set_auth_cookies(response: RedirectResponse, access_token: str, refresh_toke
     """
     Устанавливает access и refresh токены в куки ответа и возвращает его.
     """
-    # Используем FRONTEND_URL для редиректа
-    response = RedirectResponse(url=FRONTEND_URL, status_code=status.HTTP_302_FOUND)
+    # Настраиваем куки с нужными параметрами
     response.set_cookie(
         key="access_token",
         value=access_token,
@@ -360,50 +359,79 @@ async def google_login(request: Request) -> RedirectResponse:
     """
     Генерирует URL для входа через Google и перенаправляет пользователя.
     """
-    login_url = await generate_google_login_url(request)
-    return RedirectResponse(url=login_url, status_code=status.HTTP_302_FOUND)
+    try:
+        login_url = await generate_google_login_url(request)
+        if not login_url:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                detail="Ошибка генерации URL для Google OAuth"
+            )
+        logger.info(f"Перенаправление на Google OAuth: {login_url}")
+        return RedirectResponse(url=login_url, status_code=status.HTTP_302_FOUND)
+    except Exception as e:
+        logger.error(f"Ошибка при генерации Google Login URL: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при Google OAuth: {str(e)}"
+        )
 
 @router.get("/google/callback", summary="Google Callback")
 async def google_callback(request: Request, db: Session = Depends(get_db)) -> RedirectResponse:
     """
     Обрабатывает callback от Google OAuth, создает/обновляет пользователя и перенаправляет на фронтенд.
     """
-    user_info = await handle_google_callback(request)
-    if not user_info:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Ошибка получения данных от Google")
+    try:
+        user_info = await handle_google_callback(request)
+        if not user_info:
+            logger.error("Не удалось получить данные пользователя от Google")
+            return RedirectResponse(url=f"{FRONTEND_URL}/login?error=google_auth_failed", status_code=status.HTTP_302_FOUND)
 
-    email = user_info.get("email")
-    google_id = user_info.get("sub")
-    user = db.query(User).filter((User.email == email) | (User.google_id == google_id)).first()
+        email = user_info.get("email")
+        if not email:
+            logger.error("Email не получен от Google")
+            return RedirectResponse(url=f"{FRONTEND_URL}/login?error=email_missing", status_code=status.HTTP_302_FOUND)
+            
+        google_id = user_info.get("sub")
+        user = db.query(User).filter((User.email == email) | (User.google_id == google_id)).first()
 
-    if user:
-        logger.info(f"Найден существующий пользователь: {user.email}")
-        if not user.google_id and google_id:
-            user.google_id = google_id
+        if user:
+            logger.info(f"Найден существующий пользователь: {user.email}")
+            if not user.google_id and google_id:
+                user.google_id = google_id
+                db.commit()
+                logger.info(f"Обновлен Google ID для пользователя: {user.email}")
+        else:
+            base_username = user_info.get("name", "").replace(" ", "_").lower() or email.split("@")[0]
+            username = generate_unique_username(base_username, db)
+            user = User(
+                email=email,
+                username=username,
+                hashed_password="",  # Для OAuth можно оставить пустым или задать заглушку
+                google_id=google_id,
+                first_name=user_info.get("given_name"),
+                last_name=user_info.get("family_name"),
+                avatar_url=user_info.get("picture")
+            )
+            db.add(user)
             db.commit()
-            logger.info(f"Обновлен Google ID для пользователя: {user.email}")
-    else:
-        base_username = user_info.get("name", "").replace(" ", "_") or email.split("@")[0]
-        username = generate_unique_username(base_username, db)
-        user = User(
-            email=email,
-            username=username,
-            hashed_password="",  # Для OAuth можно оставить пустым или задать заглушку
-            google_id=google_id,
-            first_name=user_info.get("given_name"),
-            last_name=user_info.get("family_name"),
-            avatar_url=user_info.get("picture")
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        logger.info(f"Создан новый Google пользователь: {user.email}")
+            db.refresh(user)
+            logger.info(f"Создан новый Google пользователь: {user.email}")
 
-    access_token = create_access_token(user)
-    refresh_token_value = create_refresh_token(user)
-    response = RedirectResponse(url=FRONTEND_URL, status_code=status.HTTP_302_FOUND)
-    response = set_auth_cookies(response, access_token, refresh_token_value)
-    return response
+        access_token = create_access_token(user)
+        refresh_token_value = create_refresh_token(user)
+        
+        # Создаем ответ-перенаправление на фронтенд
+        redirect_url = f"{FRONTEND_URL}/login?auth_success=true"
+        logger.info(f"Перенаправление на фронтенд: {redirect_url}")
+        response = RedirectResponse(url=redirect_url, status_code=status.HTTP_302_FOUND)
+        
+        # Устанавливаем куки с токенами
+        response = set_auth_cookies(response, access_token, refresh_token_value)
+        return response
+        
+    except Exception as e:
+        logger.error(f"Ошибка при обработке Google callback: {e}")
+        return RedirectResponse(url=f"{FRONTEND_URL}/login?error=google_callback_error", status_code=status.HTTP_302_FOUND)
 
 # ---------------------- GitHub OAuth ----------------------
 
@@ -412,10 +440,21 @@ async def github_login(request: Request) -> RedirectResponse:
     """
     Генерирует URL для входа через GitHub и перенаправляет пользователя.
     """
-    login_url = await generate_github_login_url(request)
-    if not login_url:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Ошибка GitHub OAuth")
-    return RedirectResponse(url=login_url, status_code=status.HTTP_302_FOUND)
+    try:
+        login_url = await generate_github_login_url(request)
+        if not login_url:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                detail="Ошибка генерации URL для GitHub OAuth"
+            )
+        logger.info(f"Перенаправление на GitHub OAuth: {login_url}")
+        return RedirectResponse(url=login_url, status_code=status.HTTP_302_FOUND)
+    except Exception as e:
+        logger.error(f"Ошибка при генерации GitHub Login URL: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при GitHub OAuth: {str(e)}"
+        )
 
 @router.get("/github/callback", summary="GitHub Callback")
 async def github_callback(request: Request, db: Session = Depends(get_db)) -> RedirectResponse:
@@ -423,41 +462,71 @@ async def github_callback(request: Request, db: Session = Depends(get_db)) -> Re
     Обрабатывает callback от GitHub OAuth, создает/обновляет пользователя и перенаправляет на фронтенд.
     """
     try:
+        # Получаем токен от GitHub
         token = await oauth.github.authorize_access_token(request)
-    except Exception as e:
-        logger.error(f"GitHub OAuth Error: {e}")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Ошибка GitHub OAuth")
+        if not token:
+            logger.error("Не удалось получить токен от GitHub")
+            return RedirectResponse(url=f"{FRONTEND_URL}/login?error=github_token_failed", status_code=status.HTTP_302_FOUND)
+            
+        # Получаем данные пользователя
+        user_data = await get_github_user_info(token)
+        if not user_data:
+            logger.error("Не удалось получить данные пользователя от GitHub")
+            return RedirectResponse(url=f"{FRONTEND_URL}/login?error=github_user_data_failed", status_code=status.HTTP_302_FOUND)
 
-    user_data = await get_github_user_info(token)
-    if not user_data or not user_data.get("email"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Не удалось получить email из GitHub")
+        email = user_data.get("email")
+        if not email:
+            logger.error("Email не получен от GitHub")
+            return RedirectResponse(url=f"{FRONTEND_URL}/login?error=email_missing", status_code=status.HTTP_302_FOUND)
+            
+        github_url = user_data.get("html_url")
+        github_id = str(user_data.get("id", ""))
+        username_github = user_data.get("login", "")
+            
+        # Ищем существующего пользователя
+        user = db.query(User).filter(
+            (User.email == email) | 
+            (User.github == github_url) | 
+            (User.username == username_github)
+        ).first()
 
-    email = user_data.get("email")
-    github_url = user_data.get("html_url")
-    user = db.query(User).filter((User.email == email) | (User.github == github_url)).first()
-
-    if user:
-        logger.info(f"Найден существующий GitHub пользователь: {user.email}")
-        if not user.github and github_url:
-            user.github = github_url
+        if user:
+            logger.info(f"Найден существующий GitHub пользователь: {user.email}")
+            # Обновляем GitHub информацию, если она отсутствует
+            if not user.github and github_url:
+                user.github = github_url
+                db.commit()
+                logger.info(f"Обновлен GitHub URL для пользователя: {user.email}")
+        else:
+            # Создаем нового пользователя
+            base_username = username_github or email.split("@")[0]
+            username = generate_unique_username(base_username, db)
+            user = User(
+                email=email,
+                username=username,
+                hashed_password="",  # Для OAuth, можно оставить пустым
+                github=github_url,
+                avatar_url=user_data.get("avatar_url", ""),
+                name=user_data.get("name", "")
+            )
+            db.add(user)
             db.commit()
-            logger.info(f"Обновлен GitHub URL для пользователя: {user.email}")
-    else:
-        base_username = user_data.get("login") or email.split("@")[0]
-        username = generate_unique_username(base_username, db)
-        user = User(
-            email=email,
-            username=username,
-            hashed_password="",  # Для OAuth, можно оставить пустым
-            github=github_url,
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        logger.info(f"Создан новый GitHub пользователь: {user.email}")
+            db.refresh(user)
+            logger.info(f"Создан новый GitHub пользователь: {user.email}")
 
-    access_token = create_access_token(user)
-    refresh_token_value = create_refresh_token(user)
-    response = RedirectResponse(url=FRONTEND_URL, status_code=status.HTTP_302_FOUND)
-    response = set_auth_cookies(response, access_token, refresh_token_value)
-    return response
+        # Генерируем токены
+        access_token = create_access_token(user)
+        refresh_token_value = create_refresh_token(user)
+        
+        # Создаем ответ-перенаправление на фронтенд
+        redirect_url = f"{FRONTEND_URL}/login?auth_success=true"
+        logger.info(f"Перенаправление на фронтенд: {redirect_url}")
+        response = RedirectResponse(url=redirect_url, status_code=status.HTTP_302_FOUND)
+        
+        # Устанавливаем куки с токенами
+        response = set_auth_cookies(response, access_token, refresh_token_value)
+        return response
+        
+    except Exception as e:
+        logger.error(f"Ошибка при обработке GitHub callback: {e}")
+        return RedirectResponse(url=f"{FRONTEND_URL}/login?error=github_callback_error", status_code=status.HTTP_302_FOUND)

@@ -16,9 +16,12 @@ const PopularPosts = () => {
                         limit: 3,
                     },
                 });
-                setPopularPosts(response.data);
+                // Ensure data is an array before setting state
+                const data = Array.isArray(response.data) ? response.data : [];
+                setPopularPosts(data);
             } catch (error) {
                 console.error("Error fetching popular posts:", error);
+                setPopularPosts([]);
             } finally {
                 setLoading(false);
             }

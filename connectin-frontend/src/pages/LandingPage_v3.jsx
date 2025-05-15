@@ -1,23 +1,37 @@
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
-import { NavLink } from "react-router";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ReactTyped } from "react-typed";
-import { faUsers, faProjectDiagram, faStar, faUserTie, faCode, faRocket, faSearch, faNetworkWired, faBriefcase, faArrowRight, faComments, faBlog, faFileCode } from "@fortawesome/free-solid-svg-icons";
+import {motion, useScroll, useTransform} from "framer-motion";
+import {useRef} from "react";
+import {NavLink} from "react-router";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {ReactTyped} from "react-typed";
+import {
+    faUsers,
+    faProjectDiagram,
+    faStar,
+    faUserTie,
+    faCode,
+    faRocket,
+    faSearch,
+    faNetworkWired,
+    faBriefcase,
+    faArrowRight,
+    faComments,
+    faBlog,
+    faFileCode
+} from "@fortawesome/free-solid-svg-icons";
 
 // Animations
 const fadeIn = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } },
+    hidden: {opacity: 0, y: 20},
+    visible: {opacity: 1, y: 0, transition: {duration: 0.8, ease: [0.22, 1, 0.36, 1]}},
 };
 
 const fadeInUp = {
-    hidden: { opacity: 0, y: 40 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] } },
+    hidden: {opacity: 0, y: 40},
+    visible: {opacity: 1, y: 0, transition: {duration: 0.9, ease: [0.22, 1, 0.36, 1]}},
 };
 
 const staggerContainer = {
-    hidden: { opacity: 0 },
+    hidden: {opacity: 0},
     visible: {
         opacity: 1,
         transition: {
@@ -28,17 +42,17 @@ const staggerContainer = {
 };
 
 const fadeInLeft = {
-    hidden: { opacity: 0, x: -60 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] } },
+    hidden: {opacity: 0, x: -60},
+    visible: {opacity: 1, x: 0, transition: {duration: 0.9, ease: [0.22, 1, 0.36, 1]}},
 };
 
 const fadeInRight = {
-    hidden: { opacity: 0, x: 60 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] } },
+    hidden: {opacity: 0, x: 60},
+    visible: {opacity: 1, x: 0, transition: {duration: 0.9, ease: [0.22, 1, 0.36, 1]}},
 };
 
 const LandingPage_v3 = () => {
-    const { scrollY } = useScroll();
+    const {scrollY} = useScroll();
     const mainRef = useRef(null);
 
     // Parallax effect for title
@@ -49,26 +63,35 @@ const LandingPage_v3 = () => {
     const smoothStickyScale = useTransform(scrollY, [0, 300], [1, 0.95]);
 
     return (
-        <div className="min-h-screen bg-white dark:bg-black text-gray-800 dark:text-gray-200 overflow-hidden" ref={mainRef}>
+        <div className="min-h-screen bg-white dark:bg-black text-gray-800 dark:text-gray-200 overflow-hidden"
+             ref={mainRef}>
             {/* Hero Section with parallax effect */}
             <section className="relative min-h-screen pt-5 flex items-center">
                 <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                    <motion.div style={{ opacity: headerOpacity, y: headerY }} className="text-center max-w-4xl mx-auto">
-                        <motion.h1 initial="hidden" animate="visible" variants={fadeInUp} className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
+                    <motion.div style={{opacity: headerOpacity, y: headerY}} className="text-center max-w-4xl mx-auto">
+                        <motion.h1 initial="hidden" animate="visible" variants={fadeInUp}
+                                   className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
                             <span className="block">
-                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500 dark:from-emerald-400 dark:via-teal-400 dark:to-green-400">Connect.</span>
+                                <span
+                                    className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500 dark:from-emerald-400 dark:via-teal-400 dark:to-green-400">Connect.</span>
                             </span>
                             <span className="block mt-2">
-                                <ReactTyped strings={["Collaborate.", "Create.", "Contribute."]} typeSpeed={100} backSpeed={70} loop className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500 dark:from-emerald-400 dark:via-teal-400 dark:to-green-400" />
+                                <ReactTyped strings={["Collaborate.", "Create.", "Contribute."]} typeSpeed={100}
+                                            backSpeed={70} loop
+                                            className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500 dark:from-emerald-400 dark:via-teal-400 dark:to-green-400"/>
                             </span>
                         </motion.h1>
 
-                        <motion.p initial="hidden" animate="visible" variants={fadeIn} className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 mb-10 max-w-3xl mx-auto leading-relaxed">
-                            The dynamic platform where developers find meaningful projects and unlock career opportunities beyond just code.
+                        <motion.p initial="hidden" animate="visible" variants={fadeIn}
+                                  className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 mb-10 max-w-3xl mx-auto leading-relaxed">
+                            The dynamic platform where developers find meaningful projects and unlock career
+                            opportunities beyond just code.
                         </motion.p>
 
-                        <motion.div initial="hidden" animate="visible" variants={fadeIn} className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <NavLink to="/register" className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-10 py-4 rounded-full text-lg font-medium hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg hover:shadow-emerald-500/30 transform hover:translate-y-[-2px]">
+                        <motion.div initial="hidden" animate="visible" variants={fadeIn}
+                                    className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <NavLink to="/register"
+                                     className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-10 py-4 rounded-full text-lg font-medium hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg hover:shadow-emerald-500/30 transform hover:translate-y-[-2px]">
                                 Get Started Free
                             </NavLink>
                         </motion.div>
@@ -79,7 +102,7 @@ const LandingPage_v3 = () => {
                         initial="hidden"
                         animate="visible"
                         variants={{
-                            hidden: { opacity: 0, y: 100 },
+                            hidden: {opacity: 0, y: 100},
                             visible: {
                                 opacity: 1,
                                 y: 0,
@@ -90,7 +113,7 @@ const LandingPage_v3 = () => {
                                 },
                             },
                         }}
-                        style={{ scale: smoothStickyScale }}
+                        style={{scale: smoothStickyScale}}
                         className="mt-16 md:mt-20 max-w-5xl mx-auto"
                     ></motion.div>
                 </div>
@@ -100,13 +123,15 @@ const LandingPage_v3 = () => {
             <section className="py-24 px-4 bg-white dark:bg-black relative overflow-hidden">
                 <div className="w-full max-w-7xl mx-auto">
                     <div className="grid md:grid-cols-2 gap-16 items-center">
-                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={fadeInLeft}>
+                        <motion.div initial="hidden" whileInView="visible" viewport={{once: true, amount: 0.3}}
+                                    variants={fadeInLeft}>
                             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">
                                 Stop Searching.
-                                <br />
+                                <br/>
                                 Start <span className="text-emerald-500 dark:text-emerald-400">Connecting</span>.
                             </h2>
-                            <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">We focus on people and collaboration.</p>
+                            <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">We focus on
+                                people and collaboration.</p>
 
                             <ul className="space-y-6">
                                 {[
@@ -127,8 +152,9 @@ const LandingPage_v3 = () => {
                                     },
                                 ].map((item, index) => (
                                     <motion.li key={index} variants={fadeIn} className="flex items-start gap-4">
-                                        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                                            <FontAwesomeIcon icon={item.icon} />
+                                        <div
+                                            className="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                                            <FontAwesomeIcon icon={item.icon}/>
                                         </div>
                                         <div>
                                             <h3 className="font-semibold text-gray-900 dark:text-white">{item.title}</h3>
@@ -139,35 +165,41 @@ const LandingPage_v3 = () => {
                             </ul>
                         </motion.div>
 
-                        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={fadeInRight} className="relative">
+                        <motion.div initial="hidden" whileInView="visible" viewport={{once: true, amount: 0.3}}
+                                    variants={fadeInRight} className="relative">
                             {/* Создаем эффект "плавающих" элементов интерфейса */}
                             <div className="relative">
                                 <motion.div
-                                    animate={{ y: [-8, 8, -8], x: [3, -3, 3] }}
-                                    transition={{ repeat: Infinity, duration: 10, ease: "easeInOut" }}
-                                    className="absolute -top-10 -right-6 w-64 h-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 z-30 border border-gray-200 dark:border-gray-700"
+                                    animate={{y: [-8, 8, -8], x: [3, -3, 3]}}
+                                    transition={{repeat: Infinity, duration: 10, ease: "easeInOut"}}
+                                    className="absolute top-10 -right-6 w-64 h-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 z-30 border border-gray-200 dark:border-gray-700"
                                 >
                                     <div className="w-full h-5 bg-emerald-100 dark:bg-emerald-900 rounded mb-3"></div>
                                     <div className="w-3/4 h-3 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
                                     <div className="w-1/2 h-3 bg-gray-200 dark:bg-gray-700 rounded mb-6"></div>
                                     <div className="grid grid-cols-2 gap-2">
-                                        <div className="h-12 bg-emerald-50 dark:bg-emerald-900/50 rounded flex items-center justify-center">
-                                            <FontAwesomeIcon icon={faCode} className="text-emerald-500 dark:text-emerald-400" />
+                                        <div
+                                            className="h-12 bg-emerald-50 dark:bg-emerald-900/50 rounded flex items-center justify-center">
+                                            <FontAwesomeIcon icon={faCode}
+                                                             className="text-emerald-500 dark:text-emerald-400"/>
                                         </div>
-                                        <div className="h-12 bg-emerald-50 dark:bg-emerald-900/50 rounded flex items-center justify-center">
-                                            <FontAwesomeIcon icon={faUsers} className="text-emerald-500 dark:text-emerald-400" />
+                                        <div
+                                            className="h-12 bg-emerald-50 dark:bg-emerald-900/50 rounded flex items-center justify-center">
+                                            <FontAwesomeIcon icon={faUsers}
+                                                             className="text-emerald-500 dark:text-emerald-400"/>
                                         </div>
                                     </div>
                                 </motion.div>
 
                                 <motion.div
-                                    animate={{ y: [5, -5, 5], x: [-4, 4, -4] }}
-                                    transition={{ repeat: Infinity, duration: 12, ease: "easeInOut" }}
+                                    animate={{y: [5, -5, 5], x: [-4, 4, -4]}}
+                                    transition={{repeat: Infinity, duration: 12, ease: "easeInOut"}}
                                     className="absolute top-20 -left-10 w-72 h-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 z-20 border border-gray-200 dark:border-gray-700"
                                 >
                                     <div className="flex items-center mb-4">
-                                        <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-emerald-500 dark:text-emerald-400 mr-3">
-                                            <FontAwesomeIcon icon={faUserTie} />
+                                        <div
+                                            className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-emerald-500 dark:text-emerald-400 mr-3">
+                                            <FontAwesomeIcon icon={faUserTie}/>
                                         </div>
                                         <div>
                                             <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-1"></div>
@@ -181,11 +213,14 @@ const LandingPage_v3 = () => {
                                     </div>
                                 </motion.div>
 
-                                <motion.div animate={{ y: [-10, 10, -10], x: [5, -5, 5] }} transition={{ repeat: Infinity, duration: 14, ease: "easeInOut" }} className="relative z-10 w-80 h-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-5 border border-gray-200 dark:border-gray-700 mx-auto">
+                                <motion.div animate={{y: [-10, 10, -10], x: [5, -5, 5]}}
+                                            transition={{repeat: Infinity, duration: 14, ease: "easeInOut"}}
+                                            className="relative z-10 w-80 h-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-5 border border-gray-200 dark:border-gray-700 mx-auto">
                                     <div className="flex justify-between items-center mb-4">
                                         <div className="w-1/2 h-6 bg-emerald-100 dark:bg-emerald-900 rounded"></div>
-                                        <div className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center">
-                                            <FontAwesomeIcon icon={faProjectDiagram} />
+                                        <div
+                                            className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center">
+                                            <FontAwesomeIcon icon={faProjectDiagram}/>
                                         </div>
                                     </div>
                                     <div className="space-y-3 mb-6">
@@ -194,7 +229,9 @@ const LandingPage_v3 = () => {
                                         <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/6"></div>
                                     </div>
                                     <div className="flex gap-2">
-                                        <div className="h-8 w-20 bg-emerald-500 rounded flex items-center justify-center text-white text-xs">Connect</div>
+                                        <div
+                                            className="h-8 w-20 bg-emerald-500 rounded flex items-center justify-center text-white text-xs">Connect
+                                        </div>
                                         <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
                                     </div>
                                 </motion.div>
@@ -205,48 +242,87 @@ const LandingPage_v3 = () => {
             </section>
 
             {/* === Key Benefits Section с анимированными карточками === */}
-            <section className="py-24 px-4 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-black dark:to-gray-900">
+            <section
+                className="py-24 px-4 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-black dark:to-gray-900">
                 <div className="w-full max-w-7xl mx-auto">
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-20">
-                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">Your Complete Platform for Growth</h2>
-                        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">Every feature designed to accelerate your development journey and expand your network.</p>
+                    <motion.div
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{once: true}}
+                        variants={fadeInUp}
+                        className="text-center mb-20"
+                    >
+                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+                            Your Complete Platform for Growth
+                        </h2>
+                        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+                            Every feature designed to accelerate your development journey and expand your network.
+                        </p>
                     </motion.div>
 
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="grid md:grid-cols-3 gap-8 md:gap-12">
+                    <motion.div
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{once: true}}
+                        variants={staggerContainer}
+                        className="grid md:grid-cols-3 gap-8 md:gap-12"
+                    >
                         {[
                             {
                                 icon: faSearch,
                                 title: "Smart Project Discovery",
                                 desc: "Our AI matching algorithm finds projects that perfectly align with your skills and interests.",
+                                apiUrl: "https://frontend-production-1eef2.up.railway.app/search"
                             },
                             {
                                 icon: faNetworkWired,
                                 title: "Networking & Collaboration",
                                 desc: "Connect with developers who have complementary skills. Communicate and collaborate seamlessly.",
                                 link: "/features/networking",
+                                apiUrl: "https://frontend-production-1eef2.up.railway.app/network"
                             },
                             {
                                 icon: faBriefcase,
                                 title: "Career Opportunities",
                                 desc: "Access to job postings, freelance gigs, and networking events to boost your professional growth.",
+                                apiUrl: "https://frontend-production-1eef2.up.railway.app/careers"
                             },
                         ].map((item, index) => (
                             <motion.div key={index} variants={fadeInUp} className="group">
-                                <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-emerald-500/10 h-full transform group-hover:translate-y-[-8px]">
-                                    <div className="h-48 bg-emerald-100 dark:bg-emerald-900/30 relative overflow-hidden flex items-center justify-center">
-                                        <div className="text-emerald-500 dark:text-emerald-400 text-6xl transform transition-all duration-500 group-hover:scale-110">
-                                            <FontAwesomeIcon icon={item.icon} />
+                                <div
+                                    className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-emerald-500/10 h-full transform group-hover:translate-y-[-8px]"
+                                >
+                                    <div
+                                        className="h-48 bg-emerald-100 dark:bg-emerald-900/30 relative overflow-hidden flex items-center justify-center"
+                                    >
+                                        <div
+                                            className="text-emerald-500 dark:text-emerald-400 text-6xl transform transition-all duration-500 group-hover:scale-110"
+                                        >
+                                            <FontAwesomeIcon icon={item.icon}/>
                                         </div>
                                     </div>
                                     <div className="p-8">
-                                        <div className="inline-block p-3 bg-emerald-100 dark:bg-emerald-900 rounded-lg mb-4 w-12 h-12 flex items-center justify-center">
-                                            <FontAwesomeIcon icon={item.icon} className="text-emerald-600 dark:text-emerald-400 text-xl" />
+                                        <div
+                                            className="inline-block p-3 bg-emerald-100 dark:bg-emerald-900 rounded-lg mb-4 w-12 h-12 flex items-center justify-center"
+                                        >
+                                            <FontAwesomeIcon
+                                                icon={item.icon}
+                                                className="text-emerald-600 dark:text-emerald-400 text-xl"
+                                            />
                                         </div>
-                                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{item.title}</h3>
-                                        <p className="text-gray-600 dark:text-gray-400 mb-6">{item.desc}</p>
-                                        <NavLink to={item.link || `/features/${item.title.toLowerCase().replace(/\s+/g, "-")}`} className="inline-flex items-center font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300">
+                                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                                            {item.title}
+                                        </h3>
+                                        <p className="text-gray-600 dark:text-gray-400 mb-6">
+                                            {item.desc}
+                                        </p>
+                                        <NavLink
+                                            to={item.link || `/features/${item.title.toLowerCase().replace(/\s+/g, "-")}`}
+                                            className="inline-flex items-center font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
+                                            data-search-api={item.apiUrl}
+                                        >
                                             Learn more
-                                            <FontAwesomeIcon icon={faArrowRight} className="ml-2 text-sm" />
+                                            <FontAwesomeIcon icon={faArrowRight} className="ml-2 text-sm"/>
                                         </NavLink>
                                     </div>
                                 </div>
@@ -257,17 +333,22 @@ const LandingPage_v3 = () => {
             </section>
 
             {/* === Features Showcase Section с параллакс-эффектом === */}
-            <section className="py-24 bg-gradient-to-br from-emerald-900 via-teal-900 to-green-900 dark:from-gray-900 dark:via-gray-800 dark:to-black text-white relative overflow-hidden">
+            <section
+                className="py-24 bg-gradient-to-br from-emerald-900 via-teal-900 to-green-900 dark:from-gray-900 dark:via-gray-800 dark:to-black text-white relative overflow-hidden">
                 {/* Декоративные элементы фона */}
                 <div className="absolute inset-0 overflow-hidden">
-                    <div className="absolute w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-800/30 via-transparent to-transparent opacity-70"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent"></div>
+                    <div
+                        className="absolute w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-800/30 via-transparent to-transparent opacity-70"></div>
+                    <div
+                        className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent"></div>
                 </div>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-20">
+                    <motion.div initial="hidden" whileInView="visible" viewport={{once: true}} variants={fadeInUp}
+                                className="text-center mb-20">
                         <h2 className="text-4xl md:text-5xl font-bold mb-6">Designed for the Modern Developer</h2>
-                        <p className="text-xl text-emerald-100 dark:text-gray-300 max-w-3xl mx-auto">Powerful features that help you focus on what matters most: building great things with great people.</p>
+                        <p className="text-xl text-emerald-100 dark:text-gray-300 max-w-3xl mx-auto">Powerful features
+                            that help you focus on what matters most: building great things with great people.</p>
                     </motion.div>
 
                     <div className="grid md:grid-cols-3 gap-y-12 md:gap-x-8">
@@ -307,9 +388,9 @@ const LandingPage_v3 = () => {
                                 key={index}
                                 initial="hidden"
                                 whileInView="visible"
-                                viewport={{ once: true, amount: 0.3 }}
+                                viewport={{once: true, amount: 0.3}}
                                 variants={{
-                                    hidden: { opacity: 0, y: 30 },
+                                    hidden: {opacity: 0, y: 30},
                                     visible: {
                                         opacity: 1,
                                         y: 0,
@@ -322,8 +403,9 @@ const LandingPage_v3 = () => {
                                 }}
                                 className="flex flex-col items-center text-center px-4"
                             >
-                                <div className="h-16 w-16 rounded-full bg-emerald-700/50 dark:bg-emerald-800/30 flex items-center justify-center text-emerald-400 mb-6">
-                                    <FontAwesomeIcon icon={feature.icon} className="text-xl" />
+                                <div
+                                    className="h-16 w-16 rounded-full bg-emerald-700/50 dark:bg-emerald-800/30 flex items-center justify-center text-emerald-400 mb-6">
+                                    <FontAwesomeIcon icon={feature.icon} className="text-xl"/>
                                 </div>
                                 <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
                                 <p className="text-emerald-100 dark:text-gray-400">{feature.desc}</p>
@@ -336,12 +418,17 @@ const LandingPage_v3 = () => {
             {/* === Testimonials Section с горизонтальной прокруткой === */}
             <section className="py-24 bg-white dark:bg-black overflow-hidden">
                 <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">From the Developer Community</h2>
-                        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">Hear from developers who&apos;ve found success through ConnectIn.</p>
+                    <motion.div initial="hidden" whileInView="visible" viewport={{once: true}} variants={fadeInUp}
+                                className="text-center mb-16">
+                        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">From the
+                            Developer Community</h2>
+                        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">Hear from developers
+                            who&apos;ve found success through ConnectIn.</p>
                     </motion.div>
 
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="flex overflow-x-auto space-x-6 pb-8 -mx-4 px-4 scrollbar-hide">
+                    <motion.div initial="hidden" whileInView="visible" viewport={{once: true}}
+                                variants={staggerContainer}
+                                className="flex overflow-x-auto space-x-6 pb-8 -mx-4 px-4 scrollbar-hide">
                         {[
                             {
                                 quote: "ConnectIn helped me find a project that perfectly matched my skill set. Now I'm contributing to an open-source project that's making a real difference.",
@@ -376,13 +463,16 @@ const LandingPage_v3 = () => {
                             >
                                 <div className="flex flex-col h-full">
                                     <div className="mb-6 flex-grow">
-                                        <svg className="h-8 w-8 text-emerald-500 mb-4" fill="currentColor" viewBox="0 0 32 32">
-                                            <path d="M9.352 4C4.456 7.456 1 13.12 1 19.36c0 5.088 3.072 8.064 6.624 8.064 3.36 0 5.856-2.688 5.856-5.856 0-3.168-2.208-5.472-5.088-5.472-.576 0-1.344.096-1.536.192.48-3.264 3.552-7.104 6.624-9.024L9.352 4zm16.512 0c-4.8 3.456-8.256 9.12-8.256 15.36 0 5.088 3.072 8.064 6.624 8.064 3.264 0 5.856-2.688 5.856-5.856 0-3.168-2.304-5.472-5.184-5.472-.576 0-1.248.096-1.44.192.48-3.264 3.456-7.104 6.528-9.024L25.864 4z" />
+                                        <svg className="h-8 w-8 text-emerald-500 mb-4" fill="currentColor"
+                                             viewBox="0 0 32 32">
+                                            <path
+                                                d="M9.352 4C4.456 7.456 1 13.12 1 19.36c0 5.088 3.072 8.064 6.624 8.064 3.36 0 5.856-2.688 5.856-5.856 0-3.168-2.208-5.472-5.088-5.472-.576 0-1.344.096-1.536.192.48-3.264 3.552-7.104 6.624-9.024L9.352 4zm16.512 0c-4.8 3.456-8.256 9.12-8.256 15.36 0 5.088 3.072 8.064 6.624 8.064 3.264 0 5.856-2.688 5.856-5.856 0-3.168-2.304-5.472-5.184-5.472-.576 0-1.248.096-1.44.192.48-3.264 3.456-7.104 6.528-9.024L25.864 4z"/>
                                         </svg>
                                         <p className="text-gray-700 dark:text-gray-300 italic mb-3">{testimonial.quote}</p>
                                     </div>
                                     <div className="flex items-center">
-                                        <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-emerald-500 dark:text-emerald-400 font-bold mr-4">{testimonial.name.charAt(0)}</div>
+                                        <div
+                                            className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-emerald-500 dark:text-emerald-400 font-bold mr-4">{testimonial.name.charAt(0)}</div>
                                         <div>
                                             <h4 className="font-semibold text-gray-900 dark:text-white">{testimonial.name}</h4>
                                             <p className="text-sm text-emerald-600 dark:text-emerald-400">{testimonial.title}</p>
@@ -398,12 +488,16 @@ const LandingPage_v3 = () => {
             {/* === Pricing Section === */}
             <section className="py-24 bg-white dark:bg-black overflow-hidden">
                 <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-16">
-                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">Simple, Transparent Pricing</h2>
-                        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">Choose the plan that&apos;s right for your development journey.</p>
+                    <motion.div initial="hidden" whileInView="visible" viewport={{once: true}} variants={fadeInUp}
+                                className="text-center mb-16">
+                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">Simple,
+                            Transparent Pricing</h2>
+                        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">Choose the plan
+                            that&apos;s right for your development journey.</p>
                     </motion.div>
 
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="grid md:grid-cols-3 gap-8">
+                    <motion.div initial="hidden" whileInView="visible" viewport={{once: true}}
+                                variants={staggerContainer} className="grid md:grid-cols-3 gap-8">
                         {[
                             {
                                 name: "Free",
@@ -440,21 +534,27 @@ const LandingPage_v3 = () => {
                                     plan.highlighted ? "ring-4 ring-emerald-500 dark:ring-emerald-400" : "border border-emerald-200 dark:border-emerald-800/20"
                                 } transition-all duration-300 group hover:shadow-xl hover:shadow-emerald-500/5 transform hover:translate-y-[-4px]`}
                             >
-                                <div className={`p-8 ${plan.highlighted ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white" : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white"}`}>
+                                <div
+                                    className={`p-8 ${plan.highlighted ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white" : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white"}`}>
                                     <h3 className="text-2xl font-bold mb-1">{plan.name}</h3>
                                     <p className={`mb-5 ${plan.highlighted ? "text-emerald-100" : "text-gray-500 dark:text-gray-400"}`}>{plan.description}</p>
                                     <div className="flex items-baseline mb-5">
                                         <span className="text-4xl font-extrabold tracking-tight">{plan.price}</span>
-                                        {plan.period && <span className={`ml-1 text-xl ${plan.highlighted ? "text-emerald-100" : "text-gray-500 dark:text-gray-400"}`}> {plan.period}</span>}
+                                        {plan.period && <span
+                                            className={`ml-1 text-xl ${plan.highlighted ? "text-emerald-100" : "text-gray-500 dark:text-gray-400"}`}> {plan.period}</span>}
                                     </div>
-                                    <button className={`w-full py-3 px-6 rounded-lg font-medium transition-all transform hover:translate-y-[-2px] ${plan.highlighted ? "bg-white text-emerald-600 hover:bg-gray-50" : "bg-emerald-500 text-white hover:bg-emerald-600"}`}>{plan.cta}</button>
+                                    <button
+                                        className={`w-full py-3 px-6 rounded-lg font-medium transition-all transform hover:translate-y-[-2px] ${plan.highlighted ? "bg-white text-emerald-600 hover:bg-gray-50" : "bg-emerald-500 text-white hover:bg-emerald-600"}`}>{plan.cta}</button>
                                 </div>
                                 <div className="p-8 bg-gray-50 dark:bg-gray-800">
                                     <ul className="space-y-4">
                                         {plan.features.map((feature, idx) => (
                                             <li key={idx} className="flex items-start">
-                                                <svg className="h-6 w-6 text-emerald-500 dark:text-emerald-400 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                <svg
+                                                    className="h-6 w-6 text-emerald-500 dark:text-emerald-400 mr-3 flex-shrink-0"
+                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                                          d="M5 13l4 4L19 7"/>
                                                 </svg>
                                                 <span className="text-gray-700 dark:text-gray-300">{feature}</span>
                                             </li>
@@ -465,7 +565,8 @@ const LandingPage_v3 = () => {
                         ))}
                     </motion.div>
 
-                    <motion.p initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeIn} className="text-center text-gray-600 dark:text-gray-400 mt-10">
+                    <motion.p initial="hidden" whileInView="visible" viewport={{once: true}} variants={fadeIn}
+                              className="text-center text-gray-600 dark:text-gray-400 mt-10">
                         Need a custom solution?{" "}
                         <a href="/contact" className="text-emerald-600 dark:text-emerald-400 hover:underline">
                             Contact our team
@@ -478,7 +579,8 @@ const LandingPage_v3 = () => {
             <section className="py-32 relative overflow-hidden">
                 {/* Градиентный фон с сияющим эффектом */}
                 <div className="absolute inset-0 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 dark:from-emerald-900 dark:via-green-900 dark:to-teal-900"></div>
+                    <div
+                        className="absolute inset-0 bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 dark:from-emerald-900 dark:via-green-900 dark:to-teal-900"></div>
                     <motion.div
                         animate={{
                             scale: [1, 1.2, 1],
@@ -506,15 +608,20 @@ const LandingPage_v3 = () => {
                     />
                 </div>
 
-                <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+                <motion.div initial="hidden" whileInView="visible" viewport={{once: true}} variants={staggerContainer}
+                            className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
                     <motion.h2 variants={fadeInUp} className="text-4xl md:text-6xl font-bold text-white mb-6">
                         Ready to transform your development experience?
                     </motion.h2>
-                    <motion.p variants={fadeInUp} className="text-xl md:text-2xl text-emerald-100 dark:text-emerald-200 mb-10 max-w-3xl mx-auto">
-                        Join thousands of developers who&apos;ve found their perfect projects, teams, and career opportunities on ConnectIn.
+                    <motion.p variants={fadeInUp}
+                              className="text-xl md:text-2xl text-emerald-100 dark:text-emerald-200 mb-10 max-w-3xl mx-auto">
+                        Join thousands of developers who&apos;ve found their perfect projects, teams, and career
+                        opportunities on ConnectIn.
                     </motion.p>
-                    <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <NavLink to="/register" className="bg-white text-emerald-700 px-10 py-4 rounded-full text-lg font-semibold hover:bg-gray-50 transition-all shadow-xl hover:shadow-2xl transform hover:translate-y-[-2px]">
+                    <motion.div variants={fadeInUp}
+                                className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <NavLink to="/register"
+                                 className="bg-white text-emerald-700 px-10 py-4 rounded-full text-lg font-semibold hover:bg-gray-50 transition-all shadow-xl hover:shadow-2xl transform hover:translate-y-[-2px]">
                             Join ConnectIn Today
                         </NavLink>
                         {/*<NavLink to="/demo" className="text-white border border-white/40 bg-white/10 backdrop-blur-sm px-10 py-4 rounded-full text-lg font-semibold hover:bg-white/20 transition-all">*/}

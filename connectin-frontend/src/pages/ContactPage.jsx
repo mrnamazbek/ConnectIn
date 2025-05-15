@@ -70,7 +70,7 @@ const ContactPage = () => {
                         <FontAwesomeIcon icon={faEnvelope} size="lg" />
                     </div>
                     <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Email</h3>
-                    <p className="text-gray-600 dark:text-gray-400">support@connectin.dev</p>
+                    <p className="text-gray-600 dark:text-gray-400">bekzhanovnnn@gmail.com</p>
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
@@ -78,7 +78,7 @@ const ContactPage = () => {
                         <FontAwesomeIcon icon={faMapMarkerAlt} size="lg" />
                     </div>
                     <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Location</h3>
-                    <p className="text-gray-600 dark:text-gray-400">San Francisco, CA</p>
+                    <p className="text-gray-600 dark:text-gray-400">Kazakhstan, Almaty</p>
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
@@ -86,7 +86,11 @@ const ContactPage = () => {
                         <FontAwesomeIcon icon={faPhone} size="lg" />
                     </div>
                     <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Phone</h3>
-                    <p className="text-gray-600 dark:text-gray-400">+1 (555) 123-4567</p>
+                    <div className="text-gray-600 dark:text-gray-400">
+                        <p>Backend Developer: 8700 564 6454</p>
+                        <p>Frontend Developer: +77057156574</p>
+                        <p>Project Manager: +77758798483</p>
+                    </div>
                 </div>
             </div>
 

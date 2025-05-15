@@ -7,6 +7,43 @@ import { toast } from "react-toastify";
 
 const LICENSE_KEY = import.meta.env.VITE_CKEDITOR_LICENSE_KEY;
 
+// Custom CSS for CKEditor in dark mode
+const darkModeEditorStyles = `
+  .ck.ck-editor__editable_inline {
+    background-color: #1f2937 !important;
+    color: #e5e7eb !important;
+    border-color: #374151 !important;
+  }
+  
+  .ck.ck-toolbar {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+  }
+  
+  .ck.ck-button {
+    color: #e5e7eb !important;
+  }
+  
+  .ck.ck-button.ck-on {
+    background-color: #374151 !important;
+    color: #e5e7eb !important;
+  }
+  
+  .ck.ck-list {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+  }
+  
+  .ck.ck-list__item .ck-button {
+    color: #e5e7eb !important;
+  }
+  
+  .ck.ck-dropdown__panel {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+  }
+`;
+
 const PublishPage = () => {
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
@@ -21,7 +58,46 @@ const PublishPage = () => {
     const [showAllTags, setShowAllTags] = useState(false);
     const [showAllSkills, setShowAllSkills] = useState(false);
     const [error, setError] = useState(null);
+    const [isDarkMode, setIsDarkMode] = useState(false);
     const cloud = useCKEditorCloud({ version: "44.1.0" });
+
+    useEffect(() => {
+        // Check if the page is in dark mode
+        const checkDarkMode = () => {
+            const isDark = document.documentElement.classList.contains('dark');
+            setIsDarkMode(isDark);
+        };
+
+        // Initial check
+        checkDarkMode();
+
+        // Add a mutation observer to detect theme changes
+        const observer = new MutationObserver(checkDarkMode);
+        observer.observe(document.documentElement, { 
+            attributes: true, 
+            attributeFilter: ['class'] 
+        });
+
+        // Clean up
+        return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => {
+        // Apply dark mode styles to CKEditor
+        if (isDarkMode) {
+            if (!document.getElementById('ckeditor-dark-mode')) {
+                const style = document.createElement('style');
+                style.id = 'ckeditor-dark-mode';
+                style.innerHTML = darkModeEditorStyles;
+                document.head.appendChild(style);
+            }
+        } else {
+            const darkStyle = document.getElementById('ckeditor-dark-mode');
+            if (darkStyle) {
+                darkStyle.remove();
+            }
+        }
+    }, [isDarkMode]);
 
     useEffect(() => {
         const fetchData = async () => {

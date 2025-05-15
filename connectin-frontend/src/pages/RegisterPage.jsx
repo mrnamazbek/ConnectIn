@@ -5,10 +5,22 @@ import { useNavigate } from "react-router";
 import { NavLink } from "react-router";
 import { ReactTyped } from "react-typed";
 import { faShareNodes, faGlobe, faArrowUpRightDots } from "@fortawesome/free-solid-svg-icons";
+import { faGoogle, faGithub } from "@fortawesome/free-brands-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useEffect } from "react";
+import useAuthStore from "../store/authStore";
 
 const RegisterPage = () => {
     const navigate = useNavigate();
+    const { handleOAuthCookies } = useAuthStore();
+
+    useEffect(() => {
+        // Check for OAuth cookies on component mount
+        const authSuccess = handleOAuthCookies();
+        if (authSuccess) {
+            navigate("/");
+        }
+    }, [handleOAuthCookies, navigate]);
 
     const validationSchema = Yup.object({
         username: Yup.string().min(3, "Username must be at least 3 characters").required("Username is required"),
@@ -55,6 +67,14 @@ const RegisterPage = () => {
             }
         },
     });
+
+    const handleGoogleLogin = () => {
+        window.location.href = `${import.meta.env.VITE_API_URL}/auth/google/login`;
+    };
+
+    const handleGithubLogin = () => {
+        window.location.href = `${import.meta.env.VITE_API_URL}/auth/github/login`;
+    };
 
     return (
         <div className="flex justify-center items-center min-h-screen -mt-20 px-4 bg-white dark:bg-black">
@@ -136,6 +156,33 @@ const RegisterPage = () => {
                         <div className="mt-4 sm:mt-5">
                             <button type="submit" disabled={formik.isSubmitting} className="w-full font-semibold bg-green-700 dark:bg-green-600 shadow-md text-white py-2 rounded-md hover:bg-green-600 dark:hover:bg-green-500 transition cursor-pointer disabled:opacity-70 text-sm sm:text-base">
                                 {formik.isSubmitting ? "Signing up..." : "Sign up"}
+                            </button>
+                        </div>
+
+                        {/* Social Login Divider */}
+                        <div className="flex items-center my-3">
+                            <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+                            <div className="px-3 text-xs text-gray-500 dark:text-gray-400">OR</div>
+                            <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+                        </div>
+
+                        {/* Social Login Buttons */}
+                        <div className="flex flex-col space-y-2">
+                            <button
+                                type="button"
+                                onClick={handleGoogleLogin}
+                                className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
+                            >
+                                <FontAwesomeIcon icon={faGoogle} className="text-red-500" />
+                                <span>Continue with Google</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleGithubLogin}
+                                className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
+                            >
+                                <FontAwesomeIcon icon={faGithub} className="text-gray-800 dark:text-white" />
+                                <span>Continue with GitHub</span>
                             </button>
                         </div>
 

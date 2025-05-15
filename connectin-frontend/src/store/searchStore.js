@@ -20,6 +20,13 @@ const useSearchStore = create((set, get) => ({
     },
     activeTab: "all", // 'all', 'posts', 'projects', 'users'
     hasSearched: false,
+    
+    // Pagination
+    pagination: {
+        currentPage: 1,
+        pageSize: 10,
+        totalItems: 0,
+    },
 
     // Set active tab
     setActiveTab: (tab) => set({ activeTab: tab }),
@@ -27,85 +34,176 @@ const useSearchStore = create((set, get) => ({
     // Set query
     setQuery: (query) => set({ query }),
 
+    // Update pagination
+    setPagination: (paginationData) => set({
+        pagination: { ...get().pagination, ...paginationData }
+    }),
+
     // Clear search results
     clearResults: () =>
         set({
             results: { posts: [], projects: [], users: [] },
             hasSearched: false,
             error: null,
+            pagination: {
+                currentPage: 1,
+                pageSize: 10,
+                totalItems: 0,
+            }
         }),
 
-    // Load all data for client-side search
-    loadAllData: async () => {
+    // Load data for specific type only when needed
+    loadDataByType: async (type) => {
         const { cachedData } = get();
         const now = new Date();
+        const cacheTimeout = 5 * 60 * 1000; // 5 minutes
 
         // Only fetch if we haven't cached or cache is older than 5 minutes
-        if (!cachedData.lastFetched || now - cachedData.lastFetched > 5 * 60 * 1000) {
+        if (!cachedData.lastFetched || now - cachedData.lastFetched > cacheTimeout) {
             try {
-                // Fetch all posts, projects and users
-                const [postsResponse, projectsResponse, usersResponse] = await Promise.all([axios.get(`${import.meta.env.VITE_API_URL}/posts/`), axios.get(`${import.meta.env.VITE_API_URL}/projects/`), axios.get(`${import.meta.env.VITE_API_URL}/users/`)]);
-
-                set({
-                    cachedData: {
-                        posts: postsResponse.data.items || [],
-                        projects: projectsResponse.data.items || [],
-                        users: usersResponse.data || [],
-                        lastFetched: new Date(),
-                    },
-                });
-
-                return {
-                    posts: postsResponse.data.items || [],
-                    projects: projectsResponse.data.items || [],
-                    users: usersResponse.data || [],
-                };
+                let updatedCache = { ...cachedData };
+                
+                if (type === 'posts' || type === 'all') {
+                    const postsResponse = await axios.get(`${import.meta.env.VITE_API_URL}/posts/`);
+                    updatedCache.posts = postsResponse.data.items || [];
+                }
+                
+                if (type === 'projects' || type === 'all') {
+                    const projectsResponse = await axios.get(`${import.meta.env.VITE_API_URL}/projects/`);
+                    updatedCache.projects = projectsResponse.data.items || [];
+                }
+                
+                if (type === 'users' || type === 'all') {
+                    const usersResponse = await axios.get(`${import.meta.env.VITE_API_URL}/users/`);
+                    updatedCache.users = usersResponse.data || [];
+                }
+                
+                updatedCache.lastFetched = now;
+                set({ cachedData: updatedCache });
+                
+                return updatedCache;
             } catch (error) {
-                console.error("Error loading all data for client-side search:", error);
-                return { posts: [], projects: [], users: [] };
+                console.error(`Error loading ${type} data for client-side search:`, error);
+                return cachedData;
             }
         }
 
-        return {
-            posts: cachedData.posts,
-            projects: cachedData.projects,
-            users: cachedData.users,
-        };
+        return cachedData;
     },
 
-    // Perform client-side search
-    performClientSideSearch: (query) => {
-        const { cachedData } = get();
+    // Perform client-side search with pagination
+    performClientSideSearch: (query, page = 1, pageSize = 10) => {
+        const { cachedData, activeTab } = get();
         const lowercaseQuery = query.toLowerCase();
+        let results = { posts: [], projects: [], users: [] };
+        
+        // Only search in types that are needed based on activeTab
+        if (activeTab === 'all' || activeTab === 'posts') {
+            // Filter posts
+            const allFilteredPosts = cachedData.posts.filter(
+                (post) => 
+                    post.title?.toLowerCase().includes(lowercaseQuery) || 
+                    post.content?.toLowerCase().includes(lowercaseQuery) || 
+                    post.tags?.some((tag) => tag.toLowerCase().includes(lowercaseQuery))
+            );
+            
+            // Apply pagination to posts
+            const startIdx = (page - 1) * pageSize;
+            results.posts = allFilteredPosts.slice(startIdx, startIdx + pageSize);
+            
+            // Set total count for pagination
+            if (activeTab === 'posts') {
+                set(state => ({
+                    pagination: {
+                        ...state.pagination,
+                        totalItems: allFilteredPosts.length
+                    }
+                }));
+            }
+        }
 
-        // Filter posts
-        const filteredPosts = cachedData.posts.filter((post) => post.title?.toLowerCase().includes(lowercaseQuery) || post.content?.toLowerCase().includes(lowercaseQuery) || post.tags?.some((tag) => tag.toLowerCase().includes(lowercaseQuery)));
+        if (activeTab === 'all' || activeTab === 'projects') {
+            // Filter projects
+            const allFilteredProjects = cachedData.projects.filter(
+                (project) =>
+                    project.name?.toLowerCase().includes(lowercaseQuery) || 
+                    project.description?.toLowerCase().includes(lowercaseQuery) || 
+                    project.tags?.some((tag) => tag.name.toLowerCase().includes(lowercaseQuery)) || 
+                    project.skills?.some((skill) => skill.name.toLowerCase().includes(lowercaseQuery))
+            );
+            
+            // Apply pagination to projects
+            const startIdx = (page - 1) * pageSize;
+            results.projects = allFilteredProjects.slice(startIdx, startIdx + pageSize);
+            
+            // Set total count for pagination
+            if (activeTab === 'projects') {
+                set(state => ({
+                    pagination: {
+                        ...state.pagination,
+                        totalItems: allFilteredProjects.length
+                    }
+                }));
+            }
+        }
 
-        // Filter projects
-        const filteredProjects = cachedData.projects.filter(
-            (project) =>
-                project.name?.toLowerCase().includes(lowercaseQuery) || project.description?.toLowerCase().includes(lowercaseQuery) || project.tags?.some((tag) => tag.name.toLowerCase().includes(lowercaseQuery)) || project.skills?.some((skill) => skill.name.toLowerCase().includes(lowercaseQuery))
-        );
+        if (activeTab === 'all' || activeTab === 'users') {
+            // Filter users
+            const allFilteredUsers = cachedData.users.filter(
+                (user) => 
+                    user.username?.toLowerCase().includes(lowercaseQuery) || 
+                    user.first_name?.toLowerCase().includes(lowercaseQuery) || 
+                    user.last_name?.toLowerCase().includes(lowercaseQuery)
+            );
+            
+            // Apply pagination to users
+            const startIdx = (page - 1) * pageSize;
+            results.users = allFilteredUsers.slice(startIdx, startIdx + pageSize);
+            
+            // Set total count for pagination
+            if (activeTab === 'users') {
+                set(state => ({
+                    pagination: {
+                        ...state.pagination,
+                        totalItems: allFilteredUsers.length
+                    }
+                }));
+            }
+        }
 
-        // Filter users
-        const filteredUsers = cachedData.users.filter((user) => user.username?.toLowerCase().includes(lowercaseQuery) || user.first_name?.toLowerCase().includes(lowercaseQuery) || user.last_name?.toLowerCase().includes(lowercaseQuery));
+        // Calculate total items for 'all' tab
+        if (activeTab === 'all') {
+            set(state => ({
+                pagination: {
+                    ...state.pagination,
+                    totalItems: results.posts.length + results.projects.length + results.users.length
+                }
+            }));
+        }
 
-        return {
-            posts: filteredPosts,
-            projects: filteredProjects,
-            users: filteredUsers,
-        };
+        return results;
     },
 
-    // Search function that fetches posts, projects and users
+    // Optimized search function that fetches only data for the active tab
     search: async (query, options = {}) => {
-        const { abort = false, page = 1, page_size = 10 } = options;
+        const { abort = false, page = 1, pageSize = 10 } = options;
+        const { activeTab } = get();
 
         // If abort is true and we're already loading, don't proceed
         if (abort && get().loading) return;
 
         // Update query in store
-        set({ query, loading: true, error: null, hasSearched: true });
+        set({ 
+            query, 
+            loading: true, 
+            error: null, 
+            hasSearched: true,
+            pagination: {
+                ...get().pagination,
+                currentPage: page,
+                pageSize: pageSize
+            }
+        });
 
         // Trim the query to handle whitespace properly
         const trimmedQuery = query.trim();
@@ -124,43 +222,68 @@ const useSearchStore = create((set, get) => ({
         }
 
         try {
-            // Attempt to load all data for client-side search if not already loaded
-            await get().loadAllData();
-
-            // Build the search URLs with proper query parameters
-            const postsSearchUrl = `${import.meta.env.VITE_API_URL}/posts/search?query=${encodeURIComponent(trimmedQuery)}&page=${page}&page_size=${page_size}`;
-            const projectsSearchUrl = `${import.meta.env.VITE_API_URL}/projects/search?query=${encodeURIComponent(trimmedQuery)}&page=${page}&page_size=${page_size}`;
-            const usersSearchUrl = `${import.meta.env.VITE_API_URL}/users/search?query=${encodeURIComponent(trimmedQuery)}`;
-
-            // Try server-side search first
-            const serverSearchPromise = Promise.all([
-                axios.get(postsSearchUrl).catch((error) => {
-                    console.warn("Posts search API error (falling back to client-side):", error);
-                    return { data: null };
-                }),
-                axios.get(projectsSearchUrl).catch((error) => {
-                    console.warn("Projects search API error (falling back to client-side):", error);
-                    return { data: null };
-                }),
-                axios.get(usersSearchUrl).catch((error) => {
-                    console.warn("Users search API error (falling back to client-side):", error);
-                    return { data: null };
-                }),
-            ]);
-
-            const [postsResponse, projectsResponse, usersResponse] = await serverSearchPromise;
-            let results;
-
-            // If all API searches fail, use client-side search
-            if (postsResponse.data === null && projectsResponse.data === null && usersResponse.data === null) {
-                results = get().performClientSideSearch(trimmedQuery);
-            } else {
-                // Use a mix of API and client-side results if needed
-                results = {
-                    posts: postsResponse.data !== null ? postsResponse.data : get().performClientSideSearch(trimmedQuery).posts,
-                    projects: projectsResponse.data !== null ? projectsResponse.data : get().performClientSideSearch(trimmedQuery).projects,
-                    users: usersResponse.data !== null ? usersResponse.data : get().performClientSideSearch(trimmedQuery).users,
-                };
+            // Determine which endpoints to call based on activeTab
+            let endpointsToCall = [];
+            
+            if (activeTab === 'all' || activeTab === 'posts') {
+                endpointsToCall.push({
+                    type: 'posts',
+                    url: `${import.meta.env.VITE_API_URL}/posts/search?query=${encodeURIComponent(trimmedQuery)}&page=${page}&page_size=${pageSize}`
+                });
+            }
+            
+            if (activeTab === 'all' || activeTab === 'projects') {
+                endpointsToCall.push({
+                    type: 'projects',
+                    url: `${import.meta.env.VITE_API_URL}/projects/search?query=${encodeURIComponent(trimmedQuery)}&page=${page}&page_size=${pageSize}`
+                });
+            }
+            
+            if (activeTab === 'all' || activeTab === 'users') {
+                endpointsToCall.push({
+                    type: 'users',
+                    url: `${import.meta.env.VITE_API_URL}/users/search?query=${encodeURIComponent(trimmedQuery)}`
+                });
+            }
+            
+            // Make API calls in parallel only for the needed types
+            const apiResults = await Promise.all(
+                endpointsToCall.map(endpoint => 
+                    axios.get(endpoint.url)
+                        .then(response => ({ type: endpoint.type, data: response.data, success: true }))
+                        .catch(error => {
+                            console.warn(`${endpoint.type} search API error (falling back to client-side):`, error);
+                            return { type: endpoint.type, data: null, success: false };
+                        })
+                )
+            );
+            
+            // Process results
+            let results = { posts: [], projects: [], users: [] };
+            let useClientSideFallback = false;
+            
+            apiResults.forEach(result => {
+                if (result.success && result.data) {
+                    results[result.type] = result.data;
+                } else {
+                    useClientSideFallback = true;
+                }
+            });
+            
+            // If any API call failed, load necessary data for client-side search
+            if (useClientSideFallback) {
+                // Load only the data types we need based on activeTab
+                await get().loadDataByType(activeTab);
+                
+                // Perform client-side search for missing data types
+                const clientSideResults = get().performClientSideSearch(trimmedQuery, page, pageSize);
+                
+                // Merge API results with client-side results
+                apiResults.forEach(result => {
+                    if (!result.success || !result.data) {
+                        results[result.type] = clientSideResults[result.type];
+                    }
+                });
             }
 
             // Set results
@@ -173,13 +296,19 @@ const useSearchStore = create((set, get) => ({
         } catch (error) {
             console.error("Search error:", error);
 
+            // Only load data for the active tab
+            await get().loadDataByType(activeTab);
+            
             // Fall back to client-side search
-            const clientResults = get().performClientSideSearch(trimmedQuery);
+            const clientResults = get().performClientSideSearch(trimmedQuery, page, pageSize);
 
             set({
                 loading: false,
                 results: clientResults,
-                error: clientResults.posts.length === 0 && clientResults.projects.length === 0 && clientResults.users.length === 0 ? "No results found" : null,
+                error: 
+                    clientResults.posts.length === 0 && 
+                    clientResults.projects.length === 0 && 
+                    clientResults.users.length === 0 ? "No results found" : null,
             });
 
             return clientResults;
@@ -208,6 +337,11 @@ const useSearchStore = create((set, get) => ({
         const { results } = get();
         return results.posts.length + results.projects.length + results.users.length;
     },
+
+    // Get pagination data
+    getPagination: () => {
+        return get().pagination;
+    }
 }));
 
 export default useSearchStore;

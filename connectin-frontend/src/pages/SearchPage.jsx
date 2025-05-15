@@ -1,45 +1,86 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useLocation } from "react-router";
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faSpinner, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { faSearch, faSpinner, faInfoCircle, faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import SearchResults from "../components/Search/SearchResults";
 import useSearchStore from "../store/searchStore";
+import { debounce } from "lodash";
 
 export default function SearchPage() {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const initialQuery = queryParams.get("q") || "";
     const [showLengthHint, setShowLengthHint] = useState(false);
+    const [localQuery, setLocalQuery] = useState(initialQuery);
 
-    const { query, setQuery, search, clearResults, loading } = useSearchStore();
+    const { 
+        query, 
+        setQuery, 
+        search, 
+        clearResults, 
+        loading,
+        pagination,
+        setPagination,
+        getTotalCount
+    } = useSearchStore();
+
+    // Debounced search function
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const debouncedSearch = useCallback(
+        debounce((searchQuery) => {
+            if (searchQuery.trim().length >= 3) {
+                search(searchQuery);
+                // Update URL with search query
+                const url = new URL(window.location);
+                url.searchParams.set("q", searchQuery);
+                window.history.pushState({}, "", url);
+            } else if (searchQuery.trim() === "") {
+                clearResults();
+                // Remove query parameter from URL
+                const url = new URL(window.location);
+                url.searchParams.delete("q");
+                window.history.pushState({}, "", url);
+            }
+        }, 500),
+        [search, clearResults]
+    );
 
     // Set initial query from URL and search if there is a query
     useEffect(() => {
         if (initialQuery) {
             setQuery(initialQuery);
+            setLocalQuery(initialQuery);
             search(initialQuery);
         }
     }, [initialQuery, setQuery, search]);
 
-    // Handle input change - only update query state and show hint
+    // Handle input change - update local state and show hint
     const handleInputChange = (e) => {
         const value = e.target.value;
+        setLocalQuery(value);
         setQuery(value);
+        
         // Show hint if query is less than 3 characters and not empty
         setShowLengthHint(value.trim().length > 0 && value.trim().length < 3);
+        
+        // Trigger debounced search for queries of 3+ characters
+        if (value.trim().length >= 3 || value.trim() === "") {
+            debouncedSearch(value);
+        }
     };
 
-    // Handle submit - search and update URL
+    // Handle submit - immediately search without debounce
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (query.trim().length >= 3) {
-            search(query);
+        if (localQuery.trim().length >= 3) {
+            debouncedSearch.cancel(); // Cancel any pending debounced searches
+            search(localQuery);
             // Update URL with search query
             const url = new URL(window.location);
-            url.searchParams.set("q", query);
+            url.searchParams.set("q", localQuery);
             window.history.pushState({}, "", url);
-        } else if (query.trim() === "") {
+        } else if (localQuery.trim() === "") {
             clearResults();
             // Remove query parameter from URL
             const url = new URL(window.location);
@@ -48,25 +89,19 @@ export default function SearchPage() {
         }
     };
 
-    // Handle key press - search only on Enter
-    const handleKeyPress = (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            if (query.trim().length >= 3) {
-                search(query);
-                // Update URL with search query
-                const url = new URL(window.location);
-                url.searchParams.set("q", query);
-                window.history.pushState({}, "", url);
-            } else if (query.trim() === "") {
-                clearResults();
-                // Remove query parameter from URL
-                const url = new URL(window.location);
-                url.searchParams.delete("q");
-                window.history.pushState({}, "", url);
-            }
+    // Handle pagination
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1) {
+            setPagination({ currentPage: newPage });
+            search(query, { page: newPage, pageSize: pagination.pageSize });
+            
+            // Scroll to top of results
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
+
+    // Calculate total pages
+    const totalPages = Math.ceil(pagination.totalItems / pagination.pageSize) || 1;
 
     return (
         <div className="container mx-auto py-5 min-h-screen">
@@ -80,9 +115,8 @@ export default function SearchPage() {
                         <input
                             type="text"
                             placeholder="Search for posts, projects, skills... (min. 3 characters)"
-                            value={query}
+                            value={localQuery}
                             onChange={handleInputChange}
-                            onKeyPress={handleKeyPress}
                             className="w-full bg-white text-sm pl-10 pr-4 py-3 border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                         />
                         {showLengthHint && (
@@ -95,8 +129,8 @@ export default function SearchPage() {
                     <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        disabled={!query.trim() || query.trim().length < 3 || loading}
-                        className={`mt-2 sm:mt-0 cursor-pointer px-6 py-3 font-semibold text-white rounded-md shadow-md transition ${!query.trim() || query.trim().length < 3 || loading ? "bg-gray-400 cursor-not-allowed" : "bg-green-700 hover:bg-green-600"}`}
+                        disabled={!localQuery.trim() || localQuery.trim().length < 3 || loading}
+                        className={`mt-2 sm:mt-0 cursor-pointer px-6 py-3 font-semibold text-white rounded-md shadow-md transition ${!localQuery.trim() || localQuery.trim().length < 3 || loading ? "bg-gray-400 cursor-not-allowed" : "bg-green-700 hover:bg-green-600"}`}
                         type="submit"
                     >
                         {loading ? (
@@ -111,9 +145,39 @@ export default function SearchPage() {
                 </form>
             </motion.div>
 
-            {/* Search Results - removed grid */}
+            {/* Search Results */}
             <div className="w-full">
                 <SearchResults />
+
+                {/* Pagination Controls */}
+                {getTotalCount() > 0 && (
+                    <div className="flex justify-center items-center mt-8 mb-4">
+                        <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow">
+                            <button
+                                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                                disabled={pagination.currentPage <= 1}
+                                className={`p-2 rounded-md ${pagination.currentPage <= 1 ? 'text-gray-400 cursor-not-allowed' : 'text-green-700 hover:bg-green-50 dark:hover:bg-gray-700'}`}
+                            >
+                                <FontAwesomeIcon icon={faChevronLeft} />
+                            </button>
+                            
+                            <div className="text-sm font-medium mx-2">
+                                Page {pagination.currentPage} of {totalPages}
+                                <span className="text-gray-500 ml-2 hidden sm:inline">
+                                    ({pagination.totalItems} {pagination.totalItems === 1 ? 'result' : 'results'})
+                                </span>
+                            </div>
+                            
+                            <button
+                                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                                disabled={pagination.currentPage >= totalPages}
+                                className={`p-2 rounded-md ${pagination.currentPage >= totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-green-700 hover:bg-green-50 dark:hover:bg-gray-700'}`}
+                            >
+                                <FontAwesomeIcon icon={faChevronRight} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     STRIPE_WEBHOOK_SECRET: str = "whsec_..."  # Секрет для проверки подписи вебхуков
 
     OPENAI_API_KEY: str = Field(..., env="OPENAI_API_KEY")
-    FRONTEND_URL: str = Field("http://localhost:8000/docs")
+    FRONTEND_URL: str = Field("http://localhost:5173", env="FRONTEND_URL")
     ENVIRONMENT: str = Field("development", env="ENVIRONMENT")
     
     SECRET_KEY: str = Field(..., env="SECRET_KEY")

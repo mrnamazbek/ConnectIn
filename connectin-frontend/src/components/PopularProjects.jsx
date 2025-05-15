@@ -16,9 +16,12 @@ const PopularProjects = () => {
                         limit: 3,
                     },
                 });
-                setPopularProjects(response.data);
+                // Ensure data is an array before setting state
+                const data = Array.isArray(response.data) ? response.data : [];
+                setPopularProjects(data);
             } catch (error) {
                 console.error("Error fetching popular projects:", error);
+                setPopularProjects([]);
             } finally {
                 setLoading(false);
             }

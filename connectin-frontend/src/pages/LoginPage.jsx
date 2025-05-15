@@ -5,17 +5,30 @@ import { Link, useNavigate, useLocation } from "react-router";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { ReactTyped } from "react-typed";
 import { faLightbulb, faHandshakeSimple, faRocket } from "@fortawesome/free-solid-svg-icons";
+import { faGoogle, faGithub } from "@fortawesome/free-brands-svg-icons";
+import { useEffect } from "react";
 import useAuthStore from "../store/authStore";
+import OAuthHandler from "../components/OAuthHandler";
 
 const LoginPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { login, loading } = useAuthStore();
+    const { login, loading, handleOAuthCookies } = useAuthStore();
 
     const validationSchema = Yup.object({
         username: Yup.string().required("Username is required").min(3, "Username must be at least 3 characters long"),
         password: Yup.string().required("Password is required"),
     });
+
+    useEffect(() => {
+        // Check for OAuth cookies on component mount
+        const authSuccess = handleOAuthCookies();
+        if (authSuccess) {
+            // Redirect to the page user was trying to access, or home
+            const from = location.state?.from || "/";
+            navigate(from);
+        }
+    }, [handleOAuthCookies, navigate, location.state]);
 
     const formik = useFormik({
         initialValues: {
@@ -38,8 +51,41 @@ const LoginPage = () => {
         },
     });
 
+    const handleGoogleLogin = () => {
+        // Add a loading state indicator if needed
+        // setGoogleLoading(true);
+
+        // Store the current path in localStorage to redirect back after login
+        const currentPath = location.pathname;
+        if (currentPath !== '/login') {
+            localStorage.setItem('login_redirect', currentPath);
+        }
+
+        // For security, we can add a state parameter
+        const state = Math.random().toString(36).substring(2);
+        localStorage.setItem('oauth_state', state);
+        
+        // Redirect to Google OAuth endpoint
+        window.location.href = `${import.meta.env.VITE_API_URL}/auth/google/login`;
+    };
+
+    const handleGithubLogin = () => {
+        // Similar implementation to Google login
+        // Store redirect info
+        const currentPath = location.pathname;
+        if (currentPath !== '/login') {
+            localStorage.setItem('login_redirect', currentPath);
+        }
+
+        // Redirect to GitHub OAuth endpoint
+        window.location.href = `${import.meta.env.VITE_API_URL}/auth/github/login`;
+    };
+
     return (
         <div className="flex justify-center items-center min-h-screen -mt-20 px-4">
+            {/* This component handles OAuth callbacks */}
+            <OAuthHandler />
+            
             <div className="flex flex-wrap md:flex-nowrap border border-green-700 dark:border-green-500 rounded-md bg-white dark:bg-gray-800 shadow-lg w-full max-w-3xl">
                 {/* Left Side: Form */}
                 <div className="flex flex-col flex-1 p-4 sm:p-6">
@@ -97,6 +143,33 @@ const LoginPage = () => {
                                 ) : (
                                     "Sign in"
                                 )}
+                            </button>
+                        </div>
+
+                        {/* Social Login Divider */}
+                        <div className="flex items-center my-3">
+                            <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+                            <div className="px-3 text-xs text-gray-500 dark:text-gray-400">OR</div>
+                            <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+                        </div>
+
+                        {/* Social Login Buttons */}
+                        <div className="flex flex-col space-y-2">
+                            <button
+                                type="button"
+                                onClick={handleGoogleLogin}
+                                className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
+                            >
+                                <FontAwesomeIcon icon={faGoogle} className="text-red-500" />
+                                <span>Continue with Google</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleGithubLogin}
+                                className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
+                            >
+                                <FontAwesomeIcon icon={faGithub} className="text-gray-800 dark:text-white" />
+                                <span>Continue with GitHub</span>
                             </button>
                         </div>
 

@@ -8,6 +8,7 @@ import { faLightbulb, faHandshakeSimple, faRocket } from "@fortawesome/free-soli
 import { faGoogle, faGithub } from "@fortawesome/free-brands-svg-icons";
 import { useEffect } from "react";
 import useAuthStore from "../store/authStore";
+import OAuthHandler from "../components/OAuthHandler";
 
 const LoginPage = () => {
     const navigate = useNavigate();
@@ -51,15 +52,40 @@ const LoginPage = () => {
     });
 
     const handleGoogleLogin = () => {
+        // Add a loading state indicator if needed
+        // setGoogleLoading(true);
+
+        // Store the current path in localStorage to redirect back after login
+        const currentPath = location.pathname;
+        if (currentPath !== '/login') {
+            localStorage.setItem('login_redirect', currentPath);
+        }
+
+        // For security, we can add a state parameter
+        const state = Math.random().toString(36).substring(2);
+        localStorage.setItem('oauth_state', state);
+        
+        // Redirect to Google OAuth endpoint
         window.location.href = `${import.meta.env.VITE_API_URL}/auth/google/login`;
     };
 
     const handleGithubLogin = () => {
+        // Similar implementation to Google login
+        // Store redirect info
+        const currentPath = location.pathname;
+        if (currentPath !== '/login') {
+            localStorage.setItem('login_redirect', currentPath);
+        }
+
+        // Redirect to GitHub OAuth endpoint
         window.location.href = `${import.meta.env.VITE_API_URL}/auth/github/login`;
     };
 
     return (
         <div className="flex justify-center items-center min-h-screen -mt-20 px-4">
+            {/* This component handles OAuth callbacks */}
+            <OAuthHandler />
+            
             <div className="flex flex-wrap md:flex-nowrap border border-green-700 dark:border-green-500 rounded-md bg-white dark:bg-gray-800 shadow-lg w-full max-w-3xl">
                 {/* Left Side: Form */}
                 <div className="flex flex-col flex-1 p-4 sm:p-6">

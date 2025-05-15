@@ -86,23 +86,41 @@ def set_auth_cookies(response: RedirectResponse, access_token: str, refresh_toke
     """
     Устанавливает access и refresh токены в куки ответа и возвращает его.
     """
-    # Настраиваем куки с нужными параметрами
+    # Get frontend URL for SameSite configuration
+    frontend_url = settings.FRONTEND_URL
+    is_secure = frontend_url.startswith("https")
+    
+    # Parse the frontend URL to get the domain
+    from urllib.parse import urlparse
+    parsed_url = urlparse(frontend_url)
+    domain = parsed_url.netloc
+    
+    # Log cookie settings for debugging
+    logger.info(f"Setting cookies for domain: {domain}, secure: {is_secure}")
+    logger.info(f"Frontend URL: {frontend_url}")
+    
+    # Access token cookie - short lived
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,
-        samesite="lax",
-        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        secure=is_secure,  # True for HTTPS, False for HTTP
+        samesite="lax",    # Use "none" for cross-site requests when secure=True
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/"           # Make cookie available across all paths
     )
+    
+    # Refresh token cookie - longer lived
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
-        samesite="lax",
-        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+        secure=is_secure,  # True for HTTPS, False for HTTP
+        samesite="lax",    # Use "none" for cross-site requests when secure=True
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        path="/"           # Make cookie available across all paths
     )
+    
     return response
 
 def generate_unique_username(base_username: str, db: Session) -> str:

@@ -25,18 +25,23 @@ oauth = OAuth()
 class OAuthSettings:
     """Класс для хранения настроек OAuth для Google и GitHub."""
     def __init__(self):
+        # Google OAuth configuration
         self.google = {
             "client_id": settings.GOOGLE_CLIENT_ID,
             "client_secret": settings.GOOGLE_CLIENT_SECRET,
             "server_metadata_url": "https://accounts.google.com/.well-known/openid-configuration",
-            "client_kwargs": {"scope": "openid email profile"},
+            "client_kwargs": {
+                "scope": "openid email profile",
+                "prompt": "select_account"  # Always show account selector
+            }
         }
+        # GitHub OAuth configuration
         self.github = {
             "client_id": settings.GITHUB_CLIENT_ID,
             "client_secret": settings.GITHUB_CLIENT_SECRET,
             "authorize_url": "https://github.com/login/oauth/authorize",
             "access_token_url": "https://github.com/login/oauth/access_token",
-            "client_kwargs": {"scope": "user:email"},
+            "client_kwargs": {"scope": "user:email"}
         }
 
 oauth_settings = OAuthSettings()
@@ -44,16 +49,18 @@ oauth_settings = OAuthSettings()
 # Регистрация Google OAuth
 try:
     oauth.register(name="google", **oauth_settings.google)
-    logger.info("✅ Google OAuth успешно настроен с ID: %s", settings.GOOGLE_CLIENT_ID[:8] + "...")
-    logger.info("✅ Google redirect URI: %s", settings.GOOGLE_REDIRECT_URI)
+    logger.info("✅ Google OAuth успешно настроен с ID: %s", 
+                settings.GOOGLE_CLIENT_ID[:8] + "..." if settings.GOOGLE_CLIENT_ID else "Not set")
+    logger.info("✅ Google redirect URI: %s", settings.GOOGLE_REDIRECT_URI or "Not set")
 except Exception as e:
     logger.error(f"❌ Ошибка настройки Google OAuth: {e}")
 
 # Регистрация GitHub OAuth
 try:
     oauth.register(name="github", **oauth_settings.github)
-    logger.info("✅ GitHub OAuth успешно настроен с ID: %s", settings.GITHUB_CLIENT_ID[:8] + "...")
-    logger.info("✅ GitHub redirect URI: %s", settings.GITHUB_REDIRECT_URI)
+    logger.info("✅ GitHub OAuth успешно настроен с ID: %s", 
+                settings.GITHUB_CLIENT_ID[:8] + "..." if settings.GITHUB_CLIENT_ID else "Not set")
+    logger.info("✅ GitHub redirect URI: %s", settings.GITHUB_REDIRECT_URI or "Not set")
 except Exception as e:
     logger.error(f"❌ Ошибка настройки GitHub OAuth: {e}")
 
@@ -81,7 +88,16 @@ async def generate_google_login_url(request: Request) -> Optional[str]:
             return None
             
         # Генерируем URL для редиректа
-        redirect = await oauth.google.authorize_redirect(request, settings.GOOGLE_REDIRECT_URI)
+        # Use the exact URI registered in Google Cloud Console
+        redirect_uri = settings.GOOGLE_REDIRECT_URI
+        
+        # Generate authorization URL with state parameter for security
+        redirect = await oauth.google.authorize_redirect(
+            request, 
+            redirect_uri,
+            # Optional: Add state parameter for additional security
+            # state=generate_secure_state(request)
+        )
         login_url = redirect.headers["location"]
         logger.info(f"🔹 Google Login URL: {login_url}")
         return login_url
@@ -115,6 +131,7 @@ async def handle_google_callback(request: Request) -> Optional[Dict[str, str]]:
             "sub": user_info.get("sub"),
             "given_name": user_info.get("given_name", ""),
             "family_name": user_info.get("family_name", ""),
+            "provider": "google"  # Add provider for tracking login source
         }
     except Exception as e:
         logger.error(f"❌ Ошибка при обработке Google OAuth Callback: {e}")

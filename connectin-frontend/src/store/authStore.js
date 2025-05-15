@@ -325,9 +325,15 @@ const useAuthStore = create((set, get) => ({
         if (accessTokenCookie && refreshTokenCookie) {
             try {
                 // Validate token before setting
-                jwtDecode(accessTokenCookie);
+                const decodedToken = jwtDecode(accessTokenCookie);
+                
+                // Check if token is not expired
+                const currentTime = Date.now() / 1000;
+                if (decodedToken.exp && decodedToken.exp < currentTime) {
+                    throw new Error("Token expired");
+                }
 
-                // Store tokens
+                // Store tokens securely
                 localStorage.setItem(ACCESS_TOKEN_KEY, accessTokenCookie);
                 localStorage.setItem(REFRESH_TOKEN_KEY, refreshTokenCookie);
 
@@ -337,7 +343,7 @@ const useAuthStore = create((set, get) => ({
                 // Setup token refresh
                 get().setupTokenRefresh(accessTokenCookie);
 
-                // Remove cookies
+                // Remove cookies after transferring to localStorage
                 Cookies.remove("access_token");
                 Cookies.remove("refresh_token");
 
@@ -352,15 +358,66 @@ const useAuthStore = create((set, get) => ({
                 get().fetchCurrentUser();
 
                 toast.success("Login successful via OAuth!");
+                
+                // Check if we need to redirect to a specific page
+                const redirectPath = localStorage.getItem('login_redirect');
+                if (redirectPath) {
+                    localStorage.removeItem('login_redirect');
+                    // Use window.location to navigate to the stored path
+                    // This is handled by the component using this function
+                }
+                
                 return true;
             } catch (error) {
                 console.error("Invalid OAuth token:", error);
                 Cookies.remove("access_token");
                 Cookies.remove("refresh_token");
+                toast.error("Authentication failed. Please try again.");
                 return false;
             }
         }
         return false;
+    },
+
+    // Method to manually set tokens (used as fallback for OAuth)
+    setTokensManually: async (accessToken, refreshToken) => {
+        try {
+            // Validate token
+            const decodedToken = jwtDecode(accessToken);
+            
+            // Check if token is not expired
+            const currentTime = Date.now() / 1000;
+            if (decodedToken.exp && decodedToken.exp < currentTime) {
+                toast.error("Received expired token");
+                return false;
+            }
+            
+            // Store tokens securely
+            localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+            localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+            
+            // Set axios default headers
+            axios.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
+            
+            // Setup token refresh
+            get().setupTokenRefresh(accessToken);
+            
+            // Update state
+            set({
+                accessToken,
+                refreshToken,
+                isAuthenticated: true,
+            });
+            
+            // Fetch user data
+            await get().fetchCurrentUser();
+            
+            return true;
+        } catch (error) {
+            console.error("Error setting tokens manually:", error);
+            toast.error("Authentication failed. Invalid tokens received.");
+            return false;
+        }
     },
 }));
 

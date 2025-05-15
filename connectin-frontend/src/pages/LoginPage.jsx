@@ -68,7 +68,7 @@ const LoginPage = () => {
         // Use the backend URL directly for production environment
         // This ensures the OAuth callback goes directly to the backend API
         const backendUrl = import.meta.env.PROD 
-            ? "https://api-production-xxxx.up.railway.app" // Replace with your actual backend API URL
+            ? "backend-production-a087.up.railway.app/api/v1" // Replace with your actual backend API URL
             : import.meta.env.VITE_API_URL;
             
         // Redirect to Google OAuth endpoint on the backend

@@ -25,6 +25,7 @@ from jose import JWTError, jwt
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
+import httpx
 
 from app.schemas.user import UserOut
 from app.schemas.user import UserCreate, UserOut
@@ -450,6 +451,130 @@ async def google_callback(request: Request, db: Session = Depends(get_db)) -> Re
     except Exception as e:
         logger.error(f"Ошибка при обработке Google callback: {e}")
         return RedirectResponse(url=f"{FRONTEND_URL}/login?error=google_callback_error", status_code=status.HTTP_302_FOUND)
+
+@router.post("/google/process-callback", summary="Process Google OAuth Callback")
+async def process_google_callback(
+    data: dict = Body(...),
+    db: Session = Depends(get_db)
+) -> Dict[str, Union[str, UserOut]]:
+    """
+    Process Google OAuth callback code received from frontend
+    """
+    try:
+        code = data.get("code")
+        redirect_uri = data.get("redirect_uri")
+        
+        if not code:
+            logger.error("No authorization code provided")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Authorization code is required"
+            )
+        
+        # Exchange the code for token
+        token_request_uri = "https://oauth2.googleapis.com/token"
+        token_data = {
+            "code": code,
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "client_secret": settings.GOOGLE_CLIENT_SECRET,
+            "redirect_uri": redirect_uri or settings.GOOGLE_REDIRECT_URI,
+            "grant_type": "authorization_code"
+        }
+        
+        async with httpx.AsyncClient() as client:
+            token_response = await client.post(token_request_uri, data=token_data)
+            if token_response.status_code != 200:
+                logger.error(f"Failed to get token from Google: {token_response.text}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Failed to exchange authorization code for token"
+                )
+                
+            token_data = token_response.json()
+        
+        # Get user info from ID token
+        id_token_value = token_data.get("id_token")
+        if not id_token_value:
+            logger.error("Missing id_token in Google response")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Missing ID token in Google response"
+            )
+        
+        # Verify and decode the ID token
+        try:
+            from google.oauth2 import id_token
+            from google.auth.transport import requests
+            
+            id_info = id_token.verify_oauth2_token(
+                id_token_value, 
+                requests.Request(),
+                settings.GOOGLE_CLIENT_ID
+            )
+            
+            # Validate issuer
+            if id_info['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+                raise ValueError('Wrong issuer.')
+                
+            # Get user info
+            email = id_info.get("email")
+            if not email:
+                logger.error("Email not found in token")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email not found in token"
+                )
+            
+            # Check if user exists or create a new one
+            google_id = id_info.get("sub")
+            user = db.query(User).filter((User.email == email) | (User.google_id == google_id)).first()
+            
+            if user:
+                logger.info(f"Found existing user: {user.email}")
+                if not user.google_id and google_id:
+                    user.google_id = google_id
+                    db.commit()
+            else:
+                # Create new user
+                base_username = id_info.get("name", "").replace(" ", "_").lower() or email.split("@")[0]
+                username = generate_unique_username(base_username, db)
+                user = User(
+                    email=email,
+                    username=username,
+                    hashed_password="",  # Empty for OAuth users
+                    google_id=google_id,
+                    first_name=id_info.get("given_name"),
+                    last_name=id_info.get("family_name"),
+                    avatar_url=id_info.get("picture")
+                )
+                db.add(user)
+                db.commit()
+                db.refresh(user)
+                logger.info(f"Created new Google user: {user.email}")
+            
+            # Generate tokens
+            access_token = create_access_token(user)
+            refresh_token = create_refresh_token(user)
+            
+            return {
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "token_type": "bearer",
+                "user": UserOut.from_orm(user)
+            }
+            
+        except ValueError as e:
+            logger.error(f"Invalid ID token: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid ID token: {str(e)}"
+            )
+    except Exception as e:
+        logger.error(f"Error processing Google callback: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error processing Google callback: {str(e)}"
+        )
 
 # ---------------------- GitHub OAuth ----------------------
 

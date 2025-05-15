@@ -28,6 +28,8 @@ import ContactPage from "./pages/ContactPage.jsx";
 import FAQPage from "./pages/FAQPage.jsx";
 import NetworkGraph from "./pages/NetworkGraph.jsx";
 import InboxPage from "./pages/InboxPage.jsx";
+// OAuth Callback Pages
+import GoogleCallback from "./pages/auth/GoogleCallback.jsx";
 // Убедитесь, что пути ко всем страницам и компонентам верны!
 
 function App() {
@@ -48,6 +50,9 @@ function App() {
                             <Routes>
                                 {/* === ЛЕНДИНГ НА ГЛАВНОЙ === */}
                                 <Route path="/" element={<LandingPageV3 />} />
+
+                                {/* === OAuth Callback Routes === */}
+                                <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
                                 {/* === ОСТАЛЬНЫЕ СТРАНИЦЫ ВНУТРИ ОБЕРТКИ С ОГРАНИЧЕНИЕМ ШИРИНЫ === */}
                                 <Route

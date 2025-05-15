@@ -65,8 +65,14 @@ const LoginPage = () => {
         const state = Math.random().toString(36).substring(2);
         localStorage.setItem('oauth_state', state);
         
-        // Redirect to Google OAuth endpoint
-        window.location.href = `${import.meta.env.VITE_API_URL}/auth/google/login`;
+        // Use the backend URL directly for production environment
+        // This ensures the OAuth callback goes directly to the backend API
+        const backendUrl = import.meta.env.PROD 
+            ? "https://api-production-xxxx.up.railway.app" // Replace with your actual backend API URL
+            : import.meta.env.VITE_API_URL;
+            
+        // Redirect to Google OAuth endpoint on the backend
+        window.location.href = `${backendUrl}/api/v1/auth/google/login`;
     };
 
     const handleGithubLogin = () => {

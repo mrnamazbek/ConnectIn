@@ -29,7 +29,11 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173", "https://frontend-production-1eef2.up.railway.app"],
+        allow_origins=[
+            "http://localhost:5173", 
+            "https://frontend-production-1eef2.up.railway.app",
+            "https://connectin.app",  # If you have a custom domain
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

@@ -19,7 +19,15 @@ const GoogleCallback = () => {
                 // Extract query parameters
                 const searchParams = new URLSearchParams(location.search);
                 const code = searchParams.get('code');
-                const state = searchParams.get('state');
+                const error = searchParams.get('error');
+                
+                // Handle any OAuth error returned from Google
+                if (error) {
+                    console.error('Google OAuth error:', error);
+                    toast.error(`Google authentication error: ${error}`);
+                    navigate('/login');
+                    return;
+                }
                 
                 if (!code) {
                     toast.error('Authorization code missing');
@@ -29,15 +37,22 @@ const GoogleCallback = () => {
                 
                 // Forward the authorization code to your backend API
                 const apiUrl = import.meta.env.PROD 
-                    ? "https://connectin-production.up.railway.app/api/v1" // Replace with your actual production API URL
-                    : `${import.meta.env.VITE_API_URL}/api/v1`;
+                    ? "https://backend-production-a087.up.railway.app"  // Make sure this matches LoginPage.jsx
+                    : import.meta.env.VITE_API_URL;
+                
+                console.log('Sending code to backend:', apiUrl);
+                
+                // Use the exact same redirect URI as registered in Google Cloud Console
+                // This MUST match what you have registered there exactly
+                const redirectUri = `${window.location.origin}/auth/google/callback`;
                 
                 // Send the code to your backend for processing
-                const response = await axios.post(`${apiUrl}/auth/google/process-callback`, { 
-                    code, 
-                    state,
-                    redirect_uri: window.location.origin + '/auth/google/callback'
+                const response = await axios.post(`${apiUrl}/api/v1/auth/google/process-callback`, { 
+                    code,
+                    redirect_uri: redirectUri
                 });
+                
+                console.log('Response received:', response.status);
                 
                 // Handle successful authentication
                 if (response.data && response.data.access_token) {
@@ -53,7 +68,11 @@ const GoogleCallback = () => {
                 }
             } catch (error) {
                 console.error('Error processing Google callback:', error);
-                toast.error(error.response?.data?.detail || 'Authentication failed');
+                // More detailed error message
+                const errorDetail = error.response?.data?.detail || 
+                                   (error.response ? `Error ${error.response.status}: ${error.response.statusText}` : 
+                                   error.message || 'Authentication failed');
+                toast.error(errorDetail);
                 navigate('/login');
             }
         };

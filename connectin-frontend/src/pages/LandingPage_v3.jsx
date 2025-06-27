@@ -172,7 +172,7 @@ const LandingPage_v3 = () => {
                                 <motion.div
                                     animate={{y: [-8, 8, -8], x: [3, -3, 3]}}
                                     transition={{repeat: Infinity, duration: 10, ease: "easeInOut"}}
-                                    className="absolute top-10 -right-6 w-64 h-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 z-30 border border-gray-200 dark:border-gray-700"
+                                    className="absolute top-10 -right-6 w-64 h-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 z-20 border border-gray-200 dark:border-gray-700"
                                 >
                                     <div className="w-full h-5 bg-emerald-100 dark:bg-emerald-900 rounded mb-3"></div>
                                     <div className="w-3/4 h-3 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>

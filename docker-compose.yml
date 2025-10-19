@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: connectin
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: connectinamazon123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./connectin-backend/archive/backup.sql:/docker-entrypoint-initdb.d/backup.sql
+    networks:
+      - connectin-network
+
+  # Redis для кэширования
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - connectin-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./connectin-backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:password@postgres:5432/connectin}
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:8000/auth/google/callback}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - GITHUB_REDIRECT_URI=${GITHUB_REDIRECT_URI:-http://localhost:8000/auth/github/callback}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME:-connectin-bucket}
+      - AWS_REGION=${AWS_REGION:-eu-north-1}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - connectin-network
+    volumes:
+      - ./connectin-backend:/app
+    command: >
+      sh -c "
+        alembic upgrade head &&
+        python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  # Frontend React App
+  frontend:
+    build:
+      context: ./connectin-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000/api/v1
+      - VITE_WS_URL=ws://localhost:8000
+      - VITE_CKEDITOR_LICENSE_KEY=eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3NzA0MjIzOTksImp0aSI6IjVlOTZlZmE3LTc3NjUtNGY2Yy1iYWVlLWUyNjU4MTY2NzE3MiIsImxpY2Vuc2VkSG9zdHMiOlsiMTI3LjAuMC4xIiwibG9jYWxob3N0IiwiMTkyLjE2OC4qLioiLCIxMC4qLiouKiIsIjE3Mi4qLiouKiIsIioudGVzdCIsIioubG9jYWxob3N0IiwiKi5sb2NhbCJdLCJ1c2FnZUVuZHBvaW50IjoiaHR0cHM6Ly9wcm94eS1ldmVudC5ja2VkaXRvci5jb20iLCJkaXN0cmlidXRpb25DaGFubmVsIjpbImNsb3VkIiwiZHJ1cGFsIl0sImxpY2Vuc2VUeXBlIjoiZGV2ZWxvcG1lbnQiLCJmZWF0dXJlcyI6WyJEUlVQIl0sInZjIjoiYWQ0MmM4M2UifQ.NwegKhZxZ6l3QiZa9UfiYwCSOHg1uJ0esVicu77sHWsWF3EUp16ajo_h05d8K7zM2HXARuyIGnpGnaxSdV19Lw
+      - VITE_EMAIL_PUBLIC_KEY=HS0LjMeoADdVlZ9r9
+      - VITE_EMAIL_SERVICE_KEY=service_cr4lr4q
+      - VITE_EMAIL_TEMPLATE_KEY=template_v1ojrij
+    depends_on:
+      - backend
+    networks:
+      - connectin-network
+    volumes:
+      - ./connectin-frontend:/app
+      - /app/node_modules
+
+  # ML Service
+  ml-service:
+    build:
+      context: ./connectin-ml_service
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:connectinamazon123@postgres:5432/connectin
+    depends_on:
+      - postgres
+    networks:
+      - connectin-network
+
+  # Kafka (для будущей интеграции)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - connectin-network
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - connectin-network
+
+volumes:
+  postgres_data:
+
+networks:
+  connectin-network:
+    driver: bridge

@@ -178,17 +178,17 @@ asyncio.run(main())
 ### Event Loop Flow
 ```mermaid
 flowchart LR
-  A[Start main()] --> B[Create tasks]
-  B --> C[Event Loop]
-  C -->|schedule| D[Task1: coroutine]
-  C -->|schedule| E[Task2: coroutine]
-  D -->|await I/O| F[OS waits]
+  A["Start main()"] --> B["Create tasks"]
+  B --> C["Event Loop"]
+  C -->|schedule| D["Task1: coroutine"]
+  C -->|schedule| E["Task2: coroutine"]
+  D -->|await I/O| F["OS waits"]
   E -->|await I/O| F
   F -->|I/O done| D
   F -->|I/O done| E
-  D --> G[complete]
+  D --> G["complete"]
   E --> G
-  G --> H[results]
+  G --> H["results"]
 ```
 
 **ASCII event loop (quick):**

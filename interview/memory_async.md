@@ -32,11 +32,11 @@ graph TD
     B --> E[Local Variables]
     C --> F[Objects]
     C --> G[Dynamic Allocation]
-    
+
     D --> H[Frame 1: f()]
     E --> I[x = 5]
     E --> J[y = ref to list]
-    
+
     F --> K[List [1,2,3]]
     G --> L[Other Objects]
 ```

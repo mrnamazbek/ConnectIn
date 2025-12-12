@@ -1,126 +1,153 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
+  # ==================== DATABASE ====================
   postgres:
-    image: postgres:15
+    image: postgres:15-alpine
+    container_name: connectin_db
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: connectin
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: connectinamazon123
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-connectin}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./connectin-backend/archive/backup.sql:/docker-entrypoint-initdb.d/backup.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
-      - connectin-network
+      - connectin-net
 
-  # Redis для кэширования
+  # ==================== CACHE ====================
   redis:
     image: redis:7-alpine
+    container_name: connectin_redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     networks:
-      - connectin-network
+      - connectin-net
 
-  # Backend API
-  backend:
+  # ==================== MICROSERVICES ====================
+  
+  # API Gateway
+  api-gateway:
     build:
-      context: ./connectin-backend
+      context: ./api-gateway
       dockerfile: Dockerfile
+    container_name: connectin_gateway
+    restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:password@postgres:5432/connectin}
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:8000/auth/google/callback}
-      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
-      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
-      - GITHUB_REDIRECT_URI=${GITHUB_REDIRECT_URI:-http://localhost:8000/auth/github/callback}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME:-connectin-bucket}
-      - AWS_REGION=${AWS_REGION:-eu-north-1}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AUTH_SERVICE_URL=http://auth-service:8001
+      - PROJECT_SERVICE_URL=http://project-service:8002
+      - NOTIFICATION_SERVICE_URL=http://notification-service:8003
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=HS256
     depends_on:
-      - postgres
-      - redis
+      auth-service:
+        condition: service_healthy
+      project-service:
+        condition: service_healthy
     networks:
-      - connectin-network
-    volumes:
-      - ./connectin-backend:/app
-    command: >
-      sh -c "
-        alembic upgrade head &&
-        python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-      "
+      - connectin-net
 
-  # Frontend React App
-  frontend:
+  # Auth Service
+  auth-service:
     build:
-      context: ./connectin-frontend
+      context: ./auth-service
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
+    container_name: connectin_auth
+    restart: unless-stopped
     environment:
-      - VITE_API_URL=http://localhost:8000/api/v1
-      - VITE_WS_URL=ws://localhost:8000
-      - VITE_CKEDITOR_LICENSE_KEY=eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3NzA0MjIzOTksImp0aSI6IjVlOTZlZmE3LTc3NjUtNGY2Yy1iYWVlLWUyNjU4MTY2NzE3MiIsImxpY2Vuc2VkSG9zdHMiOlsiMTI3LjAuMC4xIiwibG9jYWxob3N0IiwiMTkyLjE2OC4qLioiLCIxMC4qLiouKiIsIjE3Mi4qLiouKiIsIioudGVzdCIsIioubG9jYWxob3N0IiwiKi5sb2NhbCJdLCJ1c2FnZUVuZHBvaW50IjoiaHR0cHM6Ly9wcm94eS1ldmVudC5ja2VkaXRvci5jb20iLCJkaXN0cmlidXRpb25DaGFubmVsIjpbImNsb3VkIiwiZHJ1cGFsIl0sImxpY2Vuc2VUeXBlIjoiZGV2ZWxvcG1lbnQiLCJmZWF0dXJlcyI6WyJEUlVQIl0sInZjIjoiYWQ0MmM4M2UifQ.NwegKhZxZ6l3QiZa9UfiYwCSOHg1uJ0esVicu77sHWsWF3EUp16ajo_h05d8K7zM2HXARuyIGnpGnaxSdV19Lw
-      - VITE_EMAIL_PUBLIC_KEY=HS0LjMeoADdVlZ9r9
-      - VITE_EMAIL_SERVICE_KEY=service_cr4lr4q
-      - VITE_EMAIL_TEMPLATE_KEY=template_v1ojrij
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-connectin}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - REFRESH_TOKEN_EXPIRE_DAYS=7
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
     depends_on:
-      - backend
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
-      - connectin-network
-    volumes:
-      - ./connectin-frontend:/app
-      - /app/node_modules
+      - connectin-net
 
-  # ML Service
+  # Project Service
+  project-service:
+    build:
+      context: ./project-service
+      dockerfile: Dockerfile
+    container_name: connectin_projects
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-connectin}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8002/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - connectin-net
+
+  # ML Service (Optional - for recommendations)
   ml-service:
     build:
-      context: ./connectin-ml_service
+      context: ./ml-service
       dockerfile: Dockerfile
-    ports:
-      - "5000:5000"
+    container_name: connectin_ml
+    restart: "no"  # Don't restart - requires legacy schema
     environment:
-      - DATABASE_URL=postgresql://postgres:connectinamazon123@postgres:5432/connectin
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-connectin}
     depends_on:
       - postgres
     networks:
-      - connectin-network
+      - connectin-net
+    profiles:
+      - full  # Run with: docker-compose --profile full up
 
-  # Kafka (для будущей интеграции)
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    networks:
-      - connectin-network
-
-  kafka:
-    image: confluentinc/cp-kafka:latest
-    depends_on:
-      - zookeeper
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: connectin_frontend
+    restart: unless-stopped
     ports:
-      - "9092:9092"
+      - "3000:80"
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - api-gateway
     networks:
-      - connectin-network
+      - connectin-net
 
 volumes:
   postgres_data:
+    driver: local
 
 networks:
-  connectin-network:
+  connectin-net:
     driver: bridge

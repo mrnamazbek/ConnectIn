@@ -28,6 +28,7 @@ import ContactPage from "./pages/ContactPage.jsx";
 import FAQPage from "./pages/FAQPage.jsx";
 import NetworkGraph from "./pages/NetworkGraph.jsx";
 import InboxPage from "./pages/InboxPage.jsx";
+import ComponentShowcase from "./pages/ComponentShowcase.jsx"; // NEW: Glass components demo
 // OAuth Callback Pages
 import GoogleCallback from "./pages/auth/GoogleCallback.jsx";
 // Убедитесь, что пути ко всем страницам и компонентам верны!
@@ -173,6 +174,14 @@ function App() {
                                     element={
                                         <MainContentWrapper>
                                             <RecommendationsPage />
+                                        </MainContentWrapper>
+                                    }
+                                />
+                                <Route
+                                    path="/components-showcase"
+                                    element={
+                                        <MainContentWrapper>
+                                            <ComponentShowcase />
                                         </MainContentWrapper>
                                     }
                                 />
